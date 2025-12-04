@@ -1,7 +1,7 @@
 // Backend base URL: prefer Vite runtime env, then runtime-injected window.__API_URL, then the live Render URL as final fallback.
 const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
     ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-    : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-1.onrender.com';
+    : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-backend-main.onrender.com';
 const API_URL = `${BASE_URL}/api/songs`;
 
 export const getSongs = async (token) => {

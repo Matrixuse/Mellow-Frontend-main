@@ -2,7 +2,7 @@
 // Prefer Vite env var, then runtime window injection, then the live Render URL.
 const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
   ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-  : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-1.onrender.com';
+  : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-backend-main.onrender.com';
 const API_URL = `${BASE_URL}/api/playlists`;
 
 async function parseJsonSafe(response) {
