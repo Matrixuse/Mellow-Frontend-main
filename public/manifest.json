@@ -1,0 +1,48 @@
+{
+  "short_name": "Mellow",
+  "name": "Mellow Music Player - Play & Relax",
+  "description": "A beautiful music player with playlists, queue management, and mobile features",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1F2937",
+  "background_color": "#111827",
+  "categories": ["music", "entertainment"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Library",
+      "short_name": "Library",
+      "description": "View your music library",
+      "url": "/",
+      "icons": [{ "src": "logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Playlists",
+      "short_name": "Playlists",
+      "description": "Manage your playlists",
+      "url": "/playlists",
+      "icons": [{ "src": "logo.png", "sizes": "96x96" }]
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+﻿{
+    "registerError":  null,
+    "login":  {
+                  "token":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MmMwZjJlMzNkMWZiYmY4ZDhhNDVhYyIsImVtYWlsIjoiYXV0b3Rlc3RfdXNlckBleGFtcGxlLmNvbSIsIm5hbWUiOiJBdXRvVGVzdGVyIiwiaWF0IjoxNzY0NDk1OTEwLCJleHAiOjE3NjUxMDA3MTB9.qiourteU6tagtobekaku8Jtr9ihkfpZrVVfSDjmmVls",
+                  "user":  {
+                               "id":  "692c0f2e33d1fbbf8d8a45ac",
+                               "name":  "AutoTester",
+                               "email":  "autotest_user@example.com"
+                           }
+              },
+    "token":  "eyJhbGciOiJIUzI1NiIs...",
+    "songsCount":  397,
+    "songsSample":  {
+                        "id":  "692bd9894d202237316f0ca1",
+                        "title":  "Sahiba",
+                        "artist":  [
+                                       "Aditya Rikhari"
+                                   ],
+                        "songUrl":  "https://res.cloudinary.com/dajnpmuya/video/upload/v1764481416/music_app_songs/d35ljyybczwurphbxyfx.mp3",
+                        "coverUrl":  "https://res.cloudinary.com/dajnpmuya/image/upload/v1764481415/music_app_covers/qzlt1nrl2gh4h5bvuroc.jpg",
+                        "moods":  [
+                                      "Chill",
+                                      "Soft \u0026 HeartBreak",
+                                      "Smooth",
+                                      "Romantic"
+                                  ]
+                    },
+    "playlistCreated":  {
+                            "id":  "692c1227973481e3625ce955",
+                            "name":  "CI Test Playlist",
+                            "description":  "Automated test",
+                            "userId":  "692c0f2e33d1fbbf8d8a45ac",
+                            "isPublic":  false,
+                            "createdAt":  "2025-11-30T09:45:11.370Z",
+                            "songCount":  0
+                        },
+    "addSong":  {
+                    "message":  "Song added to playlist successfully",
+                    "position":  1
+                },
+    "addedSongId":  "692bd9894d202237316f0ca1",
+    "playlistDetail":  {
+                           "id":  "692c1227973481e3625ce955",
+                           "name":  "CI Test Playlist",
+                           "description":  "Automated test",
+                           "isPublic":  false,
+                           "coverUrl":  null,
+                           "createdAt":  "2025-11-30T09:45:11.370Z",
+                           "updatedAt":  "2025-11-30T09:45:11.805Z",
+                           "songs":  [
+                                         {
+                                             "_id":  "692bd9894d202237316f0ca1",
+                                             "title":  "Sahiba",
+                                             "artist":  [
+                                                            "Aditya Rikhari"
+                                                        ],
+                                             "songUrl":  "https://res.cloudinary.com/dajnpmuya/video/upload/v1764481416/music_app_songs/d35ljyybczwurphbxyfx.mp3",
+                                             "coverUrl":  "https://res.cloudinary.com/dajnpmuya/image/upload/v1764481415/music_app_covers/qzlt1nrl2gh4h5bvuroc.jpg",
+                                             "moods":  [
+                                                           "Chill",
+                                                           "Soft \u0026 HeartBreak",
+                                                           "Smooth",
+                                                           "Romantic"
+                                                       ],
+                                             "createdAt":  "2025-11-30T05:43:37.425Z",
+                                             "__v":  0,
+                                             "position":  1,
+                                             "addedAt":  "2025-11-30T09:45:11.799Z"
+                                         }
+                                     ],
+                           "songCount":  1
+                       },
+    "reorder":  {
+                    "message":  "Playlist songs reordered successfully"
+                },
+    "remove":  {
+                   "message":  "Song removed from playlist successfully"
+               },
+    "delete":  {
+                   "message":  "Playlist deleted successfully"
+               }
+}

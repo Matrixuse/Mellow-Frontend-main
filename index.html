@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="A modern music player built with React and Node.js"
+    />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    
+    <link rel="manifest" href="/manifest.json" />
+    
+    <title>Mellow - Play & Relax</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    
+    <script>
+      (function () {
+        try {
+          if (typeof onAddToQueue === 'undefined') {
+            function __shim_onAddToQueue(song, position) {
+              try {
+                if (window.__APP_ON_ADD_TO_QUEUE && typeof window.__APP_ON_ADD_TO_QUEUE === 'function') {
+                  return window.__APP_ON_ADD_TO_QUEUE(song, position);
+                }
+              } catch (e) {}
+            }
+            window.__APP_ON_ADD_TO_QUEUE = window.__APP_ON_ADD_TO_QUEUE || __shim_onAddToQueue;
+            var onAddToQueue = __shim_onAddToQueue;
+            window.onAddToQueue = window.onAddToQueue || __shim_onAddToQueue;
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

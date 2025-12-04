@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Page ko scroll hone se rokne ke liye */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure a sensible root font size for desktop (rem-based sizing relies on this). */
+html {
+  font-size: 18px; /* increase desktop baseline for a 'zoomed in' feel */
+}
+/* Slightly increase base on very large screens for readability */
+@media (min-width: 1600px) {
+  html { font-size: 19px; }
+}
+
+/* Vertical Scrollbar ke liye */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a5568; /* Tailwind gray-600 */
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #718096; /* Tailwind gray-500 */
+}
+
+/* --- YAHAN HUMNE BADLAAV KIYA HAI --- */
+/* Horizontal Scrollbar ko hide karne ke liye */
+.custom-scrollbar-h {
+  -ms-overflow-style: none;  /* IE and Edge ke liye */
+  scrollbar-width: none;  /* Firefox ke liye */
+}
+.custom-scrollbar-h::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera ke liye */
+}
+
+/* Mobile (<=767px) par vertical scrollbar ko hide karna */
+@media (max-width: 767px) {
+  .custom-scrollbar {
+    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;            /* WebKit */
+  }
+}
+
