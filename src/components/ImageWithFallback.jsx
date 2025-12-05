@@ -16,23 +16,45 @@ const ImageWithFallback = ({ src, alt = '', className = '', fallback = DEFAULT_P
             return;
         }
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), checkTimeout);
+        // Create a DOM Image to preload the resource. This avoids using HEAD
+        // requests which some hosts or CDNs may block or CORS-restrict. The
+        // browser will handle the cross-origin request for the image and
+        // correctly trigger onload/onerror callbacks without requiring a
+        // separate fetch() call.
+        const img = new Image();
+        let timeoutId = null;
 
-        // Use HEAD to verify resource existence (smaller response than GET)
-        fetch(src, { method: 'HEAD', signal: controller.signal, cache: 'no-cache' })
-            .then(res => {
-                if (cancelled) return;
-                if (res && res.ok) setDisplaySrc(src);
-                else setDisplaySrc(fallback);
-            })
-            .catch(() => {
-                if (cancelled) return;
-                setDisplaySrc(fallback);
-            })
-            .finally(() => clearTimeout(timeoutId));
+        const handleSuccess = () => {
+            if (cancelled) return;
+            clearTimeout(timeoutId);
+            setDisplaySrc(src);
+        };
 
-        return () => { cancelled = true; controller.abort(); clearTimeout(timeoutId); };
+        const handleFailure = () => {
+            if (cancelled) return;
+            clearTimeout(timeoutId);
+            setDisplaySrc(fallback);
+        };
+
+        img.onload = handleSuccess;
+        img.onerror = handleFailure;
+        // attempt to load; some CDNs require the crossorigin attribute for caching
+        try { img.crossOrigin = 'anonymous'; } catch (e) {}
+        img.src = src;
+
+        // Fallback timeout in case the image load hangs
+        timeoutId = setTimeout(() => {
+            if (cancelled) return;
+            // If still not loaded after timeout, treat as failure
+            try { img.onload = null; img.onerror = null; } catch (e) {}
+            setDisplaySrc(fallback);
+        }, checkTimeout);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timeoutId);
+            try { img.onload = null; img.onerror = null; } catch (e) {}
+        };
     }, [src, fallback, checkTimeout]);
 
     return <img src={displaySrc} alt={alt} className={className} onError={(e) => { e.target.onerror = null; e.target.src = fallback; }} {...rest} />;
