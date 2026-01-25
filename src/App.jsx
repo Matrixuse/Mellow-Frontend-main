@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 // Humne yahan 'Outlet' aur 'useOutletContext' ko import kiya hai
 import { Routes, Route, Link, Outlet, useOutletContext, useNavigate } from 'react-router-dom';
 import AuthForm from './components/AuthForm';
@@ -8,24 +8,28 @@ import lockScreenService from './services/lockScreenService';
 import PlayerUI from './components/PlayerUI';
 import SongLibrary from './components/SongLibrary';
 import AdminPanel from './components/Admin';
-import ArtistPage from './components/ArtistPage';
 import { Loader, Footer } from './components/OtherComponents';
 import { getSongs } from './api/songService';
-import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown } from 'lucide-react';
+import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shuffle } from 'lucide-react';
 import QueuePanel from './components/QueuePanel';
 import PlaylistModal from './components/PlaylistModal';
 import PlaylistPage from './components/PlaylistPage';
 import PlaylistsPage from './components/PlaylistsPage';
 import FeedbackPage from './components/FeedbackPage';
 import BottomNav from './components/BottomNav';
-import MoodPage from './components/MoodPage';
+import SearchResults from './components/SearchResults';
+import ProfilePage from './pages/ProfilePage';
 import { createFuzzySearch, getFuzzySuggestions } from './utils/fuzzySearch';
+
+// Lazy load heavy components for better initial load time
+const ArtistPage = lazy(() => import('./components/ArtistPage'));
+const MoodPage = lazy(() => import('./components/MoodPage'));
 
 // No global fallbacks for handlers. Handlers should be passed explicitly via props or outlet context.
 
 // --- Main Layout Component ---
 // Yeh component left player aur right content area ka layout banata hai
-const MainLayout = (props) => (
+const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onLogout, toggleLogoutVisible, isLogoutVisible, ...props }) => (
     <div className="flex flex-col md:flex-row h-full">
         {/* Left Column desktop/tablet par hi dikhega */}
     <div className="hidden md:flex md:w-80 p-3 flex-shrink-0 flex-col bg-gray-800/30">
@@ -49,17 +53,21 @@ const MainLayout = (props) => (
         </div>
         {/* Right Column (Yahan ab Outlet aayega jo page badlega) */}
         {/* Hum yahan 'context' ke zariye saare props neeche bhej rahe hain */}
-        <Outlet context={props} /> 
-        {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
-        <div className="md:hidden">
-            <MobilePlayerBar {...props} />
-            <BottomNav />
+        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
+            <Outlet context={{ ...props, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onLogout, toggleLogoutVisible, isLogoutVisible }} /> 
+            {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
+            <div className="md:hidden">
+                <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} isPlayerInitialized={props.isPlayerInitialized} />
+                <BottomNav />
+            </div>
         </div>
     </div>
-);
+));
+
+MainLayout.displayName = 'MainLayout';
 
 // --- Library Page Component ---
-const LibraryPage = () => {
+const LibraryPage = React.memo(() => {
     // Safely read the outlet context so we don't crash if it's undefined
     const context = useOutletContext() || {};
     // helpful debug logs to inspect the outlet context at runtime
@@ -70,7 +78,7 @@ const LibraryPage = () => {
         // eslint-disable-next-line no-console
         console.debug('LibraryPage - onAddToQueue present?', Boolean(context && context.onAddToQueue));
     } catch (e) {}
-    const { filteredSongs, onSelectSong, currentSongId, isPlaying, isLoadingSongs, error, searchTerm, onSearchChange, onClearSearch, onAdminClick, onLogoutClick, isLogoutVisible, onLogout } = context;
+    const { filteredSongs, onSelectSong, currentSongId, isPlaying, isLoadingSongs, error, searchTerm, onSearchChange, onClearSearch, onSearchBarClick, onAdminClick, toggleLogoutVisible, isLogoutVisible, onLogout, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout } = context;
 
     // Safe wrapper that calls the context handler if present.
     const safeAddToQueue = (song, position = 'end') => {
@@ -87,29 +95,41 @@ const LibraryPage = () => {
                 <div className="mb-4 flex items-center gap-3">
                     {/* Mobile-only user icon to the left of search with logout toggle */}
                     <div className="md:hidden relative flex-shrink-0 flex items-center gap-2">
-                        <button onClick={onLogoutClick} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                        <button onClick={toggleLogoutVisible} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
                             <User size={20} className="text-white" />
                         </button>
                         {isLogoutVisible && (
-                            <button onClick={onLogout} className="absolute left-0 top-14 bg-gray-900 text-white py-2 px-4 rounded-lg shadow-lg text-sm whitespace-nowrap">Logout</button>
+                            <div className="absolute left-0 top-14 bg-gray-900 text-white rounded-lg shadow-lg text-sm z-50 min-w-max">
+                                <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">Profile</button>
+                                <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">Your Updates</button>
+                                <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">About</button>
+                                <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700 block">Logout</button>
+                            </div>
                         )}
                     </div>
                     <div className="relative flex-1 flex items-center">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             {/* Give an id so BottomNav can focus this input when Search button pressed */}
-                            <input id="global-search-input" type="text" placeholder="Search for songs or artists..." value={searchTerm} onChange={onSearchChange} autoComplete="off" className="w-full bg-gray-700/60 text-white rounded-full py-1.5 pl-9 pr-9 text-sm" />
+                            <input id="global-search-input" type="text" placeholder="Search for songs or artists..." value={searchTerm} onChange={onSearchChange} onClick={onSearchBarClick} autoComplete="off" className="w-full bg-gray-700/60 text-white rounded-full py-1.5 pl-9 pr-9 text-sm" />
                             {searchTerm && (<button onClick={onClearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"><X size={20} /></button>)}
                         </div>
                         {/* Desktop: move user profile icon and 'Hi,' to the right of search */}
                         <div className="hidden md:flex items-center ml-3">
                             <span className="text-gray-300 font-medium mr-2">Hi,</span>
-                            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer" onClick={onLogoutClick}>
-                                <User size={20} className="text-white" />
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer" onClick={toggleLogoutVisible}>
+                                    <User size={20} className="text-white" />
+                                </div>
+                                {isLogoutVisible && (
+                                    <div className="absolute right-0 mt-2 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden">
+                                        <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Profile</button>
+                                        <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Your Updates</button>
+                                        <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">About</button>
+                                        <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700">Logout</button>
+                                    </div>
+                                )}
                             </div>
-                            {isLogoutVisible && (
-                                <button onClick={onLogout} className="ml-3 bg-gray-900 text-white py-2 px-3 rounded-md text-sm">Logout</button>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -128,7 +148,9 @@ const LibraryPage = () => {
             </div>
         </div>
     );
-};
+});
+
+LibraryPage.displayName = 'LibraryPage';
 
 // --- Main App Component (Master Controller) ---
 function App() {
@@ -161,6 +183,8 @@ function App() {
 
     const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
     const [playlistSongId, setPlaylistSongId] = useState(null);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
 
     const audioRef = useRef(null);
     const currentSong = songs[currentSongIndex];
@@ -246,7 +270,6 @@ function App() {
             window.removeEventListener('touchend', onTouchEnd);
         };
     }, [navigate]);
-    
     useEffect(() => { 
         if (user) { 
             setIsLoadingSongs(true); 
@@ -258,6 +281,7 @@ function App() {
                         id: s.id || s._id || (s._id && s._id.$oid) || String(s.id || s._id || (s._id && s._id.$oid)),
                         coverUrl: s.coverUrl || s.cover_url || 'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'
                     })) : [];
+                    
                     setSongs(normalized);
                 })
                 .catch(err => {
@@ -330,7 +354,13 @@ function App() {
     // Handlers
     const handleLogin = useCallback((d) => {
         try {
-            setUser(d);
+            // Backend returns { token, user: { id, name, email } }
+            // Merge token with user object so we have all data in one place
+            const userData = {
+                ...(d.user || d),
+                token: d.token || (d.user ? undefined : d.token)
+            };
+            setUser(userData);
         } catch (err) {
             // If React state update itself fails for any unexpected reason, log it
             // eslint-disable-next-line no-console
@@ -341,7 +371,11 @@ function App() {
             // localStorage may throw if value cannot be serialized (circular refs)
             // or storage quotas are exceeded. Guard it so the app doesn't crash.
             if (typeof localStorage !== 'undefined') {
-                const serialized = JSON.stringify(d);
+                const userData = {
+                    ...(d.user || d),
+                    token: d.token || (d.user ? undefined : d.token)
+                };
+                const serialized = JSON.stringify(userData);
                 try {
                     localStorage.setItem('user', serialized);
                 } catch (err) {
@@ -356,7 +390,7 @@ function App() {
         }
     }, []);
     const handleLogout = useCallback(() => { setIsPlaying(false); if (audioRef.current) audioRef.current.src = ""; setUser(null); setSongs([]); setCurrentSongIndex(0); localStorage.removeItem('user'); }, []);
-    const handlePlayPause = useCallback(() => { if (!currentSong) return; setIsPlaying(p => !p); }, [currentSong]);
+    const handlePlayPause = useCallback(() => { if (!currentSong) return; setIsPlaying(p => !p); setIsPlayerInitialized(true); }, [currentSong]);
     const handleTogglePlayerExpand = useCallback(() => setIsPlayerExpanded(p => !p), []);
     const handleNext = useCallback(() => {
         try {
@@ -567,8 +601,22 @@ function App() {
         }
         handleNext();
     };
+
+    // Handle audio errors (missing/deleted songs from Cloudinary)
+    const handleAudioError = useCallback(() => {
+        if (currentSongIndex >= 0 && songs[currentSongIndex]) {
+            const failedSong = songs[currentSongIndex];
+            // Remove the broken song from the list silently
+            setSongs(prevSongs => prevSongs.filter((_, idx) => idx !== currentSongIndex));
+            // Skip to next song
+            setCurrentSongIndex(prev => Math.max(0, prev - 1));
+            handleNext();
+        }
+    }, [currentSongIndex, songs, handleNext]);
     const handleSongUploaded = (s) => setSongs(p => [...p, s]);
     const handleSelectSong = useCallback((id) => {
+        // Initialize player when song is selected
+        setIsPlayerInitialized(true);
         // If user manually selects a song (from home/library), clear any
         // active playlist-scoped queue so global playback continues independently.
         if (isUsingPlaylistQueue) {
@@ -716,15 +764,44 @@ function App() {
     const handleRepeatToggle = useCallback(() => setIsRepeat(r => !r), []);
     const toggleLogoutVisible = useCallback(() => setIsLogoutVisible(v => !v), []);
     
+    // Handle navigating to profile page
+    const handleNavigateToProfile = useCallback(() => {
+        setIsLogoutVisible(false);
+        navigate('/profile');
+    }, [navigate]);
+
+    // Handle "Your Updates" navigation (placeholder for now)
+    const handleNavigateToUpdates = useCallback(() => {
+        setIsLogoutVisible(false);
+        // navigate('/updates'); // TODO: Create updates page when ready
+        console.log('Your Updates clicked');
+    }, []);
+
+    // Handle "About" navigation (placeholder for now)
+    const handleNavigateToAbout = useCallback(() => {
+        setIsLogoutVisible(false);
+        // navigate('/about'); // TODO: Create about page when ready
+        console.log('About clicked');
+    }, []);
+    
     // New search handlers
     const handleSearchChange = useCallback((e) => {
         const val = e.target.value;
         setSearchTerm(val);
+        // Show search results page when user types
+        if (val.trim()) {
+            setShowSearchResults(true);
+        }
         // Suggestions UI is not currently rendered; we keep indexing but
         // do not store suggestion state to avoid unused-vars warnings.
     }, []);
     const handleClearSearch = useCallback(() => {
         setSearchTerm('');
+        setShowSearchResults(false);
+    }, []);
+    const handleSearchBarClick = useCallback(() => {
+        // Show all songs when clicking on search bar
+        setShowSearchResults(true);
     }, []);
 
     // Handle browser/mobile gesture back navigation
@@ -837,7 +914,12 @@ function App() {
                 ) : (
                     <Route path="/" element={
                         <MainLayout 
+                            navigate={navigate}
+                            onNavigateToProfile={handleNavigateToProfile}
+                            onNavigateToUpdates={handleNavigateToUpdates}
+                            onNavigateToAbout={handleNavigateToAbout}
                             user={user}
+                            toggleLogoutVisible={toggleLogoutVisible}
                             onLogoutClick={toggleLogoutVisible}
                             isLogoutVisible={isLogoutVisible} 
                             onLogout={handleLogout}
@@ -865,6 +947,8 @@ function App() {
                             searchTerm={searchTerm}
                             onSearchChange={handleSearchChange}
                             onClearSearch={handleClearSearch}
+                            onSearchBarClick={handleSearchBarClick}
+                            isPlayerInitialized={isPlayerInitialized}
                             onAdminClick={() => setIsAdminPanelOpen(true)}
                             onAddToQueue={handleAddToQueue}
                             onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
@@ -884,8 +968,9 @@ function App() {
                         />
                     }>
                         <Route index element={<LibraryPage />} />
-                        <Route path="artist/:artistName" element={<ArtistPage />} />
-                            <Route path="mood/:moodName" element={<MoodPage />} />
+                        <Route path="profile" element={<ProfilePage />} />
+                        <Route path="artist/:artistName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><ArtistPage /></Suspense>} />
+                        <Route path="mood/:moodName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><MoodPage /></Suspense>} />
                         <Route path="playlists" element={<PlaylistsPage />} />
                         <Route path="playlists/:id" element={<PlaylistPage />} />
                         <Route path="feedback" element={<FeedbackPage />} />
@@ -933,12 +1018,39 @@ function App() {
                     </div>
                 </div>
             )}
-            <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} onEnded={handleSongEnd} />
+            <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} onEnded={handleSongEnd} onError={handleAudioError} />
             {isQueueOpen && (
                 <QueuePanel queue={queue} onClose={() => setIsQueueOpen(false)} onPlaySongAtIndex={handlePlaySongAtIndex} onRemove={handleRemoveFromQueue} />
             )}
             {isPlaylistOpen && (
                 <PlaylistModal token={(user && user.token) ? user.token : null} onClose={() => setIsPlaylistOpen(false)} songId={playlistSongId} onPlaylistUpdated={handlePlaylistUpdated} allSongs={songs} />
+            )}
+            {showSearchResults && (
+                <div className="fixed inset-0 z-50 md:hidden">
+                    <SearchResults 
+                        songs={filteredSongs}
+                        onSelectSong={handleSelectSong}
+                        currentSongId={currentSong?.id}
+                        isPlaying={isPlaying}
+                        onAddToQueue={handleAddToQueue}
+                        onAddToPlaylist={handleOpenAddToPlaylist}
+                        onClose={() => {
+                            setShowSearchResults(false);
+                            setSearchTerm('');
+                        }}
+                        initialSearchTerm={searchTerm}
+                        onNavigateHome={() => {
+                            setShowSearchResults(false);
+                            setSearchTerm('');
+                            navigate('/');
+                        }}
+                        onNavigatePlaylists={() => {
+                            setShowSearchResults(false);
+                            setSearchTerm('');
+                            navigate('/playlists');
+                        }}
+                    />
+                </div>
             )}
         </div>
     );
@@ -947,16 +1059,20 @@ function App() {
 export default App;
 
 // --- Mobile mini player bar component ---
-const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand }) => {
-    if (!currentSong) return null;
+const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand, isShuffle, onShuffleToggle, isPlayerInitialized }) => {
+    // Hide player bar until a song has been played, then keep it visible
+    if (!currentSong || !isPlayerInitialized) return null;
     return (
-        <div className="fixed bottom-14 left-0 right-0 bg-gray-800 border-t border-gray-700 p-1.5 z-40">
+        <div className="fixed bottom-14 left-0 right-0 bg-gray-800 border-t border-gray-700 p-1.5 z-40 animate-in slide-in-from-bottom-2 duration-500">
             <div onClick={onTogglePlayerExpand} className="w-full flex items-center gap-2 cursor-pointer" role="button" tabIndex={0}>
                 <img src={currentSong.coverUrl} alt={currentSong.title} className="w-9 h-9 rounded-md object-cover flex-shrink-0" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x200/1F2937/FFFFFF?text=Music'; }} />
                 <div className="flex-1 min-w-0 text-left">
                     <div className="text-sm font-semibold truncate">{currentSong.title}</div>
                     <div className="text-xs text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</div>
                 </div>
+                <button onClick={(e) => { e.stopPropagation(); onShuffleToggle(); }} className={`p-2 transition-colors ${isShuffle ? 'text-blue-400 drop-shadow-lg drop-shadow-blue-500/50' : 'text-gray-400'}`} title="Shuffle">
+                    <Shuffle className="w-5 h-5" />
+                </button>
                 <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-500">
                     {isPlaying ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
                 </button>

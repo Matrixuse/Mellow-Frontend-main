@@ -57,7 +57,7 @@ export const ProgressBar = ({ progress, onProgressChange, duration, currentTime 
             min="0"
             max="100"
             value={progress || 0}
-            onChange={(e) => onProgressChange(e.target.value)}
+            onChange={(e) => onProgressChange(Number(e.target.value))}
             style={{ background: `linear-gradient(to right, #ffffff ${progress}%, #4B5563 ${progress}%)` }}
             className="w-full h-1.5 rounded-full appearance-none cursor-pointer range-sm [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
         />

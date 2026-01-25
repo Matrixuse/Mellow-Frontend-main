@@ -1,7 +1,7 @@
 {
   "appId": "com.Mellow.app",
   "appName": "Mellow",
-  "webDir": "build",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",

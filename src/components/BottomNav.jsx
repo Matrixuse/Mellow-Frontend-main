@@ -41,7 +41,7 @@ export default function BottomNav() {
               </button>
               <button onClick={openPlaylists} aria-label="Playlists" className={`flex flex-col items-center ${isActive('/playlists') ? 'text-white' : 'text-gray-300 hover:text-white'}`}>
                 <List className={`w-5 h-5 ${isActive('/playlists') ? 'scale-110' : ''}`} />
-                <span className={`text-[10px] mt-0.5 ${isActive('/playlists') ? 'text-white font-semibold' : ''}`}>Playlists</span>
+                <span className={`text-[10px] mt-0.5 ${isActive('/playlists') ? 'text-white font-semibold' : ''}`}>Your Library</span>
               </button>
             </div>
         </div>
