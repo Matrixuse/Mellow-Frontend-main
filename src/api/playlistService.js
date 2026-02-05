@@ -213,3 +213,46 @@ export const reorderPlaylistSongs = async (playlistId, songIds, token) => {
 
   return response.json();
 };
+
+// Toggle playlist visibility (public/private)
+export const togglePlaylistVisibility = async (playlistId, token) => {
+  if (!token) {
+    throw new Error('Authentication token not found');
+  }
+
+  const response = await fetch(`${API_URL}/${playlistId}/toggle-visibility`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await parseJsonSafe(response);
+    throw new Error(errorData.message || 'Failed to toggle playlist visibility');
+  }
+
+  return response.json();
+};
+
+// Search public playlists
+export const searchPublicPlaylists = async (query) => {
+  if (!query || !query.trim()) {
+    return [];
+  }
+
+  const response = await fetch(`${API_URL}/search/public?q=${encodeURIComponent(query)}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await parseJsonSafe(response);
+    throw new Error(errorData.message || 'Failed to search playlists');
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+};

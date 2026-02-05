@@ -57,7 +57,7 @@ const ImageWithFallback = ({ src, alt = '', className = '', fallback = DEFAULT_P
         };
     }, [src, fallback, checkTimeout]);
 
-    return <img src={displaySrc} alt={alt} className={className} onError={(e) => { e.target.onerror = null; e.target.src = fallback; }} {...rest} />;
+    return <img src={displaySrc} alt={alt} className={className} onError={(e) => { e.target.onerror = null; e.target.src = fallback; }} referrerPolicy="no-referrer" {...rest} />;
 };
 
 export default ImageWithFallback;

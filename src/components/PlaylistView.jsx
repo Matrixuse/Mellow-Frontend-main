@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Play, MoreVertical, Trash2, Music } from 'lucide-react';
-import { getPlaylistById, removeSongFromPlaylist, reorderPlaylistSongs } from '../api/playlistService';
+import { ArrowLeft, Play, MoreVertical, Trash2, Music, Shuffle, Lock, Globe } from 'lucide-react';
+import { getPlaylistById, removeSongFromPlaylist, reorderPlaylistSongs, togglePlaylistVisibility } from '../api/playlistService';
 import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 
-const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQueue, currentSongId, isPlaying, onClose }) => {
+const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQueue, currentSongId, isPlaying, onClose, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onUsePlaylistQueue }) => {
     const [playlist, setPlaylist] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -14,6 +14,14 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [draggedSongId, setDraggedSongId] = useState(null);
     const [query, setQuery] = useState('');
+    
+    // Use prop-passed shuffle state if available, otherwise fall back to local state
+    const isShuffleMode = isPlaylistShuffleMode !== undefined ? isPlaylistShuffleMode : false;
+    const handleToggleShuffleMode = (newState) => {
+        if (setIsPlaylistShuffleMode) {
+            setIsPlaylistShuffleMode(newState);
+        }
+    };
 
     const loadPlaylist = async () => {
         try {
@@ -84,6 +92,34 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
         }
     };
 
+    const handleToggleVisibility = async () => {
+        if (!user?.token || !playlistId) {
+            console.error('Toggle failed: Missing user token or playlistId', { 
+                hasUser: !!user, 
+                hasToken: !!user?.token, 
+                playlistId 
+            });
+            setToast({ type: 'error', message: 'Not authenticated' });
+            return;
+        }
+        
+        try {
+            const result = await togglePlaylistVisibility(playlistId, user.token);
+            setPlaylist(prev => ({
+                ...prev,
+                isPublic: result.isPublic
+            }));
+            setToast({ 
+                type: 'success', 
+                message: `Playlist is now ${result.isPublic ? 'public' : 'private'}` 
+            });
+        } catch (err) {
+            console.error('Toggle visibility error:', err);
+            setError(err.message);
+            setToast({ type: 'error', message: err.message });
+        }
+    };
+
     // auto-hide toast
     useEffect(() => {
         if (!toast) return;
@@ -92,8 +128,19 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
     }, [toast]);
 
     const handlePlaySong = (songId) => {
+        // Prefer direct app-level playlist queue handler when available so the
+        // app can manage playlist-scoped queues consistently.
+        const startIndex = playlist.songs.findIndex(s => String(s.id) === String(songId));
+        if (onUsePlaylistQueue && typeof onUsePlaylistQueue === 'function') {
+            try {
+                onUsePlaylistQueue(playlist.songs, startIndex >= 0 ? startIndex : 0, playlist.id);
+                return;
+            } catch (e) {
+                // fallback to onPlaySong below
+            }
+        }
         if (onPlaySong) {
-            // pass playlist context so parent can set the queue to this playlist
+            // Always pass the original playlist order - handleNext in App.jsx will handle shuffle
             onPlaySong(songId, playlist);
         }
     };
@@ -199,7 +246,36 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                         {playlist.songCount} song{playlist.songCount !== 1 ? 's' : ''}
                     </p>
                 </div>
-                {/* action buttons removed (Play All / Delete) as requested */}
+                {/* Shuffle toggle button in top right */}
+                {playlist.songs && playlist.songs.length > 0 && (
+                    <button 
+                        onClick={() => handleToggleShuffleMode(!isShuffleMode)}
+                        className={`p-2 rounded-full transition-all ${
+                            isShuffleMode 
+                                ? 'bg-blue-600 shadow-lg shadow-blue-500/50 animate-pulse' 
+                                : 'bg-gray-600 hover:bg-gray-500'
+                        }`}
+                        title={isShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
+                    >
+                        <Shuffle size={24} className="text-white" />
+                    </button>
+                )}
+                {/* Visibility toggle button */}
+                <button 
+                    onClick={handleToggleVisibility}
+                    className={`p-2 rounded-full transition-all ${
+                        playlist.isPublic
+                            ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30'
+                            : 'bg-gray-600 hover:bg-gray-500'
+                    }`}
+                    title={playlist.isPublic ? "Make private" : "Make public"}
+                >
+                    {playlist.isPublic ? (
+                        <Globe size={24} className="text-white" />
+                    ) : (
+                        <Lock size={24} className="text-white" />
+                    )}
+                </button>
             </div>
 
             {/* Thin search bar for filtering songs in this playlist */}

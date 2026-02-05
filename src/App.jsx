@@ -29,7 +29,7 @@ const MoodPage = lazy(() => import('./components/MoodPage'));
 
 // --- Main Layout Component ---
 // Yeh component left player aur right content area ka layout banata hai
-const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onLogout, toggleLogoutVisible, isLogoutVisible, ...props }) => (
+const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, ...props }) => (
     <div className="flex flex-col md:flex-row h-full">
         {/* Left Column desktop/tablet par hi dikhega */}
     <div className="hidden md:flex md:w-80 p-3 flex-shrink-0 flex-col bg-gray-800/30">
@@ -54,7 +54,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
         {/* Right Column (Yahan ab Outlet aayega jo page badlega) */}
         {/* Hum yahan 'context' ke zariye saare props neeche bhej rahe hain */}
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
-            <Outlet context={{ ...props, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onLogout, toggleLogoutVisible, isLogoutVisible }} /> 
+            <Outlet context={{ ...props, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode }} /> 
             {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
             <div className="md:hidden">
                 <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} isPlayerInitialized={props.isPlayerInitialized} />
@@ -95,8 +95,8 @@ const LibraryPage = React.memo(() => {
                 <div className="mb-4 flex items-center gap-3">
                     {/* Mobile-only user icon to the left of search with logout toggle */}
                     <div className="md:hidden relative flex-shrink-0 flex items-center gap-2">
-                        <button onClick={toggleLogoutVisible} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                            <User size={20} className="text-white" />
+                        <button onClick={toggleLogoutVisible} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
+                            <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" />
                         </button>
                         {isLogoutVisible && (
                             <div className="absolute left-0 top-14 bg-gray-900 text-white rounded-lg shadow-lg text-sm z-50 min-w-max">
@@ -118,8 +118,8 @@ const LibraryPage = React.memo(() => {
                         <div className="hidden md:flex items-center ml-3">
                             <span className="text-gray-300 font-medium mr-2">Hi,</span>
                             <div className="relative">
-                                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer" onClick={toggleLogoutVisible}>
-                                    <User size={20} className="text-white" />
+                                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer overflow-hidden" onClick={toggleLogoutVisible}>
+                                    <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" />
                                 </div>
                                 {isLogoutVisible && (
                                     <div className="absolute right-0 mt-2 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden">
@@ -180,6 +180,21 @@ function App() {
     const [isUsingPlaylistQueue, setIsUsingPlaylistQueue] = useState(false);
     const [playlistQueueIndex, setPlaylistQueueIndex] = useState(0);
     const [activePlaylistId, setActivePlaylistId] = useState(null);
+    
+    // Artist-scoped queue: when user plays inside an artist page
+    const [artistQueue, setArtistQueue] = useState([]);
+    const [isUsingArtistQueue, setIsUsingArtistQueue] = useState(false);
+    const [artistQueueIndex, setArtistQueueIndex] = useState(0);
+    const [isArtistShuffleMode, setIsArtistShuffleMode] = useState(false);
+    
+    // Mood-scoped queue: when user plays inside a mood page
+    const [moodQueue, setMoodQueue] = useState([]);
+    const [isUsingMoodQueue, setIsUsingMoodQueue] = useState(false);
+    const [moodQueueIndex, setMoodQueueIndex] = useState(0);
+    const [isMoodShuffleMode, setIsMoodShuffleMode] = useState(false);
+    
+    // Playlist shuffle mode
+    const [isPlaylistShuffleMode, setIsPlaylistShuffleMode] = useState(false);
 
     const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
     const [playlistSongId, setPlaylistSongId] = useState(null);
@@ -194,6 +209,35 @@ function App() {
 
     // New state for fuzzy search
     const [fuzzy, setFuzzy] = useState(null);
+
+    // Debug effect for queue state
+    useEffect(() => {
+        // eslint-disable-next-line no-console
+        console.log('🎵 SHUFFLE & QUEUE DEBUG:', {
+            playlistMode: {
+                isUsingPlaylistQueue,
+                isPlaylistShuffleMode,
+                playlistQueueLength: Array.isArray(playlistQueue) ? playlistQueue.length : 0,
+                playlistQueueIndex
+            },
+            moodMode: {
+                isUsingMoodQueue,
+                isMoodShuffleMode,
+                moodQueueLength: Array.isArray(moodQueue) ? moodQueue.length : 0,
+                moodQueueIndex
+            },
+            artistMode: {
+                isUsingArtistQueue,
+                isArtistShuffleMode,
+                artistQueueLength: Array.isArray(artistQueue) ? artistQueue.length : 0,
+                artistQueueIndex
+            },
+            currentSong: {
+                index: currentSongIndex,
+                title: songs[currentSongIndex]?.title || 'N/A'
+            }
+        });
+    }, [isPlaylistShuffleMode, isUsingPlaylistQueue, playlistQueue, playlistQueueIndex, isMoodShuffleMode, isUsingMoodQueue, moodQueue, moodQueueIndex, isArtistShuffleMode, isUsingArtistQueue, artistQueue, artistQueueIndex, currentSongIndex, songs]);
 
     // Effects
     useEffect(() => { const u = localStorage.getItem('user'); if (u) { try { setUser(JSON.parse(u)); } catch (e) { localStorage.removeItem('user'); } } setIsInitializing(false); }, []);
@@ -219,6 +263,24 @@ function App() {
             // silent
         }
     }, [navigate]);
+
+    // Global image error handler: replace any broken images with a placeholder
+    useEffect(() => {
+        const onImgError = (e) => {
+            try {
+                const el = e && e.target;
+                if (!el) return;
+                if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                    el.onerror = null;
+                    el.src = 'https://placehold.co/200x200/1F2937/FFFFFF?text=Music';
+                }
+            } catch (err) {
+                // ignore
+            }
+        };
+        window.addEventListener('error', onImgError, true);
+        return () => window.removeEventListener('error', onImgError, true);
+    }, []);
 
     // Mobile edge-swipe: detect a right swipe starting from the left edge
     // and navigate back one step. This complements native swipe-back and
@@ -396,7 +458,39 @@ function App() {
         try {
             // If we're currently using a playlist-scoped queue, advance within it
             if (isUsingPlaylistQueue && Array.isArray(playlistQueue) && playlistQueue.length > 0) {
-                const nextIdx = (playlistQueueIndex + 1);
+                // Use playlistQueueIndex directly (it's reliable) to determine the next index
+                const currentIdx = playlistQueueIndex;
+                
+                // If shuffle is on, pick a random song; otherwise go to next sequential
+                let nextIdx;
+                if (isPlaylistShuffleMode) {
+                    // Pick a random song from the queue (preferably not the current one)
+                    if (playlistQueue.length > 1) {
+                        do {
+                            nextIdx = Math.floor(Math.random() * playlistQueue.length);
+                        } while (nextIdx === currentIdx);
+                    } else {
+                        nextIdx = 0;
+                    }
+                } else {
+                    nextIdx = currentIdx + 1;
+                }
+                
+                try {
+                    // eslint-disable-next-line no-console
+                    console.debug('handleNext: PLAYLIST QUEUE MODE', {
+                        currentIdx,
+                        playlistQueueIndex,
+                        nextIdx,
+                        isPlaylistShuffleMode,
+                        playlistQueueLength: playlistQueue.length,
+                        nextSongExists: nextIdx < playlistQueue.length,
+                        currentSongTitle: playlistQueue[currentIdx] ? playlistQueue[currentIdx].title : 'N/A',
+                        nextSongTitle: nextIdx < playlistQueue.length ? playlistQueue[nextIdx].title : 'N/A',
+                        activePlaylistId
+                    });
+                } catch (e) {}
+                
                 if (nextIdx < playlistQueue.length) {
                     const nextSong = playlistQueue[nextIdx];
                     // Ensure nextSong is available in global `songs` list
@@ -423,6 +517,118 @@ function App() {
                 setIsUsingPlaylistQueue(false);
                 setPlaylistQueue([]);
                 setActivePlaylistId(null);
+            }
+
+            // If we're currently using an artist-scoped queue, advance within it
+            if (isUsingArtistQueue && Array.isArray(artistQueue) && artistQueue.length > 0) {
+                // Use artistQueueIndex directly (it's reliable) to determine the next index
+                const currentIdx = artistQueueIndex;
+                
+                // If shuffle is on, pick a random song; otherwise go to next sequential
+                let nextIdx;
+                if (isArtistShuffleMode) {
+                    // Pick a random song from the queue (preferably not the current one)
+                    if (artistQueue.length > 1) {
+                        do {
+                            nextIdx = Math.floor(Math.random() * artistQueue.length);
+                        } while (nextIdx === currentIdx);
+                    } else {
+                        nextIdx = 0;
+                    }
+                } else {
+                    nextIdx = currentIdx + 1;
+                }
+                
+                if (nextIdx < artistQueue.length) {
+                    const nextSong = artistQueue[nextIdx];
+                    const globalIndex = songs.findIndex(s => String(s.id) === String(nextSong.id));
+                    if (globalIndex !== -1) {
+                        setCurrentSongIndex(globalIndex);
+                    } else {
+                        setSongs(prev => {
+                            if (prev.find(s => String(s.id) === String(nextSong.id))) return prev;
+                            const insertIndex = prev.length;
+                            const newArr = [...prev, nextSong];
+                            setTimeout(() => {
+                                setCurrentSongIndex(insertIndex);
+                                setIsPlaying(true);
+                            }, 0);
+                            return newArr;
+                        });
+                    }
+                    setArtistQueueIndex(nextIdx);
+                    setIsPlaying(true);
+                    return;
+                }
+                // end of artist queue: disable artist mode and fallthrough to global queue
+                setIsUsingArtistQueue(false);
+                setArtistQueue([]);
+                setIsArtistShuffleMode(false);
+            }
+
+            // If we're currently using a mood-scoped queue, advance within it
+            if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
+                // Use moodQueueIndex directly (it's reliable) to determine the next index
+                const currentIdx = moodQueueIndex;
+                
+                // If shuffle is on, pick a random song; otherwise go to next sequential
+                let nextIdx;
+                if (isMoodShuffleMode) {
+                    // Pick a random song from the queue (preferably not the current one)
+                    if (moodQueue.length > 1) {
+                        do {
+                            nextIdx = Math.floor(Math.random() * moodQueue.length);
+                        } while (nextIdx === currentIdx);
+                    } else {
+                        nextIdx = 0;
+                    }
+                } else {
+                    nextIdx = currentIdx + 1;
+                }
+                
+                try {
+                    // eslint-disable-next-line no-console
+                    console.debug('handleNext: MOOD QUEUE MODE', {
+                        currentIdx,
+                        moodQueueIndex,
+                        nextIdx,
+                        isMoodShuffleMode,
+                        moodQueueLength: moodQueue.length,
+                        nextSongExists: nextIdx < moodQueue.length,
+                        currentSongTitle: moodQueue[currentIdx] ? moodQueue[currentIdx].title : 'N/A',
+                        nextSongTitle: nextIdx < moodQueue.length ? moodQueue[nextIdx].title : 'N/A'
+                    });
+                } catch (e) {}
+                
+                if (nextIdx < moodQueue.length) {
+                    const nextSong = moodQueue[nextIdx];
+                    const globalIndex = songs.findIndex(s => String(s.id) === String(nextSong.id));
+                    if (globalIndex !== -1) {
+                        setCurrentSongIndex(globalIndex);
+                    } else {
+                        setSongs(prev => {
+                            if (prev.find(s => String(s.id) === String(nextSong.id))) return prev;
+                            const insertIndex = prev.length;
+                            const newArr = [...prev, nextSong];
+                            setTimeout(() => {
+                                setCurrentSongIndex(insertIndex);
+                                setIsPlaying(true);
+                            }, 0);
+                            return newArr;
+                        });
+                    }
+                    setMoodQueueIndex(nextIdx);
+                    setIsPlaying(true);
+                    return;
+                }
+                // end of mood queue: disable mood mode and fallthrough to global queue
+                try {
+                    // eslint-disable-next-line no-console
+                    console.debug('handleNext: Reached end of mood queue, disabling mood mode');
+                } catch (e) {}
+                setIsUsingMoodQueue(false);
+                setMoodQueue([]);
+                setIsMoodShuffleMode(false);
             }
 
             const q = queueService.getQueue();
@@ -459,7 +665,7 @@ function App() {
         } catch (err) {
             console.error('handleNext error', err);
         }
-    }, [songs, currentSongIndex, isShuffle]);
+    }, [songs, currentSongIndex, isShuffle, isUsingPlaylistQueue, playlistQueue, playlistQueueIndex, isPlaylistShuffleMode, isUsingArtistQueue, artistQueue, artistQueueIndex, isArtistShuffleMode, isUsingMoodQueue, moodQueue, moodQueueIndex, isMoodShuffleMode]);
 
     const handlePrev = useCallback(() => {
         try {
@@ -493,6 +699,96 @@ function App() {
                 setActivePlaylistId(null);
             }
 
+            // If artist-scoped queue is active, move back inside it
+            if (isUsingArtistQueue && Array.isArray(artistQueue) && artistQueue.length > 0) {
+                // Find current song position in artist queue using currentSong ID
+                const currentSongId = currentSong && currentSong.id;
+                const currentIdx = currentSongId 
+                    ? artistQueue.findIndex(s => String(s.id) === String(currentSongId))
+                    : artistQueueIndex;
+                const actualIdx = currentIdx >= 0 ? currentIdx : artistQueueIndex;
+                
+                // If shuffle is on, pick a random song; otherwise go to previous sequential
+                let prevIdx;
+                if (isArtistShuffleMode) {
+                    // Pick a random song from the queue (can be any song)
+                    prevIdx = Math.floor(Math.random() * artistQueue.length);
+                } else {
+                    prevIdx = actualIdx - 1;
+                }
+                
+                if (prevIdx >= 0) {
+                    const prevSong = artistQueue[prevIdx];
+                    const globalIndex = songs.findIndex(s => String(s.id) === String(prevSong.id));
+                    if (globalIndex !== -1) {
+                        setCurrentSongIndex(globalIndex);
+                    } else {
+                        setSongs(prev => {
+                            if (prev.find(s => String(s.id) === String(prevSong.id))) return prev;
+                            const insertIndex = prev.length;
+                            const newArr = [...prev, prevSong];
+                            setTimeout(() => {
+                                setCurrentSongIndex(insertIndex);
+                                setIsPlaying(true);
+                            }, 0);
+                            return newArr;
+                        });
+                    }
+                    setArtistQueueIndex(prevIdx);
+                    setIsPlaying(true);
+                    return;
+                }
+                // at start: disable artist mode and fall back to global queue behavior
+                setIsUsingArtistQueue(false);
+                setArtistQueue([]);
+                setIsArtistShuffleMode(false);
+            }
+
+            // If mood-scoped queue is active, move back inside it
+            if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
+                // Find current song position in mood queue using currentSong ID
+                const currentSongId = currentSong && currentSong.id;
+                const currentIdx = currentSongId 
+                    ? moodQueue.findIndex(s => String(s.id) === String(currentSongId))
+                    : moodQueueIndex;
+                const actualIdx = currentIdx >= 0 ? currentIdx : moodQueueIndex;
+                
+                // If shuffle is on, pick a random song; otherwise go to previous sequential
+                let prevIdx;
+                if (isMoodShuffleMode) {
+                    // Pick a random song from the queue (can be any song)
+                    prevIdx = Math.floor(Math.random() * moodQueue.length);
+                } else {
+                    prevIdx = actualIdx - 1;
+                }
+                
+                if (prevIdx >= 0) {
+                    const prevSong = moodQueue[prevIdx];
+                    const globalIndex = songs.findIndex(s => String(s.id) === String(prevSong.id));
+                    if (globalIndex !== -1) {
+                        setCurrentSongIndex(globalIndex);
+                    } else {
+                        setSongs(prev => {
+                            if (prev.find(s => String(s.id) === String(prevSong.id))) return prev;
+                            const insertIndex = prev.length;
+                            const newArr = [...prev, prevSong];
+                            setTimeout(() => {
+                                setCurrentSongIndex(insertIndex);
+                                setIsPlaying(true);
+                            }, 0);
+                            return newArr;
+                        });
+                    }
+                    setMoodQueueIndex(prevIdx);
+                    setIsPlaying(true);
+                    return;
+                }
+                // at start: disable mood mode and fall back to global queue behavior
+                setIsUsingMoodQueue(false);
+                setMoodQueue([]);
+                setIsMoodShuffleMode(false);
+            }
+
             const q = queueService.getQueue();
             if (q.length > 0) {
                 const prevSong = queueService.previous();
@@ -524,7 +820,7 @@ function App() {
         } catch (err) {
             console.error('handlePrev error', err);
         }
-    }, [songs, currentSongIndex]);
+    }, [songs, currentSongIndex, isUsingPlaylistQueue, playlistQueue, playlistQueueIndex, isPlaylistShuffleMode, isUsingArtistQueue, artistQueue, artistQueueIndex, isArtistShuffleMode, isUsingMoodQueue, moodQueue, moodQueueIndex, isMoodShuffleMode]);
     // Register lockScreenService event handlers once (after handlers are defined)
     useEffect(() => {
         if (!lockScreenService.isAvailable()) return;
@@ -585,7 +881,7 @@ function App() {
             } catch (e) {}
         }
     };
-    const handleSongEnd = () => {
+    const handleSongEnd = useCallback(() => {
         if (isRepeat) {
             if (audioRef.current) {
                 audioRef.current.currentTime = 0;
@@ -593,14 +889,29 @@ function App() {
             }
             return;
         }
-        // If queue has more items, advance via queueService
+        // Prioritize playlist queue over global queue
+        if (isUsingPlaylistQueue && Array.isArray(playlistQueue) && playlistQueue.length > 0) {
+            handleNext();
+            return;
+        }
+        // Then check artist queue
+        if (isUsingArtistQueue && Array.isArray(artistQueue) && artistQueue.length > 0) {
+            handleNext();
+            return;
+        }
+        // Then check mood queue
+        if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
+            handleNext();
+            return;
+        }
+        // Finally check global queue
         const q = queueService.getQueue();
         if (q.length > 0) {
             handleNext();
             return;
         }
         handleNext();
-    };
+    }, [isRepeat, isUsingPlaylistQueue, playlistQueue, isUsingArtistQueue, artistQueue, isUsingMoodQueue, moodQueue, handleNext]);
 
     // Handle audio errors (missing/deleted songs from Cloudinary)
     const handleAudioError = useCallback(() => {
@@ -619,17 +930,39 @@ function App() {
         setIsPlayerInitialized(true);
         // If user manually selects a song (from home/library), clear any
         // active playlist-scoped queue so global playback continues independently.
+        // NOTE: We keep mood and artist queues active to support mood/artist-scoped playback
         if (isUsingPlaylistQueue) {
             setIsUsingPlaylistQueue(false);
             setPlaylistQueue([]);
             setActivePlaylistId(null);
         }
+        try {
+            // eslint-disable-next-line no-console
+            console.debug('handleSelectSong called', {songId: id, isUsingMoodQueue, moodQueueLength: moodQueue.length, isUsingArtistQueue, artistQueueLength: artistQueue.length});
+        } catch (e) {}
         const i = songs.findIndex(s => s.id === id);
         if (i !== -1) {
             if (currentSongIndex === i) setIsPlaying(p => !p);
             else {
                 setCurrentSongIndex(i);
                 setIsPlaying(true);
+                
+                // If mood queue is active, update moodQueueIndex to match the currently playing song
+                if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
+                    const moodIndexForThisSong = moodQueue.findIndex(s => String(s.id) === String(id));
+                    if (moodIndexForThisSong !== -1) {
+                        setMoodQueueIndex(moodIndexForThisSong);
+                        try {
+                            // eslint-disable-next-line no-console
+                            console.debug('handleSelectSong: Updated moodQueueIndex to match playing song', {
+                                songId: id,
+                                newMoodQueueIndex: moodIndexForThisSong,
+                                moodQueueLength: moodQueue.length,
+                                songTitle: songs[i].title
+                            });
+                        } catch (e) {}
+                    }
+                }
             }
             setSearchTerm('');
             // When user explicitly selects a song, reset queue pointer to the selected song if it's in queue
@@ -733,6 +1066,8 @@ function App() {
     // without modifying the global queueService.
     const handleUsePlaylistQueue = useCallback((songsArray, startIndex = 0, playlistId = null) => {
         if (!Array.isArray(songsArray) || songsArray.length === 0) return;
+        // Clear global queue when entering playlist mode to avoid conflicts
+        queueService.clearQueue();
         setPlaylistQueue(songsArray);
         setPlaylistQueueIndex(startIndex);
         setIsUsingPlaylistQueue(true);
@@ -952,6 +1287,22 @@ function App() {
                             onAdminClick={() => setIsAdminPanelOpen(true)}
                             onAddToQueue={handleAddToQueue}
                             onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
+                            setIsUsingPlaylistQueue={setIsUsingPlaylistQueue}
+                            setPlaylistQueue={setPlaylistQueue}
+                            setPlaylistQueueIndex={setPlaylistQueueIndex}
+                            setIsUsingArtistQueue={setIsUsingArtistQueue}
+                            setArtistQueue={setArtistQueue}
+                            setArtistQueueIndex={setArtistQueueIndex}
+                            onUsePlaylistQueue={handleUsePlaylistQueue}
+                            isArtistShuffleMode={isArtistShuffleMode}
+                            setIsArtistShuffleMode={setIsArtistShuffleMode}
+                            setIsUsingMoodQueue={setIsUsingMoodQueue}
+                            setMoodQueue={setMoodQueue}
+                            setMoodQueueIndex={setMoodQueueIndex}
+                            isMoodShuffleMode={isMoodShuffleMode}
+                            setIsMoodShuffleMode={setIsMoodShuffleMode}
+                            isPlaylistShuffleMode={isPlaylistShuffleMode}
+                            setIsPlaylistShuffleMode={setIsPlaylistShuffleMode}
                             onShowArtist={(artistName) => {
                                 // Navigate to artist page
                                 // Using window.location to avoid importing navigate here
@@ -1049,6 +1400,23 @@ function App() {
                             setSearchTerm('');
                             navigate('/playlists');
                         }}
+                        onPlayPause={handlePlayPause}
+                        onNext={handleNext}
+                        onPrev={handlePrev}
+                        allSongs={songs}
+                        isPlayerInitialized={isPlayerInitialized}
+                        isShuffle={isShuffle}
+                        onShuffleToggle={handleShuffleToggle}
+                        onTogglePlayerExpand={handleTogglePlayerExpand}
+                        currentSong={currentSong}
+                        progress={progress}
+                        onProgressChange={handleProgressChange}
+                        duration={duration}
+                        currentTime={currentTime}
+                        volume={volume}
+                        onVolumeChange={handleVolumeChange}
+                        isRepeat={isRepeat}
+                        onRepeatToggle={handleRepeatToggle}
                     />
                 </div>
             )}

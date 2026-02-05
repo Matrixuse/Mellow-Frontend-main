@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
-import { Plus, Trash2, ArrowLeft } from 'lucide-react';
-import { getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist } from '../api/playlistService';
+import { Plus, Trash2, ArrowLeft, Lock, Globe } from 'lucide-react';
+import { getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist, togglePlaylistVisibility } from '../api/playlistService';
 
 const PlaylistsPage = () => {
     const outlet = useOutletContext() || {};
@@ -105,6 +105,21 @@ const PlaylistsPage = () => {
         }
     };
 
+    const handleToggleVisibility = async (e, playlistId) => {
+        e.stopPropagation();
+        try {
+            const result = await togglePlaylistVisibility(playlistId, token);
+            setPlaylists(prev => prev.map(p => p.id === playlistId ? { ...p, isPublic: result.isPublic } : p));
+            setToast({ 
+                type: 'success', 
+                message: `Playlist is now ${result.isPublic ? 'public' : 'private'}` 
+            });
+        } catch (err) {
+            // Silently fail - do nothing on error
+            console.error('Toggle visibility error:', err);
+        }
+    };
+
     const handleAdd = async (playlistId) => {
         if (!addSongId) return;
         setAddingId(playlistId);
@@ -151,7 +166,7 @@ const PlaylistsPage = () => {
                 <div>
                     <h3 className="text-lg font-medium mb-3">Your Playlists</h3>
                     {loading ? <p className="text-gray-400">Loading...</p> : playlists.length === 0 ? <p className="text-gray-400">No playlists yet.</p> : (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                             {playlists.map(pl => (
                                 addSongId ? (
                                     <div
@@ -162,16 +177,18 @@ const PlaylistsPage = () => {
                                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAdd(pl.id); } }}
                                         className="bg-gray-800 rounded-md p-2 hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600"
                                     >
-                                        <div className="flex flex-col items-center text-center">
-                                            <img src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-24 h-24 object-cover rounded-md mb-1" />
-                                            <div className="text-sm font-semibold text-white truncate w-full">{pl.name}</div>
-                                            <div className="text-xs text-gray-400 mb-1">{pl.songs ? pl.songs.length : 0} songs</div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleAdd(pl.id); }}
-                                                    disabled={addingId === pl.id}
-                                                    className={`px-4 py-1 text-sm ${addingId === pl.id ? 'bg-blue-400' : 'bg-blue-600'} rounded-full text-white`}
-                                                >{addingId === pl.id ? 'Adding...' : 'Add'}</button>
+                                        <div className="flex items-center gap-3">
+                                            <img src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-24 h-24 object-cover rounded-md" />
+                                            <div className="flex-1">
+                                                <div className="text-sm font-semibold text-white truncate">{pl.name}</div>
+                                                <div className="text-xs text-gray-400">{pl.songs ? pl.songs.length : 0} songs</div>
+                                                <div className="mt-2">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleAdd(pl.id); }}
+                                                        disabled={addingId === pl.id}
+                                                        className={`px-4 py-1 text-sm ${addingId === pl.id ? 'bg-blue-400' : 'bg-blue-600'} rounded-full text-white`}
+                                                    >{addingId === pl.id ? 'Adding...' : 'Add'}</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -180,30 +197,50 @@ const PlaylistsPage = () => {
                                         key={pl.id}
                                         role="button"
                                         tabIndex={0}
-                                        className="relative bg-gray-800 rounded-md p-1 hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600 z-30 pointer-events-auto"
+                                        className="relative bg-gray-800 rounded-md overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600 pointer-events-auto"
                                     >
-                                        <div className="flex flex-col items-start text-left">
-                                            {/* Overlay to capture card click but let buttons be clickable */}
-                                            <button
-                                                type="button"
-                                                aria-label={`Open playlist ${pl.name}`}
-                                                onClick={(e) => {
-                                                    try { navigate(`/playlists/${pl.id}`); } catch (err) {}
-                                                    setTimeout(() => { if (window.location.pathname !== `/playlists/${pl.id}`) { window.location.href = `/playlists/${pl.id}`; } }, 150);
-                                                }}
-                                                className="absolute inset-0 z-10 bg-transparent border-0 p-0"
-                                            />
+                                        <button
+                                            type="button"
+                                            aria-label={`Open playlist ${pl.name}`}
+                                            onClick={(e) => {
+                                                try { navigate(`/playlists/${pl.id}`); } catch (err) {}
+                                                setTimeout(() => { if (window.location.pathname !== `/playlists/${pl.id}`) { window.location.href = `/playlists/${pl.id}`; } }, 150);
+                                            }}
+                                            className="absolute inset-0 z-5 bg-transparent border-0 p-0"
+                                        />
 
-                                            <img src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-24 h-24 object-cover rounded-md mb-1 shadow-inner pointer-events-none" />
-                                            <div className="w-full flex items-center justify-between">
-                                                <div className="text-sm font-semibold text-white truncate pr-2">{pl.name}</div>
+                                        <div className="flex items-center px-2 py-1 gap-3 min-h-24">
+                                            <img src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-24 h-24 object-cover rounded-md shadow-inner pointer-events-none flex-shrink-0" />
+                                            <div className="flex-1 flex flex-col justify-center">
+                                                <div className="text-sm font-semibold text-white line-clamp-2">{pl.name}</div>
+                                                <div className="text-xs text-gray-400">{pl.songs ? pl.songs.length : 0} songs</div>
+                                            </div>
+                                            <div className="flex flex-col gap-2 z-20 pointer-events-auto">
+                                                <button
+                                                    onClick={(e) => handleToggleVisibility(e, pl.id)}
+                                                    disabled={!token}
+                                                    title={!token ? "Not authenticated" : pl.isPublic ? "Make private" : "Make public"}
+                                                    className={`px-1.5 py-1 rounded-full text-white transition-all ${
+                                                        !token
+                                                            ? 'bg-gray-500 cursor-not-allowed opacity-50'
+                                                            : pl.isPublic 
+                                                            ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' 
+                                                            : 'bg-gray-600 hover:bg-gray-500'
+                                                    }`}
+                                                >
+                                                    {pl.isPublic ? <Globe size={14} /> : <Lock size={14} />}
+                                                </button>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDelete(pl.id); }}
+                                                    disabled={!token}
                                                     title="Delete playlist"
-                                                    className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded-full text-white z-20 pointer-events-auto flex items-center"
+                                                    className={`px-2 py-1 rounded-full text-white z-20 pointer-events-auto flex items-center transition-all ${
+                                                        !token
+                                                            ? 'bg-red-500 cursor-not-allowed opacity-50'
+                                                            : 'bg-red-600 hover:bg-red-500'
+                                                    }`}
                                                 ><Trash2 size={14} /></button>
                                             </div>
-                                            {/* song counter removed and Open button removed per request */}
                                         </div>
                                     </div>
                                 )

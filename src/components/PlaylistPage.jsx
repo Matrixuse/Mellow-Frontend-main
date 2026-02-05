@@ -111,6 +111,9 @@ const PlaylistPage = () => {
             currentSongId={outlet.currentSongId}
             isPlaying={outlet.isPlaying}
             onClose={() => navigate('/playlists')}
+            isPlaylistShuffleMode={outlet.isPlaylistShuffleMode}
+            setIsPlaylistShuffleMode={outlet.setIsPlaylistShuffleMode}
+            onUsePlaylistQueue={stableOutlet.onUsePlaylistQueue}
         />
     );
 };
