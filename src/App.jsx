@@ -4,6 +4,7 @@ import { Routes, Route, Link, Outlet, useOutletContext, useNavigate } from 'reac
 import AuthForm from './components/AuthForm';
 import queueService from './services/queueService';
 import nativeMediaService from './services/nativeMediaService';
+import AudioEngine from './services/audioEngine';
 import lockScreenService from './services/lockScreenService';
 import PlayerUI from './components/PlayerUI';
 import SongLibrary from './components/SongLibrary';
@@ -19,6 +20,7 @@ import FeedbackPage from './components/FeedbackPage';
 import BottomNav from './components/BottomNav';
 import SearchResults from './components/SearchResults';
 import ProfilePage from './pages/ProfilePage';
+import EqualizerPage from './pages/EqualizerPage';
 import { createFuzzySearch, getFuzzySuggestions } from './utils/fuzzySearch';
 
 // Lazy load heavy components for better initial load time
@@ -78,7 +80,7 @@ const LibraryPage = React.memo(() => {
         // eslint-disable-next-line no-console
         console.debug('LibraryPage - onAddToQueue present?', Boolean(context && context.onAddToQueue));
     } catch (e) {}
-    const { filteredSongs, onSelectSong, currentSongId, isPlaying, isLoadingSongs, error, searchTerm, onSearchChange, onClearSearch, onSearchBarClick, onAdminClick, toggleLogoutVisible, isLogoutVisible, onLogout, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout } = context;
+    const { filteredSongs, onSelectSong, currentSongId, isPlaying, isLoadingSongs, error, searchTerm, onSearchChange, onClearSearch, onSearchBarClick, onAdminClick, toggleLogoutVisible, isLogoutVisible, onLogout, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu } = context;
 
     // Safe wrapper that calls the context handler if present.
     const safeAddToQueue = (song, position = 'end') => {
@@ -102,6 +104,7 @@ const LibraryPage = React.memo(() => {
                             <div className="absolute left-0 top-14 bg-gray-900 text-white rounded-lg shadow-lg text-sm z-50 min-w-max">
                                 <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">Profile</button>
                                 <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">Your Updates</button>
+                                <button onClick={() => { onCloseLogoutMenu && onCloseLogoutMenu(); onNavigateToEqualizer && onNavigateToEqualizer(); }} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">Equalizer</button>
                                 <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors block">About</button>
                                 <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700 block">Logout</button>
                             </div>
@@ -125,6 +128,7 @@ const LibraryPage = React.memo(() => {
                                     <div className="absolute right-0 mt-2 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden">
                                         <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Profile</button>
                                         <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Your Updates</button>
+                                        <button onClick={() => { onCloseLogoutMenu && onCloseLogoutMenu(); onNavigateToEqualizer && onNavigateToEqualizer(); }} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Equalizer</button>
                                         <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">About</button>
                                         <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700">Logout</button>
                                     </div>
@@ -387,16 +391,33 @@ function App() {
         }, 10 * 60 * 1000);
         return () => clearInterval(intervalId);
     }, [user]);
-    useEffect(() => { const a = audioRef.current; if (a && currentSong) { if (a.src !== currentSong.songUrl) { a.src = currentSong.songUrl; a.load(); } 
-        // Start or update native media service when song changes
-        (async () => {
+    useEffect(() => {
+        const a = audioRef.current;
+        // ensure audio engine is initialized with the primary audio element
+        try {
+            if (a) {
+                AudioEngine.init(a);
+                AudioEngine.resumeContextIfNeeded && AudioEngine.resumeContextIfNeeded();
+            }
+        } catch (e) {}
+
+        if (a && currentSong) {
+            // Simple audio element swap (no crossfade)
             try {
-                await nativeMediaService.start(currentSong, isPlaying);
-                // Update lock screen / media session metadata for web
-                try { lockScreenService.setMetadata(currentSong); } catch (e) { console.warn('lockScreenService.setMetadata error', e); }
-            } catch(e) { console.warn('nativeMediaService.start error', e); }
-        })();
-    } }, [currentSong, isPlaying]);
+                if (a.src !== currentSong.songUrl) { a.src = currentSong.songUrl; a.load(); }
+                // Start or update native media service when song changes
+                (async () => {
+                    try {
+                        await nativeMediaService.start(currentSong, isPlaying);
+                        try { lockScreenService.setMetadata(currentSong); } catch (e) { console.warn('lockScreenService.setMetadata error', e); }
+                    } catch(e) { console.warn('nativeMediaService.start error', e); }
+                })();
+            } catch (e) {
+                console.warn('AudioEngine play error, falling back', e);
+                if (a.src !== currentSong.songUrl) { a.src = currentSong.songUrl; a.load(); }
+            }
+        }
+    }, [currentSong, isPlaying]);
     useEffect(() => { const a = audioRef.current; if (a) { if (isPlaying) { a.play().catch(console.error); } else { a.pause(); } 
         // Update native notification play state
         (async () => {
@@ -1105,6 +1126,16 @@ function App() {
         navigate('/profile');
     }, [navigate]);
 
+    // Handle navigating to equalizer page
+    const handleNavigateToEqualizer = useCallback(() => {
+        setIsLogoutVisible(false);
+        navigate('/equalizer');
+    }, [navigate]);
+
+    const handleCloseLogoutMenu = useCallback(() => {
+        setIsLogoutVisible(false);
+    }, []);
+
     // Handle "Your Updates" navigation (placeholder for now)
     const handleNavigateToUpdates = useCallback(() => {
         setIsLogoutVisible(false);
@@ -1184,6 +1215,15 @@ function App() {
         }
     };
 
+    const handleReorderQueue = (fromIndex, toIndex) => {
+        try {
+            queueService.reorderQueue(fromIndex, toIndex);
+            setQueue(queueService.getQueue());
+        } catch (e) {
+            console.error('Reorder queue failed', e);
+        }
+    };
+
     const handlePlaySongAtIndex = (index) => {
         const q = queueService.getQueue();
         if (index >= 0 && index < q.length) {
@@ -1252,6 +1292,8 @@ function App() {
                             navigate={navigate}
                             onNavigateToProfile={handleNavigateToProfile}
                             onNavigateToUpdates={handleNavigateToUpdates}
+                            onNavigateToEqualizer={handleNavigateToEqualizer}
+                            onCloseLogoutMenu={handleCloseLogoutMenu}
                             onNavigateToAbout={handleNavigateToAbout}
                             user={user}
                             toggleLogoutVisible={toggleLogoutVisible}
@@ -1322,6 +1364,7 @@ function App() {
                         <Route path="profile" element={<ProfilePage />} />
                         <Route path="artist/:artistName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><ArtistPage /></Suspense>} />
                         <Route path="mood/:moodName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><MoodPage /></Suspense>} />
+                        <Route path="equalizer" element={<EqualizerPage />} />
                         <Route path="playlists" element={<PlaylistsPage />} />
                         <Route path="playlists/:id" element={<PlaylistPage />} />
                         <Route path="feedback" element={<FeedbackPage />} />
@@ -1371,7 +1414,7 @@ function App() {
             )}
             <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} onEnded={handleSongEnd} onError={handleAudioError} />
             {isQueueOpen && (
-                <QueuePanel queue={queue} onClose={() => setIsQueueOpen(false)} onPlaySongAtIndex={handlePlaySongAtIndex} onRemove={handleRemoveFromQueue} />
+                <QueuePanel queue={queue} onClose={() => setIsQueueOpen(false)} onPlaySongAtIndex={handlePlaySongAtIndex} onRemove={handleRemoveFromQueue} onReorder={handleReorderQueue} />
             )}
             {isPlaylistOpen && (
                 <PlaylistModal token={(user && user.token) ? user.token : null} onClose={() => setIsPlaylistOpen(false)} songId={playlistSongId} onPlaylistUpdated={handlePlaylistUpdated} allSongs={songs} />

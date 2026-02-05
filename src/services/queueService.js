@@ -6,6 +6,7 @@ class QueueService {
         this.isShuffleMode = false;
         this.originalQueue = []; // Store original order when shuffle is active
         this._nextInsertOffset = 0; // number of items inserted after currentIndex (for 'next' position)
+        this._recentlyPlayed = []; // for smart shuffle (avoid repeats)
     }
 
     // Add songs to queue
@@ -90,12 +91,27 @@ class QueueService {
     // Move to next song
     next() {
         if (this.isShuffleMode) {
-            // In shuffle mode, pick a random song (but not the current one)
+            // Smart shuffle: avoid recently played items when possible
             if (this.queue.length <= 1) return this.getCurrentSong();
+            const maxHistory = Math.min(8, Math.floor(this.queue.length / 2));
+            // build candidate indices excluding recent history and current
+            const excludeIds = new Set([...this._recentlyPlayed.slice(-maxHistory), this.getCurrentSong()?.id]);
+            const candidates = this.queue.map((s, idx) => ({ id: s.id, idx })).filter(x => !excludeIds.has(x.id));
             let nextIndex;
-            do {
-                nextIndex = Math.floor(Math.random() * this.queue.length);
-            } while (nextIndex === this.currentIndex && this.queue.length > 1);
+            if (candidates.length === 0) {
+                // fallback to any random index except current
+                do { nextIndex = Math.floor(Math.random() * this.queue.length); } while (nextIndex === this.currentIndex && this.queue.length > 1);
+            } else {
+                const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                nextIndex = pick.idx;
+            }
+            // update recent history
+            const played = this.getCurrentSong();
+            if (played && played.id) {
+                this._recentlyPlayed.push(played.id);
+                // keep history bounded
+                if (this._recentlyPlayed.length > 50) this._recentlyPlayed.shift();
+            }
             this.currentIndex = nextIndex;
         } else {
             this.currentIndex = (this.currentIndex + 1) % this.queue.length;

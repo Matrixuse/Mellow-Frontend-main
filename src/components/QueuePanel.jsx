@@ -12,7 +12,7 @@ const QueuePanel = ({ queue, onClose, onPlaySongAtIndex, onRemove }) => {
             {queue && queue.length > 0 ? (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                     {queue.map((song, idx) => (
-                        <div key={song.id || idx} className="flex items-center gap-3">
+                        <div key={song.id || idx} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', String(idx)); }} onDragOver={(e) => { e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); const from = Number(e.dataTransfer.getData('text/plain')); const to = idx; if (!Number.isNaN(from)) onReorder && onReorder(from, to); }} className="flex items-center gap-3">
                             <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-12 h-12 rounded-md object-cover" fallback={'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'} />
                             <div className="flex-1">
                                 <div className="text-sm font-semibold truncate">{song.title}</div>
