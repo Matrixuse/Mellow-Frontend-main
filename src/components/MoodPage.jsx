@@ -146,37 +146,40 @@ const MoodPage = () => {
                 {moodSongs.length > 0 ? (
                     <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                            {moodSongs.map((song) => (
-                                <div 
-                                    key={song.id} 
-                                    className="group relative bg-gray-800/50 hover:bg-gray-700/80 p-2 rounded-lg cursor-pointer"
-                                >
-                                    <div className="relative mb-4">
-                                        <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer">
-                                            <ImageWithFallback
-                                                src={song.coverUrl}
-                                                alt={song.title}
-                                                className="w-full h-auto aspect-square rounded-md object-cover"
-                                                fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
-                                            />
-                                            <div className={`absolute bottom-2 right-2 w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ${currentSongId === song.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                <Play size={18} className="text-white fill-current" />
+                            {moodSongs.map((song) => {
+                                const isActive = currentSongId === song.id && isPlaying;
+                                return (
+                                    <div 
+                                        key={song.id} 
+                                        className={`group relative p-2 rounded-lg cursor-pointer ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
+                                    >
+                                        <div className="relative mb-4">
+                                            <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer">
+                                                <ImageWithFallback
+                                                    src={song.coverUrl}
+                                                    alt={song.title}
+                                                    className="w-full h-auto aspect-square rounded-md object-cover"
+                                                    fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                                                />
+                                                <div className={`absolute bottom-2 right-2 w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                                    <Play size={18} className="text-white fill-current" />
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <SongContextMenu
+                                                song={song}
+                                                onAddToQueue={onAddToQueue}
+                                                onAddToPlaylist={onAddToPlaylist}
+                                                onNavigateToArtist={handleNavigateToArtist}
+                                                onReport={handleReport}
+                                            />
+                                        </div>
+                                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                        <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                                     </div>
-                                    <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                        <SongContextMenu
-                                            song={song}
-                                            onAddToQueue={onAddToQueue}
-                                            onAddToPlaylist={onAddToPlaylist}
-                                            onNavigateToArtist={handleNavigateToArtist}
-                                            onReport={handleReport}
-                                        />
-                                    </div>
-                                    <h4 className="text-sm font-semibold text-white truncate">{song.title}</h4>
-                                    <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         <Footer onDeveloperClick={() => {}} /> 
                     </>

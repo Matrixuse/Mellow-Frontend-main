@@ -310,35 +310,38 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                         )}
                         {/* Desktop: grid of cards */}
                         <div className="hidden md:grid md:grid-cols-5 md:gap-4 md:auto-rows-fr md:justify-items-center">
-                            {filtered.map((song, index) => (
-                                <div key={song.id} className={`w-full max-w-[170px] bg-gray-800 rounded-lg p-2 flex flex-col cursor-pointer ${isDragging ? '' : 'hover:bg-gray-700 transition-colors'} ${currentSongId === song.id ? 'ring-2 ring-blue-600' : ''} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
-                                    <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-24 object-cover rounded-md mb-2" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
-                                    <div className="flex-1">
-                                        <h4 className="text-sm md:text-base font-semibold text-white truncate">{song.title}</h4>
-                                        <p className="text-xs md:text-sm text-gray-400">{Array.isArray(song.artist) ? song.artist.join(', ') : song.artist}</p>
-                                    </div>
-                                            <div className="mt-2 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={(e) => { e.stopPropagation(); handlePlaySong(song.id); }} className="px-2 py-1 bg-blue-600 rounded-md text-white flex items-center gap-2 text-sm"><Play size={12}/>Play</button>
+                            {filtered.map((song, index) => {
+                                const isActive = currentSongId === song.id && isPlaying;
+                                return (
+                                    <div key={song.id} className={`w-full max-w-[170px] rounded-lg p-2 flex flex-col cursor-pointer ${isDragging ? '' : 'transition-colors'} ${isActive ? 'bg-blue-900/30 ring-2 ring-blue-600' : 'bg-gray-800 hover:bg-gray-700'} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
+                                        <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-24 object-cover rounded-md mb-2" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
+                                        <div className="flex-1">
+                                            <h4 className={`text-sm md:text-base font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                            <p className="text-xs md:text-sm text-gray-400">{Array.isArray(song.artist) ? song.artist.join(', ') : song.artist}</p>
                                         </div>
-                                        <div className="relative">
-                                            <button onClick={(e) => { e.stopPropagation(); setExpandedMenu(expandedMenu === song.id ? null : song.id); }} className="p-1 rounded-full hover:bg-gray-700"><MoreVertical size={14} /></button>
-                                            {expandedMenu === song.id && (
-                                                        <div className="absolute right-0 top-10 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 min-w-[140px]">
-                                                            <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) { onAddToQueue(song, playlist); setToast({ type: 'success', message: 'Added to queue' }); } else { setToast({ type: 'error', message: 'Queue action not available' }); } setExpandedMenu(null); }} className="w-full text-left px-2 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"><Play size={14}/>Add to queue</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(song.id); }} className="w-full text-left px-2 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"><Trash2 size={14}/>Remove</button>
-                                                        </div>
-                                            )}
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); handlePlaySong(song.id); }} className="px-2 py-1 bg-blue-600 rounded-md text-white flex items-center gap-2 text-sm"><Play size={12}/>Play</button>
+                                            </div>
+                                            <div className="relative">
+                                                <button onClick={(e) => { e.stopPropagation(); setExpandedMenu(expandedMenu === song.id ? null : song.id); }} className="p-1 rounded-full hover:bg-gray-700"><MoreVertical size={14} /></button>
+                                                {expandedMenu === song.id && (
+                                                    <div className="absolute right-0 top-10 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 min-w-[140px]">
+                                                        <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) { onAddToQueue(song, playlist); setToast({ type: 'success', message: 'Added to queue' }); } else { setToast({ type: 'error', message: 'Queue action not available' }); } setExpandedMenu(null); }} className="w-full text-left px-2 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"><Play size={14}/>Add to queue</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(song.id); }} className="w-full text-left px-2 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"><Trash2 size={14}/>Remove</button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {/* Mobile: vertical list with horizontal bars and 3-dot menu */}
                         <div className="md:hidden space-y-2">
                             {filtered.map((song, index) => (
-                                <div key={song.id} className={`flex items-center gap-2 bg-gray-800 rounded-lg px-2 py-1 ${isDragging ? '' : ''} ${currentSongId === song.id ? 'bg-blue-900/30' : ''} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
+                                <div key={song.id} className={`flex items-center gap-2 rounded-lg px-2 py-1 ${isDragging ? '' : ''} ${currentSongId === song.id && isPlaying ? 'bg-blue-900/30' : 'bg-gray-800'} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
                                     <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-10 h-9 rounded-md object-cover" fallback={'https://placehold.co/160x160/1F2937/FFFFFF?text=♪'} />
                                     <div className="flex-1 min-w-0">
                                         <div className="font-medium text-xs md:text-base text-white truncate">{song.title}</div>

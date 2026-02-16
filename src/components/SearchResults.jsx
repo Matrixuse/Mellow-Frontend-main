@@ -31,7 +31,9 @@ const SearchResults = ({
     volume = 1,
     onVolumeChange = () => {},
     isRepeat = false,
-    onRepeatToggle = () => {}
+    onRepeatToggle = () => {},
+    onOpenUpNext = () => {},
+    onOpenRelated = () => {}
 }) => {
     const [hoveredSongId, setHoveredSongId] = useState(null);
     const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -90,7 +92,7 @@ const SearchResults = ({
 
     const handlePlayClick = (song, e) => {
         e.stopPropagation();
-        onSelectSong(song.id);
+        onSelectSong(song.id, { source: 'search' });
     };
 
     const handleMoreClick = (song, e) => {
@@ -184,7 +186,7 @@ const SearchResults = ({
                                     key={song.id}
                                     onMouseEnter={() => setHoveredSongId(song.id)}
                                     onMouseLeave={() => setHoveredSongId(null)}
-                                    onClick={() => onSelectSong(song.id)}
+                                    onClick={() => onSelectSong(song.id, { source: 'search' })}
                                     className="group cursor-pointer"
                                 >
                                     <div className="relative mb-3 rounded-lg overflow-hidden bg-gray-800 aspect-square">
@@ -278,6 +280,8 @@ const SearchResults = ({
                                 onShuffleToggle={onShuffleToggle}
                                 isRepeat={isRepeat}
                                 onRepeatToggle={onRepeatToggle}
+                                onOpenUpNext={onOpenUpNext}
+                                onOpenRelated={onOpenRelated}
                             />
                         </div>
                     </div>

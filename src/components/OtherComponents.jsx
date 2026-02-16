@@ -28,19 +28,19 @@ export const Header = ({ onLogout }) => (
 const ControlsInner = ({ isPlaying, onPlayPause, onNext, onPrev, isShuffle, onShuffleToggle, isRepeat, onRepeatToggle }) => (
     <div className="flex items-center justify-center gap-3 sm:gap-4 flex-nowrap">
             <button onClick={onShuffleToggle} className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${isShuffle ? 'text-blue-400' : 'text-gray-400'}`} aria-label="Shuffle">
-                <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Shuffle className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <button onClick={onPrev} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Previous Song">
-                <SkipBack className="w-4 h-5 sm:w-6 sm:h-6" />
+                <SkipBack className="w-5 h-6 sm:w-7 sm:h-7" />
             </button>
-            <button onClick={onPlayPause} className="bg-blue-600 text-white rounded-full p-3 sm:p-4 hover:bg-blue-500 transition-all shadow-lg flex items-center justify-center" aria-label={isPlaying ? 'Pause' : 'Play'}>
-                {isPlaying ? <Pause className="w-6 h-6 sm:w-7 sm:h-7" /> : <Play className="w-6 h-6 sm:w-7 sm:h-7" />}
+            <button onClick={onPlayPause} className="bg-blue-600 text-white rounded-full p-4 sm:p-5 hover:bg-blue-500 transition-all shadow-lg flex items-center justify-center" aria-label={isPlaying ? 'Pause' : 'Play'}>
+                {isPlaying ? <Pause className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5" /> : <Play className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5" />}
             </button>
             <button onClick={onNext} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Next Song">
-                <SkipForward className="w-4 h-5 sm:w-6 sm:h-6" />
+                <SkipForward className="w-5 h-6 sm:w-7 sm:h-7" />
             </button>
             <button onClick={onRepeatToggle} className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${isRepeat ? 'text-blue-400' : 'text-gray-400'}`} aria-label="Repeat">
-                <Repeat className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Repeat className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
     </div>
 );

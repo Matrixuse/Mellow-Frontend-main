@@ -197,52 +197,58 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                     <>
                         {/* Mobile: horizontal bars list limited to 5 items */}
                         <div className="md:hidden space-y-2.5">
-                            {songs.slice(0, 5).map((song) => (
-                                    <div key={song.id} className="w-full flex items-center gap-2 bg-gray-800/60 hover:bg-gray-700/80 p-1 rounded-md transition">
-                                        <button onClick={() => onSelectSong(song.id)} className="flex items-center gap-2 flex-1 text-left">
-                                            <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-8 h-8 rounded-md object-cover" fallback={'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'} />
-                                            <div className="flex-1 text-left">
-                                                <div className="text-sm font-semibold truncate">{song.title}</div>
-                                                <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
-                                            </div>
-                                        </button>
-                                        {currentSongId === song.id && isPlaying && (
-                                            <Play className="text-blue-400" size={16} />
-                                        )}
-                                        <SongMenu song={song} className="ml-2" />
-                                    </div>
-                                ))}
+                            {songs.slice(0, 5).map((song) => {
+                                        const isActive = currentSongId === song.id && isPlaying;
+                                        return (
+                                        <div key={song.id} className={`w-full flex items-center gap-2 p-1 rounded-md transition ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/60 hover:bg-gray-700/80'}`}>
+                                            <button onClick={() => onSelectSong(song.id)} className="flex items-center gap-2 flex-1 text-left">
+                                                <ImageWithFallback src={song.coverUrl} alt={song.title} className={`w-8 h-8 rounded-md object-cover ${isActive ? 'ring-2 ring-blue-500' : ''}`} fallback={'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'} />
+                                                <div className="flex-1 text-left">
+                                                    <div className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</div>
+                                                    <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
+                                                </div>
+                                            </button>
+                                            {isActive && (
+                                                <Play className="text-blue-400" size={16} />
+                                            )}
+                                            <SongMenu song={song} className="ml-2" />
+                                        </div>
+                                    );
+                            })}
                         </div>
                         {/* Desktop/tablet: horizontal card scroller with menu aligned to the right of the title */}
                         <div className="hidden md:grid grid-rows-2 grid-flow-col auto-cols-[9rem] sm:auto-cols-[10rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
-                            {songs.map((song) => (
-                                <div 
-                                    key={song.id} 
-                                    onClick={() => onSelectSong(song.id)}
-                                    className="group relative bg-gray-800/50 hover:bg-gray-700/80 p-4 rounded-lg cursor-pointer transition-all duration-300 flex flex-col"
-                                >
-                                    <div className="relative mb-3">
-                                        <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-auto aspect-square rounded-md object-cover" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
-                                        <div className={`absolute bottom-2 right-14 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${currentSongId === song.id && isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}>
-                                            <Play size={24} className="text-white fill-current" />
+                            {songs.map((song) => {
+                                const isActive = currentSongId === song.id && isPlaying;
+                                return (
+                                    <div 
+                                        key={song.id} 
+                                        onClick={() => onSelectSong(song.id)}
+                                        className={`group relative p-4 rounded-lg cursor-pointer transition-all duration-300 flex flex-col ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
+                                    >
+                                        <div className="relative mb-3">
+                                            <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-auto aspect-square rounded-md object-cover" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
+                                            <div className={`absolute bottom-2 right-14 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}>
+                                                <Play size={24} className="text-white fill-current" />
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Card content row: title/artist on left, three-dots menu aligned to the right corner of the title area */}
-                                    <div className="flex items-center justify-between mt-2">
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="text-sm font-semibold text-white truncate">{song.title}</h4>
+                                        {/* Card content row: title/artist on left, three-dots menu aligned to the right corner of the title area */}
+                                        <div className="flex items-center justify-between mt-2">
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
                                                 <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
-                                        </div>
+                                            </div>
                                             <div className="ml-3 flex-shrink-0">
                                                 <SongMenu song={song} onAddToQueue={handlers.onAddToQueue} onAddToPlaylist={handlers.onAddToPlaylist} onReport={handlers.onReportSong} />
                                             </div>
+                                        </div>
+                                        {/* Keep mobile ThreeDots inside card for mobile layout */}
+                                        <div className="md:hidden mt-2">
+                                            <SongMenu song={song} />
+                                        </div>
                                     </div>
-                                    {/* Keep mobile ThreeDots inside card for mobile layout */}
-                                    <div className="md:hidden mt-2">
-                                        <SongMenu song={song} />
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </>
                 )}

@@ -4,17 +4,54 @@ import { Controls, ProgressBar, VolumeControl } from './OtherComponents';
 import { Music, MoreVertical } from 'lucide-react';
 import nativeMediaService from '../services/nativeMediaService';
 import ImageWithFallback from './ImageWithFallback';
+import { useDrag } from '@use-gesture/react';
+import { useSpring } from '@react-spring/web';
 
 const PlayerUI = ({ 
     currentSong, isPlaying, onPlayPause, onNext, onPrev, 
     progress, onProgressChange, duration, currentTime,
     volume, onVolumeChange,
     isShuffle, onShuffleToggle, isRepeat, onRepeatToggle,
-    onAddToQueue = () => {}, onAddToPlaylist = () => {}, onShowArtist = () => {}, onReportSong = () => {}
+    onAddToQueue = () => {}, onAddToPlaylist = () => {}, onShowArtist = () => {}, onReportSong = () => {},
+    onOpenUpNext = () => {}, onOpenRelated = () => {}, onTogglePlayerExpand
 }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
     const [dropdownStyle, setDropdownStyle] = useState(null);
+    const containerRef = useRef(null);
+
+    // spring for y translation (minimize gesture)
+    const [{ y }, api] = useSpring(() => ({ y: 0 }));
+
+    // attach drag only if minimize handler is available
+    useDrag(({ last, movement: [, my], velocity: [, vy], direction: [, dy], event, first, active }) => {
+        if (!onTogglePlayerExpand) return;
+        try {
+            const shouldDrag = my > 0;
+            const to = shouldDrag ? Math.min(my, window.innerHeight) : 0;
+            if (!last) {
+                api.start({ y: to, immediate: true });
+                // Only call preventDefault when the finger has moved enough to
+                // indicate an intentional drag. Preventing default on every
+                // touch event can block taps/clicks that should open the modal.
+                if (event && event.cancelable && Math.abs(my) > 6) {
+                    try { event.preventDefault(); } catch (e) {}
+                }
+            } else {
+                const threshold = 120;
+                const shouldMinimize = my > threshold || (vy > 0.8 && dy > 0);
+                if (shouldMinimize) {
+                    api.start({ y: window.innerHeight, immediate: false });
+                    setTimeout(() => {
+                        try { onTogglePlayerExpand && onTogglePlayerExpand(); } catch(e){}
+                        api.start({ y: 0, immediate: true });
+                    }, 180);
+                } else {
+                    api.start({ y: 0, immediate: false });
+                }
+            }
+        } catch (err) { console.debug('PlayerUI drag error', err); }
+    }, { target: containerRef, axis: 'y', filterTaps: true, pointer: { touch: true }, eventOptions: { passive: false } });
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -248,7 +285,7 @@ const PlayerUI = ({
     }, [menuOpen]);
     
     return (
-        <div className="p-4 flex flex-col h-full">
+        <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="p-4 flex flex-col h-full">
             <div className="flex-grow flex flex-col items-center justify-center text-center space-y-3 my-3 relative">
                 {currentSong ? (
                     <>
@@ -283,12 +320,12 @@ const PlayerUI = ({
                 ) : (
                      <div className="w-48 h-48 md:w-64 md:h-64 rounded-2xl bg-gray-700/50 border border-gray-600 flex flex-col justify-center items-center p-4">
                         <Music size={48} className="text-gray-500 mb-4"/>
-                        <h2 className="text-xl font-bold">No Song Selected</h2>
+                        <h2 className="text-xl font-bold">Song</h2>
                         <p className="text-gray-400 text-sm">Select a song to start playing.</p>
                     </div>
                 )}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 pb-8 md:pb-0">
                 <ProgressBar 
                     progress={progress} 
                     onProgressChange={onProgressChange} 
@@ -308,6 +345,14 @@ const PlayerUI = ({
                     />
                 </div>
                 <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
+                <div className="mt-10 md:hidden flex items-center justify-between px-2">
+                    <div className="bg-black/5 hover:bg-black/10 active:bg-black/20 p-2 transition-colors">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: UP NEXT clicked'); try { onOpenUpNext && onOpenUpNext(); } catch(e){} }} className="text-xs uppercase text-gray-300 hover:text-white active:text-white block whitespace-nowrap">UP NEXT</button>
+                    </div>
+                    <div className="bg-black/5 hover:bg-black/10 active:bg-black/20 p-2 transition-colors">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: RELATED clicked'); try { onOpenRelated && onOpenRelated(); } catch(e){} }} className="text-xs uppercase text-gray-300 hover:text-white active:text-white block whitespace-nowrap">RELATED</button>
+                    </div>
+                </div>
             </div>
         </div>
     );
