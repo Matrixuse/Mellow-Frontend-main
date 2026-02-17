@@ -390,6 +390,10 @@ function App() {
                     }
                 }
             });
+            // Do not call preventDefault on touchmove by default so the app can
+            // use native scrolling on mobile devices. Only enable preventDefault
+            // for specific interactions that intentionally lock scrolling.
+            try { gestureService.setPreventDefaultOnMove(false); } catch (e) {}
             gestureService.enable();
             return () => {
                 try { gestureService.disable(); } catch (e) {}

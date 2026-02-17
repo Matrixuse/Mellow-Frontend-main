@@ -8,6 +8,10 @@ class GestureService {
         this.startY = 0;
         this.startTime = 0;
         this.isListening = false;
+        // By default do NOT call preventDefault() during touchmove so native
+        // scrolling remains available. Callers can enable preventDefault when
+        // they intentionally want to lock scroll (rare).
+        this.preventDefaultOnMove = false;
         this.init();
     }
 
@@ -36,13 +40,19 @@ class GestureService {
 
     handleTouchMove(e) {
         // Prevent default scrolling during gesture detection
-        if (this.isListening && e.touches && e.touches.length === 1) {
+        if (this.isListening && e.touches && e.touches.length === 1 && this.preventDefaultOnMove) {
             try {
                 if (typeof e.preventDefault === 'function') e.preventDefault();
             } catch (err) {
                 // ignore - some browsers may still disallow preventDefault in passive context
             }
         }
+    }
+
+    // Configure whether touchmove should call preventDefault while listening.
+    // Default is false to allow native scrolling on mobile devices.
+    setPreventDefaultOnMove(enabled) {
+        this.preventDefaultOnMove = !!enabled;
     }
 
     handleTouchEnd(e) {
