@@ -76,6 +76,11 @@ export const getPlaylistById = async (playlistId, token) => {
       }));
     }
     data.coverUrl = data.coverUrl || data.cover_url || '';
+    // ensure isFavorite is a boolean so consumers can rely on it
+    data.isFavorite = !!data.isFavorite;
+    // owner info
+    data.owner = data.owner || data.userId || null;
+    data.ownerName = data.ownerName || data.userName || null;
   }
   return data;
 };

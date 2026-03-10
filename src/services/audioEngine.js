@@ -15,8 +15,19 @@ const AudioEngine = (() => {
     const bands = [60, 230, 910, 3600, 14000]; // 5-band eq
 
     function init(primaryAudioElement) {
+        // Store primary audio element reference only. Actual AudioContext
+        // creation is lazy and will be attempted on first user gesture or
+        // when audio needs to play. This avoids browser warnings about
+        // creating AudioContext without a user gesture.
         if (!primaryAudioElement) return;
-        if (isInitialized) return;
+        primary = primaryAudioElement;
+        try { primary.crossOrigin = 'anonymous'; } catch (e) {}
+        // do not create AudioContext here; lazyCreateContext will do it when needed
+    }
+
+    function lazyCreateContext() {
+        if (ctx) return;
+        if (!primary) return;
         try {
             ctx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = ctx.createGain();
@@ -42,34 +53,34 @@ const AudioEngine = (() => {
             }
             if (eqNodes.length) {
                 last.connect(masterGain);
-            } else {
-                // connect master directly if no eq
-                // noop
             }
             masterGain.connect(analyser);
             analyser.connect(ctx.destination);
 
-            // setup primary audio element
-            primary = primaryAudioElement;
-            primary.crossOrigin = 'anonymous';
-
             // create media element source and gain node
-            primarySource = ctx.createMediaElementSource(primary);
-            primaryGain = ctx.createGain();
-            primaryGain.gain.value = 1.0;
-
-            // connect sources into eq chain (source -> gain -> eq[0])
-            if (eqNodes.length) {
-                primarySource.connect(primaryGain);
-                primaryGain.connect(eqNodes[0]);
-            } else {
-                primarySource.connect(primaryGain);
-                primaryGain.connect(masterGain);
+            try {
+                primarySource = ctx.createMediaElementSource(primary);
+                primaryGain = ctx.createGain();
+                primaryGain.gain.value = 1.0;
+                if (eqNodes.length) {
+                    primarySource.connect(primaryGain);
+                    primaryGain.connect(eqNodes[0]);
+                } else {
+                    primarySource.connect(primaryGain);
+                    primaryGain.connect(masterGain);
+                }
+            } catch (e) {
+                // createMediaElementSource can throw if source already used
+                // or due to CORS. Ignore and continue; playback will still work
+                // using the audio element directly.
             }
 
             isInitialized = true;
         } catch (e) {
-            console.warn('AudioEngine init failed', e);
+            // Avoid noisy console warnings from browsers about context creation
+            // without a user gesture. We'll try again later when user interacts.
+            // Keep failure silent to avoid alarming the console.
+            // console.debug('AudioEngine lazyCreateContext failed', e);
         }
     }
 
@@ -97,6 +108,8 @@ const AudioEngine = (() => {
 
     // naive normalization: measure RMS for a short window and adjust master gain
     async function applyNormalizationToElement(el) {
+        // Ensure context exists before attempting normalization
+        lazyCreateContext();
         if (!normalizationEnabled || !ctx || !analyser) return;
         try {
             // create an OfflineAudioContext to compute RMS quickly is expensive
@@ -122,12 +135,14 @@ const AudioEngine = (() => {
     // Play a URL immediately
     function playNow(url) {
         if (!primary) return;
+        // Ensure we've created an AudioContext if allowed by the browser
+        lazyCreateContext();
         try {
             primary.src = url;
             primary.load();
             primary.play().catch(console.error);
             // reset master gain
-            if (masterGain) masterGain.gain.setValueAtTime(1.0, ctx.currentTime);
+            if (masterGain && ctx) masterGain.gain.setValueAtTime(1.0, ctx.currentTime);
             if (normalizationEnabled) applyNormalizationToElement(primary);
         } catch (e) {
             console.warn('playNow error', e);
@@ -135,6 +150,8 @@ const AudioEngine = (() => {
     }
 
     function resumeContextIfNeeded() {
+        // Try to create context if not present, then resume if suspended.
+        lazyCreateContext();
         if (ctx && ctx.state === 'suspended') {
             ctx.resume().catch(() => {});
         }

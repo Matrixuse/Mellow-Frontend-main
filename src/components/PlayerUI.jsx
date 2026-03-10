@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
+import { FavoritesContext } from '../contexts/FavoritesContext';
 import { Capacitor } from '@capacitor/core';
 import { Controls, ProgressBar, VolumeControl } from './OtherComponents';
 import { Music, MoreVertical } from 'lucide-react';
@@ -19,6 +20,7 @@ const PlayerUI = ({
     const menuRef = useRef(null);
     const [dropdownStyle, setDropdownStyle] = useState(null);
     const containerRef = useRef(null);
+    const currentFav = useContext(FavoritesContext);
 
     // spring for y translation (minimize gesture)
     const [{ y }, api] = useSpring(() => ({ y: 0 }));
@@ -299,6 +301,16 @@ const PlayerUI = ({
                                 <div style={dropdownStyle} className="w-44 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1">
                                     <button onClick={() => { setMenuOpen(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
                                     <button onClick={() => { setMenuOpen(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            const { toggleSongFavorite, isSongFavorite } = currentFav;
+                                            toggleSongFavorite(currentSong.id).catch(() => {});
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                                    >
+                                        {currentFav && currentFav.isSongFavorite(currentSong.id) ? 'Remove Favourite' : 'Add Favourite'}
+                                    </button>
                                     <button onClick={() => { setMenuOpen(false); onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
                                     <button onClick={() => { setMenuOpen(false); onReportSong && onReportSong(currentSong.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
                                 </div>

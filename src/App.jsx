@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 // Humne yahan 'Outlet' aur 'useOutletContext' ko import kiya hai
-import { Routes, Route, Link, Outlet, useOutletContext, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, Outlet, useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { FavoritesProvider } from './contexts/FavoritesContext';
+import apiClient from './api/apiClient';
 import AuthForm from './components/AuthForm';
 import queueService from './services/queueService';
 import nativeMediaService from './services/nativeMediaService';
@@ -12,12 +14,17 @@ import SongLibrary from './components/SongLibrary';
 import AdminPanel from './components/Admin';
 import { Loader, Footer } from './components/OtherComponents';
 import { getSongs } from './api/songService';
-import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shuffle } from 'lucide-react';
+import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shuffle, Users } from 'lucide-react';
 import QueuePanel from './components/QueuePanel';
 import PlaylistModal from './components/PlaylistModal';
 import PlaylistPage from './components/PlaylistPage';
 import PlaylistsPage from './components/PlaylistsPage';
 import FeedbackPage from './components/FeedbackPage';
+import RecommendationsPage from './pages/RecommendationsPage';
+import FeedPage from './pages/FeedPage';
+import RecentsPage from './pages/RecentsPage';
+import UserProfilePage from './pages/UserProfilePage';
+import FavoritesPage from './pages/FavoritesPage';
 import BottomNav from './components/BottomNav';
 import SearchResults from './components/SearchResults';
 import ProfilePage from './pages/ProfilePage';
@@ -33,10 +40,18 @@ const MoodPage = lazy(() => import('./components/MoodPage'));
 
 // --- Main Layout Component ---
 // Yeh component left player aur right content area ka layout banata hai
-const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, ...props }) => (
+const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, user, ...props }) => {
+    const location = useLocation();
+    const isFavoritesPage = location.pathname.includes('/favorites');
+    const isArtistPage = location.pathname.startsWith('/artist') || location.pathname.includes('/artist/');
+    const isMoodPage = location.pathname.startsWith('/mood') || location.pathname.includes('/mood/');
+    const isProfilePage = location.pathname.startsWith('/profile') || location.pathname.includes('/profile/');
+    const isPlaylistsPage = location.pathname.startsWith('/playlists') || location.pathname.includes('/playlists/');
+    return (
     <div className="flex flex-col md:flex-row h-full">
-        {/* Left Column desktop/tablet par hi dikhega */}
-    <div className="hidden md:flex md:w-80 p-3 flex-shrink-0 flex-col bg-gray-800/30">
+        {/* Left Column desktop/tablet par hi dikhega - hide on favorites */}
+        {!isFavoritesPage && (
+        <div className="hidden md:flex md:w-80 p-3 flex-shrink-0 flex-col bg-gray-800/30">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Link to="/" className="flex items-center gap-3">
@@ -46,8 +61,10 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                 </div>
                 {/* Replace user profile area with Playlist button in the left column header (desktop) */}
                 <div className="relative flex items-center gap-3">
-                    <div className="hidden md:block">
+                    <div className="hidden md:flex items-center gap-2">
                         <Link to="/playlists" className="px-3 py-2 bg-blue-600 rounded-full text-white hover:bg-blue-500">Playlists</Link>
+                        <Link to="/recommendations" className="px-3 py-2 bg-green-600 rounded-full text-white hover:bg-green-500">Recommendations</Link>
+                        <Link to="/feed" className="px-3 py-2 bg-purple-600 rounded-full text-white hover:bg-purple-500">Feed</Link>
                     </div>
                 </div>
             </div>
@@ -57,10 +74,12 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                 <PlayerUI {...props} onOpenUpNext={props.onOpenUpNext} onOpenRelated={props.onOpenRelated} />
             </div>
         </div>
+        )}
         {/* Right Column (Yahan ab Outlet aayega jo page badlega) */}
         {/* Hum yahan 'context' ke zariye saare props neeche bhej rahe hain */}
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
-            <div className="md:hidden bg-gray-900 border-b border-gray-800 p-3 flex items-center gap-3">
+            {!isFavoritesPage && !isArtistPage && !isMoodPage && !isProfilePage && !isPlaylistsPage && (
+            <div className="md:hidden bg-gray-900 border-b border-gray-800 p-3 flex items-center gap-3 relative">
                 <div className="flex items-center">
                     <div className="w-9 h-9 rounded-full bg-gray-700 overflow-hidden cursor-pointer" onClick={toggleLogoutVisible}>
                         <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
@@ -71,6 +90,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
                             type="text"
+                            id="global-search-input"
                             placeholder="Search songs or artists"
                             value={(props && props.searchTerm) ? props.searchTerm : ''}
                             onChange={(e) => { try { props && props.onSearchChange && props.onSearchChange(e); } catch (err) {} }}
@@ -85,7 +105,6 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                         )}
                     </div>
                 </div>
-                
                 {isLogoutVisible && (
                     <div className="absolute left-3 top-14 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden z-50">
                         <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800">Profile</button>
@@ -96,7 +115,8 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                     </div>
                 )}
             </div>
-            <Outlet context={{ ...props, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode }} /> 
+            )}
+            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode }} /> 
             {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
             <div className="md:hidden">
                 <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} isPlayerInitialized={props.isPlayerInitialized} />
@@ -104,7 +124,8 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
             </div>
         </div>
     </div>
-));
+    );
+});
 
 MainLayout.displayName = 'MainLayout';
 
@@ -147,6 +168,7 @@ const LibraryPage = React.memo(() => {
                     <div className="relative mr-6 w-80">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
+                            id="global-search-input"
                             type="text"
                             placeholder="Search songs or artists"
                             value={searchTerm || ''}
@@ -225,6 +247,7 @@ function App() {
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
     const [isPlayerEntered, setIsPlayerEntered] = useState(false);
+    const [apiHealthy, setApiHealthy] = useState(true);
     const [queue, setQueue] = useState([]);
     const [isQueueOpen, setIsQueueOpen] = useState(false);
     // Playlist-scoped queue: when user plays inside a playlist we keep a
@@ -365,6 +388,7 @@ function App() {
 
     // programmatic navigation helper for gesture handling
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Global mobile swipe-down behavior:
     //  - If player is not expanded: swipe-down should expand the player UI
@@ -438,6 +462,15 @@ function App() {
 
     // Effects
     useEffect(() => { const u = localStorage.getItem('user'); if (u) { try { setUser(JSON.parse(u)); } catch (e) { localStorage.removeItem('user'); } } setIsInitializing(false); }, []);
+
+    // Quick API health check (attempt configured host, localhost:5000, then relative)
+    useEffect(() => {
+        let mounted = true;
+        apiClient.fetchWithFallback('GET', '/health')
+            .then(() => { if (mounted) setApiHealthy(true); })
+            .catch(() => { if (mounted) setApiHealthy(false); });
+        return () => { mounted = false; };
+    }, []);
     // Ensure a global bare `onAddToQueue` exists in the page global scope for
     // legacy bundles that call `onAddToQueue(...)` (without `window.`). This
     // forwards to `window.__APP_ON_ADD_TO_QUEUE` when present.
@@ -590,7 +623,9 @@ function App() {
         try {
             if (a) {
                 AudioEngine.init(a);
-                AudioEngine.resumeContextIfNeeded && AudioEngine.resumeContextIfNeeded();
+                // do NOT resume/create AudioContext here to avoid automatic
+                // context creation before a user gesture. Creation/resume
+                // will be attempted on user play gestures via handleSelectSong.
             }
         } catch (e) {}
 
@@ -1432,6 +1467,34 @@ function App() {
     const handleSelectSong = useCallback((id, options = {}) => {
         // Initialize player when song is selected
         setIsPlayerInitialized(true);
+        try { AudioEngine.resumeContextIfNeeded && AudioEngine.resumeContextIfNeeded(); } catch (e) {}
+        // record listen history
+        if (user && user.token) {
+            import('./api/userService').then(m => {
+                m.addListenHistory(id, user.token).catch(() => {});
+            }).catch(() => {});
+        }
+        // Also maintain a local session fallback for recents so the UI works
+        // even if the backend doesn't expose a GET /users/history endpoint.
+        try {
+            const songObj = songs.find(s => String(s.id) === String(id)) || { id };
+            const existing = JSON.parse(localStorage.getItem('recents') || '[]');
+            // Remove any existing entry for this song id
+            const filtered = existing.filter(e => String(e.id) !== String(songObj.id) && String(e.songId || '') !== String(songObj.id));
+            const entry = {
+                id: songObj.id || songObj.songId || id,
+                title: songObj.title || songObj.name || songObj.songTitle || '',
+                artist: songObj.artist || songObj.artists || songObj.artistName || '',
+                coverUrl: songObj.coverUrl || songObj.cover || '' ,
+                playedAt: Date.now()
+            };
+            filtered.unshift(entry);
+            // limit to 200 entries
+            const limited = filtered.slice(0, 200);
+            localStorage.setItem('recents', JSON.stringify(limited));
+        } catch (e) {
+            // ignore localStorage errors (e.g., private mode)
+        }
         // If user manually selects a song (from home/library), clear any
         // active playlist-scoped queue so global playback continues independently.
         // NOTE: We keep mood and artist queues active to support mood/artist-scoped playback
@@ -1704,13 +1767,18 @@ function App() {
     }, []);
     
     // New search handlers
+    // note: setShowSearchResults is intentionally called before updating the
+    // searchTerm state so that when the overlay mounts it will receive the
+    // most recent value.  React may batch updates but the next effect in
+    // SearchResults now also listens to prop changes which makes this more
+    // reliable when the component initializes.
     const handleSearchChange = useCallback((e) => {
         const val = e.target.value;
-        setSearchTerm(val);
-        // Show search results page when user types
+        // if there's anything to search for, open the overlay first
         if (val.trim()) {
             setShowSearchResults(true);
         }
+        setSearchTerm(val);
         // Suggestions UI is not currently rendered; we keep indexing but
         // do not store suggestion state to avoid unused-vars warnings.
     }, []);
@@ -1722,6 +1790,14 @@ function App() {
         // Show all songs when clicking on search bar
         setShowSearchResults(true);
     }, []);
+
+    // Close search overlay when route changes so it doesn't persist
+    useEffect(() => {
+        // whenever the location changes, ensure the overlay is closed
+        setShowSearchResults(false);
+        // keep the search term in sync and avoid stale UI
+        setSearchTerm('');
+    }, [location && location.pathname]);
 
     // Handle browser/mobile gesture back navigation
     useEffect(() => {
@@ -1736,6 +1812,16 @@ function App() {
         };
         window.addEventListener('popstate', onPopState);
         return () => window.removeEventListener('popstate', onPopState);
+    }, []);
+
+    // Listen for custom event to close search overlay from navigation components
+    useEffect(() => {
+        function handler() {
+            setShowSearchResults(false);
+            setSearchTerm('');
+        }
+        window.addEventListener('close-search-overlay', handler);
+        return () => window.removeEventListener('close-search-overlay', handler);
     }, []);
 
     // Register a stable global shim once. The shim forwards calls to the
@@ -1834,15 +1920,22 @@ function App() {
     
     if (isInitializing) return <div className="h-screen bg-gray-900 flex items-center justify-center"><Loader /></div>;
     
+    // determine token for favorites provider
+    const token = (user && user.token) ? user.token : null;
+
     return (
         <div className="h-screen bg-gray-900 text-white font-sans overflow-hidden">
-            <Routes>
-                { !user ? (
-                    <Route path="*" element={<div className="flex items-center justify-center h-full"><AuthForm onLoginSuccess={handleLogin} /></div>} />
-                ) : (
-                    <Route path="/" element={
-                        <MainLayout 
-                            navigate={navigate}
+            {!apiHealthy && (
+                <div className="w-full bg-rose-600 text-white text-center py-2 z-50">Backend unreachable — start the backend or set <span className="font-semibold">VITE_API_URL</span> to your API host.</div>
+            )}
+            <FavoritesProvider token={user?.token}>
+                <Routes>
+                    { !user ? (
+                        <Route path="*" element={<div className="flex items-center justify-center h-full"><AuthForm onLoginSuccess={handleLogin} /></div>} />
+                    ) : (
+                        <Route path="/" element={
+                            <MainLayout 
+                                navigate={navigate}
                             onNavigateToProfile={handleNavigateToProfile}
                             onNavigateToUpdates={handleNavigateToUpdates}
                             onNavigateToEqualizer={handleNavigateToEqualizer}
@@ -1916,16 +2009,52 @@ function App() {
                         />
                     }>
                         <Route index element={<LibraryPage />} />
+                        <Route path="search" element={<SearchResults 
+                            songs={filteredSongs}
+                            onSelectSong={handleSelectSong}
+                            currentSongId={currentSong?.id}
+                            isPlaying={isPlaying}
+                            onAddToQueue={handleAddToQueue}
+                            onAddToPlaylist={handleOpenAddToPlaylist}
+                            onPlayPause={handlePlayPause}
+                            onNext={handleNext}
+                            onPrev={handlePrev}
+                            onClose={() => { setSearchTerm(''); navigate('/'); }}
+                            initialSearchTerm={searchTerm}
+                            onNavigateHome={() => { setSearchTerm(''); navigate('/'); }}
+                            allSongs={songs}
+                            isPlayerInitialized={isPlayerInitialized}
+                            isShuffle={isShuffle}
+                            onShuffleToggle={handleShuffleToggle}
+                            onTogglePlayerExpand={handleTogglePlayerExpand}
+                            currentSong={currentSong}
+                            progress={progress}
+                            onProgressChange={handleProgressChange}
+                            duration={duration}
+                            currentTime={currentTime}
+                            volume={volume}
+                            onVolumeChange={handleVolumeChange}
+                            isRepeat={isRepeat}
+                            onRepeatToggle={handleRepeatToggle}
+                            onOpenUpNext={handleOpenUpNext}
+                            onOpenRelated={() => { setUpNextRelatedModalMode('related'); setIsUpNextRelatedModalOpen(true); }}
+                        />} />
                         <Route path="profile" element={<ProfilePage />} />
                         <Route path="artist/:artistName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><ArtistPage /></Suspense>} />
                         <Route path="mood/:moodName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><MoodPage /></Suspense>} />
                         <Route path="equalizer" element={<EqualizerPage />} />
                         <Route path="playlists" element={<PlaylistsPage />} />
                         <Route path="playlists/:id" element={<PlaylistPage />} />
+                        <Route path="favorites" element={<FavoritesPage />} />
+                        <Route path="recommendations" element={<RecommendationsPage />} />
+                        <Route path="feed" element={<FeedPage />} />
+                        <Route path="recents" element={<RecentsPage />} />
+                        <Route path="users/:id" element={<UserProfilePage />} />
                         <Route path="feedback" element={<FeedbackPage />} />
                     </Route>
                 )}
             </Routes>
+            </FavoritesProvider>
             {isAdminPanelOpen && ( <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"><AdminPanel onClose={() => setIsAdminPanelOpen(false)} onSongUploaded={handleSongUploaded} /> </div> )}
             {isPlayerExpanded && (
                 <div className="fixed inset-0 bg-gray-900 z-50 md:hidden" style={{ transform: isPlayerEntered ? 'translateY(0%)' : 'translateY(-100%)', transition: 'transform 260ms cubic-bezier(.2,.8,.2,1)' }}>
@@ -2017,6 +2146,8 @@ function App() {
                     />
                 </div>
             )}
+
+            {/* Listen for custom event to close search overlay from nav */}
             {/* prepare mood-based lists for modal */}
             {
                 (() => {
@@ -2053,9 +2184,6 @@ function App() {
         </div>
     );
 }
-
-export default App;
-
 // --- Mobile mini player bar component ---
 const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand, isShuffle, onShuffleToggle, isPlayerInitialized }) => {
     // Hide player bar until a song has been played, then keep it visible
@@ -2079,3 +2207,4 @@ const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerEx
     );
 };
 
+export default App;

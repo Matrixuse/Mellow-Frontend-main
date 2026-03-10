@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { useParams, Link, useOutletContext, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Shuffle } from 'lucide-react';
+import { ArrowLeft, Play, Shuffle, Search, X } from 'lucide-react';
 import ImageWithFallback from './ImageWithFallback';
 import SongContextMenu from './SongContextMenu';
 import { Footer } from './OtherComponents';
@@ -23,6 +23,9 @@ const MoodPage = () => {
     } = outlet;
     const { moodName: encodedMoodName } = useParams();
     const moodName = decodeURIComponent(encodedMoodName);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const searchInputRef = useRef(null);
     
     if (!allSongs) {
         return <div className="text-center p-10">Loading mood songs...</div>;
@@ -64,6 +67,17 @@ const MoodPage = () => {
     };
 
     const moodSongs = getMoodSongs(moodName);
+
+    // Filter songs by local search term when search is open
+    const filteredSongs = (searchTerm && searchTerm.trim().length > 0)
+        ? moodSongs.filter(song => {
+            const q = searchTerm.toLowerCase();
+            const title = (song.title || '').toLowerCase();
+            const artistField = song?.artist;
+            const artistString = Array.isArray(artistField) ? artistField.join(', ').toLowerCase() : (artistField || '').toLowerCase();
+            return title.includes(q) || artistString.includes(q);
+        })
+        : moodSongs;
 
     const handleSelectSong = useCallback((songId) => {
         const selectedSongInMood = moodSongs.find(s => String(s.id) === String(songId));
@@ -119,34 +133,79 @@ const MoodPage = () => {
         setIsMoodShuffleMode(prev => !prev);
     }, [setIsMoodShuffleMode]);
 
+    useEffect(() => {
+        if (searchOpen && searchInputRef.current) {
+            try { searchInputRef.current.focus(); } catch {}
+        }
+    }, [searchOpen]);
+
+    const toggleSearch = useCallback(() => {
+        setSearchOpen(v => {
+            const next = !v;
+            if (!next) setSearchTerm('');
+            return next;
+        });
+    }, []);
+
     return (
         <div className="flex-grow p-4 flex flex-col min-h-0 min-w-0">
             <div className="flex items-center gap-3 mb-3 flex-shrink-0">
-                <Link to="/" className="p-2 rounded-full bg-gray-800 hover:bg-gray-700">
-                    <ArrowLeft size={24} />
+                <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700">
+                    <ArrowLeft size={20} />
                 </Link>
-                <h1 className="text-2xl font-bold flex-1">{moodName} Mood</h1>
-                {/* Shuffle toggle button in top right */}
-                {moodSongs.length > 0 && (
-                    <button 
-                        onClick={handleToggleShuffle}
-                        className={`p-2 rounded-full transition-all ${
-                            isMoodShuffleMode 
-                                ? 'bg-blue-600 shadow-lg shadow-blue-500/50 animate-pulse' 
-                                : 'bg-gray-600 hover:bg-gray-500'
-                        }`}
-                        title={isMoodShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
-                    >
-                        <Shuffle size={24} className="text-white" />
-                    </button>
-                )}
+                <h1 className="text-xl font-bold flex-1">{moodName} Mood</h1>
+                <div className="flex items-center gap-2">
+                    {/* Search toggle button placed left of shuffle */}
+                    {moodSongs.length > 0 && (
+                        <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700">
+                            {searchOpen ? <X size={18} /> : <Search size={18} />}
+                        </button>
+                    )}
+                    {/* Shuffle toggle button in top right */}
+                    {moodSongs.length > 0 && (
+                        <button 
+                            onClick={handleToggleShuffle}
+                            className={`p-2 rounded-full transition-all ${
+                                isMoodShuffleMode 
+                                    ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' 
+                                    : 'bg-gray-900 hover:bg-gray-500'
+                            }`}
+                            title={isMoodShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
+                        >
+                            <Shuffle size={20} className="text-white" />
+                        </button>
+                    )}
+                </div>
             </div>
 
+            {/* Search bar shown when toggled */}
+            {searchOpen && (
+                <div className="mb-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder={`Search within ${moodName} mood...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                            autoComplete="off"
+                        />
+                        {searchTerm && (
+                            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="flex-grow overflow-y-auto custom-scrollbar">
-                {moodSongs.length > 0 ? (
+                {filteredSongs.length > 0 ? (
                     <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                            {moodSongs.map((song) => {
+                            {filteredSongs.map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 return (
                                     <div 

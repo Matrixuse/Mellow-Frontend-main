@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Play, MoreVertical } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
+import { FavoritesContext } from '../contexts/FavoritesContext';
 
 const topArtists = [
-    { name: 'KK', imageUrl: '/artists/KK.png' },
+    { name: 'KK', imageUrl: '/artists/kk.png' },
     { name: 'Arijit Singh', imageUrl: '/artists/arijit.png' },
     { name: 'Shreya Ghoshal', imageUrl: '/artists/shreya.png' },
     { name: 'Pritam', imageUrl: '/artists/pritam.png' },
@@ -154,6 +155,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
 
     const SongMenu = ({ song, className }) => {
         const ref = useRef(null);
+        const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
         useEffect(() => {
             function onDocClick(e) {
@@ -167,6 +169,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
         }, [song.id]);
 
         const isOpen = openMenuId === song.id;
+        const fav = isSongFavorite(song.id);
 
         return (
             <div ref={ref} className={`relative inline-block ${className || ''}`}>
@@ -178,6 +181,16 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                     <div className="absolute right-0 top-full mt-2 w-40 max-w-xs bg-gray-800 border border-gray-700 rounded-md shadow-lg text-left py-0.5 z-50">
                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                toggleSongFavorite(song.id).catch(() => {});
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                        >
+                            {fav ? 'Remove Favourite' : 'Add Favourite'}
+                        </button>
                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
                     </div>
@@ -222,6 +235,8 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                         <div className="hidden md:grid grid-rows-2 grid-flow-col auto-cols-[9rem] sm:auto-cols-[10rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
                             {songs.map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
+                                const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
+                                const fav = isSongFavorite(song.id);
                                 return (
                                     <div 
                                         key={song.id} 
@@ -276,7 +291,10 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                         </div>
                     ) : (
                         <div className="grid grid-rows-2 grid-flow-col auto-cols-[9rem] sm:auto-cols-[10rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
-                            {songs.map((song) => (
+                            {songs.map((song) => {
+                                const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
+                                const fav = isSongFavorite(song.id);
+                                return (
                                 <div 
                                     key={song.id} 
                                     onClick={() => onSelectSong(song.id)}
@@ -304,7 +322,8 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                         <SongMenu song={song} />
                                     </div>
                                 </div>
-                            ))}
+                            );
+                            })}
                         </div>
                     )}
                 </div>

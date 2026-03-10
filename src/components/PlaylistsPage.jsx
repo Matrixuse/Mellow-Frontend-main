@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
-import { Plus, Trash2, ArrowLeft, Lock, Globe } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Lock, Globe, Heart } from 'lucide-react';
+import ImageWithFallback from './ImageWithFallback';
 import { getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist, togglePlaylistVisibility } from '../api/playlistService';
+// pin toggling is now handled within playlist view; keep service but import when needed elsewhere if required
+import { FavoritesContext } from '../contexts/FavoritesContext';
 
 const PlaylistsPage = () => {
     const outlet = useOutletContext() || {};
+    const favoritesCtx = useContext(FavoritesContext);
     // Prefer token from outlet context (App provides it). If missing (direct navigation/refresh),
     // fall back to localStorage so playlists page still works.
     let token = (outlet.user && outlet.user.token) ? outlet.user.token : null;
@@ -25,6 +29,7 @@ const PlaylistsPage = () => {
     const addSongId = params.get('add');
 
     const [playlists, setPlaylists] = useState([]);
+    const [pinnedPlaylistIds, setPinnedPlaylistIds] = useState([]);
     const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);
     const [addingId, setAddingId] = useState(null);
@@ -40,7 +45,32 @@ const PlaylistsPage = () => {
     useEffect(() => {
         if (!token) return;
         setLoading(true);
-        getPlaylists(token).then(data => setPlaylists(data || [])).catch(err => setError(err.message || 'Failed to load playlists')).finally(() => setLoading(false));
+        getPlaylists(token)
+            .then(data => {
+                setPlaylists(data || []);
+                // Try to load pinned playlists from localStorage
+                try {
+                    const stored = localStorage.getItem('pinnedPlaylists');
+                    if (stored) {
+                        setPinnedPlaylistIds(JSON.parse(stored));
+                    }
+                } catch (e) {
+                    // ignore parse errors
+                }
+            })
+            .catch(err => setError(err.message || 'Failed to load playlists'))
+            .finally(() => setLoading(false));
+
+        // listen for pinned list changes from other tabs or views
+        const onStorage = (e) => {
+            if (e.key === 'pinnedPlaylists') {
+                try {
+                    setPinnedPlaylistIds(JSON.parse(e.newValue || '[]'));
+                } catch {}
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
     }, [token]);
 
     // Mobile right-swipe to go back gesture. Lightweight and only active on small screens.
@@ -120,6 +150,7 @@ const PlaylistsPage = () => {
         }
     };
 
+
     const handleAdd = async (playlistId) => {
         if (!addSongId) return;
         setAddingId(playlistId);
@@ -134,6 +165,91 @@ const PlaylistsPage = () => {
             setAddingId(null);
         }
     };
+
+    // simplified playlist card used on listing pages
+    const PlaylistCard = ({
+        playlist,
+        isFavourite,
+        togglePlaylistFavorite,
+        handleToggleFav,
+        handleDelete,
+        handleToggleVisibility,
+        token,
+        navigate,
+        addSongId,
+        addingId,
+        handleAdd
+    }) => {
+        const songCount = playlist.songs ? playlist.songs.length : 0;
+
+        if (addSongId) {
+            return (
+                <div
+                    key={playlist.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleAdd()}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAdd(); } }}
+                    className="bg-gray-800 rounded-md p-2 hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                    <div className="flex items-center gap-3">
+                        <ImageWithFallback src={playlist.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={playlist.name} className="w-10 h-10 object-cover rounded-md" fallback={'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} />
+                        <div className="flex-1">
+                            <div className="text-sm font-semibold text-white truncate">{playlist.name}</div>
+                            <div className="text-xs text-gray-400">{songCount} songs</div>
+                            <div className="mt-2">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleAdd(); }}
+                                    disabled={addingId === playlist.id}
+                                    className={`px-4 py-1 text-sm ${addingId === playlist.id ? 'bg-blue-400' : 'bg-blue-600'} rounded-full text-white`}
+                                >{addingId === playlist.id ? 'Adding...' : 'Add'}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div
+                key={playlist.id}
+                role="button"
+                tabIndex={0}
+                className="relative bg-gray-800 rounded-md overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600 pointer-events-auto"
+            >
+                <button
+                    type="button"
+                    aria-label={`Open playlist ${playlist.name}`}
+                    onClick={(e) => {
+                        try { navigate(`/playlists/${playlist.id}`); } catch (err) {}
+                        setTimeout(() => { if (window.location.pathname !== `/playlists/${playlist.id}`) { window.location.href = `/playlists/${playlist.id}`; } }, 150);
+                    }}
+                    className="absolute inset-0 z-5 bg-transparent border-0 p-0"
+                />
+
+                <div className="flex items-center px-2 py-1 gap-3 min-h-14">
+                    <ImageWithFallback src={playlist.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={playlist.name} className="w-14 h-14 object-cover rounded-md shadow-inner pointer-events-none flex-shrink-0" fallback={'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} />
+                    <div className="flex-1 flex flex-col justify-center">
+                        <div className="text-sm font-semibold text-white line-clamp-2">{playlist.name}</div>
+                        <div className="text-xs text-gray-400">{songCount} songs</div>
+                    </div>
+                    <div className="flex flex-col gap-2 z-20 pointer-events-auto">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                            disabled={!token}
+                            title="Delete playlist"
+                            className={`px-2 py-2 rounded-full text-white z-20 pointer-events-auto flex items-center transition-all ${
+                                !token
+                                    ? 'bg-red-500 cursor-not-allowed opacity-50'
+                                    : 'bg-red-600 hover:bg-red-500'
+                            }`}
+                        ><Trash2 size={14} /></button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
 
     return (
         <div className="p-6" ref={containerRef}>
@@ -165,86 +281,70 @@ const PlaylistsPage = () => {
 
                 <div>
                     <h3 className="text-lg font-medium mb-3">Your Playlists</h3>
-                    {loading ? <p className="text-gray-400">Loading...</p> : playlists.length === 0 ? <p className="text-gray-400">No playlists yet.</p> : (
+                    {loading ? <p className="text-gray-400">Loading...</p> : (
                         <div className="grid grid-cols-1 gap-3">
-                            {playlists.map(pl => (
-                                addSongId ? (
-                                    <div
-                                        key={pl.id}
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={() => handleAdd(pl.id)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAdd(pl.id); } }}
-                                        className="bg-gray-800 rounded-md p-2 hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <img src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-24 h-24 object-cover rounded-md" />
-                                            <div className="flex-1">
-                                                <div className="text-sm font-semibold text-white truncate">{pl.name}</div>
-                                                <div className="text-xs text-gray-400">{pl.songs ? pl.songs.length : 0} songs</div>
-                                                <div className="mt-2">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleAdd(pl.id); }}
-                                                        disabled={addingId === pl.id}
-                                                        className={`px-4 py-1 text-sm ${addingId === pl.id ? 'bg-blue-400' : 'bg-blue-600'} rounded-full text-white`}
-                                                    >{addingId === pl.id ? 'Adding...' : 'Add'}</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div
-                                        key={pl.id}
-                                        role="button"
-                                        tabIndex={0}
-                                        className="relative bg-gray-800 rounded-md overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600 pointer-events-auto"
-                                    >
-                                        <button
-                                            type="button"
-                                            aria-label={`Open playlist ${pl.name}`}
-                                            onClick={(e) => {
-                                                try { navigate(`/playlists/${pl.id}`); } catch (err) {}
-                                                setTimeout(() => { if (window.location.pathname !== `/playlists/${pl.id}`) { window.location.href = `/playlists/${pl.id}`; } }, 150);
+                            {/* Pinned Playlists */}
+                            {playlists
+                                .filter(pl => pinnedPlaylistIds.some(id => String(id) === String(pl.id)))
+                                .map(pl => {
+                                    const fav = favoritesCtx.isPlaylistFavorite(pl.id);
+                                    return (
+                                        <PlaylistCard
+                                            key={pl.id}
+                                            playlist={pl}
+                                            isFavourite={fav}
+                                            togglePlaylistFavorite={favoritesCtx.togglePlaylistFavorite}
+                                            handleToggleFav={async () => {
+                                                try {
+                                                    await favoritesCtx.togglePlaylistFavorite(pl.id);
+                                                } catch (err) {
+                                                    console.error(err);
+                                                }
                                             }}
-                                            className="absolute inset-0 z-5 bg-transparent border-0 p-0"
+                                            handleDelete={() => handleDelete(pl.id)}
+                                            handleToggleVisibility={(e) => handleToggleVisibility(e, pl.id)}
+                                            token={token}
+                                            navigate={navigate}
+                                            addSongId={addSongId}
+                                            addingId={addingId}
+                                            handleAdd={() => handleAdd(pl.id)}
                                         />
+                                    );
+                                })
+                            }
 
-                                        <div className="flex items-center px-2 py-1 gap-3 min-h-24">
-                                            <img src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-24 h-24 object-cover rounded-md shadow-inner pointer-events-none flex-shrink-0" />
-                                            <div className="flex-1 flex flex-col justify-center">
-                                                <div className="text-sm font-semibold text-white line-clamp-2">{pl.name}</div>
-                                                <div className="text-xs text-gray-400">{pl.songs ? pl.songs.length : 0} songs</div>
-                                            </div>
-                                            <div className="flex flex-col gap-2 z-20 pointer-events-auto">
-                                                <button
-                                                    onClick={(e) => handleToggleVisibility(e, pl.id)}
-                                                    disabled={!token}
-                                                    title={!token ? "Not authenticated" : pl.isPublic ? "Make private" : "Make public"}
-                                                    className={`px-1.5 py-1 rounded-full text-white transition-all ${
-                                                        !token
-                                                            ? 'bg-gray-500 cursor-not-allowed opacity-50'
-                                                            : pl.isPublic 
-                                                            ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' 
-                                                            : 'bg-gray-600 hover:bg-gray-500'
-                                                    }`}
-                                                >
-                                                    {pl.isPublic ? <Globe size={14} /> : <Lock size={14} />}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleDelete(pl.id); }}
-                                                    disabled={!token}
-                                                    title="Delete playlist"
-                                                    className={`px-2 py-1 rounded-full text-white z-20 pointer-events-auto flex items-center transition-all ${
-                                                        !token
-                                                            ? 'bg-red-500 cursor-not-allowed opacity-50'
-                                                            : 'bg-red-600 hover:bg-red-500'
-                                                    }`}
-                                                ><Trash2 size={14} /></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            ))}
+                            {/* Regular Playlists */}
+                            {playlists.length === 0 ? (
+                                <p className="text-gray-400">No playlists yet.</p>
+                            ) : (
+                                playlists
+                                    .filter(pl => !pinnedPlaylistIds.some(id => String(id) === String(pl.id)))
+                                    .map(pl => {
+                                        const fav = favoritesCtx.isPlaylistFavorite(pl.id);
+                                        return (
+                                            <PlaylistCard
+                                                key={pl.id}
+                                                playlist={pl}
+                                                isFavourite={fav}
+                                                togglePlaylistFavorite={favoritesCtx.togglePlaylistFavorite}
+                                                handleToggleFav={async () => {
+                                                    try {
+                                                        await favoritesCtx.togglePlaylistFavorite(pl.id);
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                    }
+                                                }}
+                                                handleDelete={() => handleDelete(pl.id)}
+                                                handleToggleVisibility={(e) => handleToggleVisibility(e, pl.id)}
+                                                token={token}
+                                                navigate={navigate}
+                                                addSongId={addSongId}
+                                                addingId={addingId}
+                                                handleAdd={() => handleAdd(pl.id)}
+                                            />
+                                        );
+                                    })
+                            )}
                         </div>
                     )}
                     {error && <p className="text-red-400 mt-2">{error}</p>}

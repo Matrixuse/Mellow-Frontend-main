@@ -1,11 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Play, MoreVertical, Trash2, Music, Shuffle, Lock, Globe } from 'lucide-react';
+import React, { useState, useEffect, useContext } from 'react';
+import { ArrowLeft, Play, MoreVertical, Trash2, Music, Shuffle, Lock, Globe, Heart, Pin } from 'lucide-react';
+import { FavoritesContext } from '../contexts/FavoritesContext';
 import { getPlaylistById, removeSongFromPlaylist, reorderPlaylistSongs, togglePlaylistVisibility } from '../api/playlistService';
-import { Link } from 'react-router-dom';
+import { togglePinPlaylist } from '../api/userService';
+import { Link, useNavigate } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 
 const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQueue, currentSongId, isPlaying, onClose, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onUsePlaylistQueue }) => {
+    const navigate = useNavigate();
+    const { isPlaylistFavorite, togglePlaylistFavorite } = useContext(FavoritesContext);
+    const [isFav, setIsFav] = useState(false);
     const [playlist, setPlaylist] = useState(null);
+    const [followingMap, setFollowingMap] = useState({});
+    const currentUserId = (() => {
+        try {
+            const u = JSON.parse(localStorage.getItem('user') || '{}');
+            return u && u.id ? String(u.id) : null;
+        } catch { return null; }
+    })();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [toast, setToast] = useState(null);
@@ -14,6 +26,9 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [draggedSongId, setDraggedSongId] = useState(null);
     const [query, setQuery] = useState('');
+
+    const [isPinned, setIsPinned] = useState(false);
+
     
     // Use prop-passed shuffle state if available, otherwise fall back to local state
     const isShuffleMode = isPlaylistShuffleMode !== undefined ? isPlaylistShuffleMode : false;
@@ -24,6 +39,8 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
     };
 
     const loadPlaylist = async () => {
+        // reset favorite state when loading a new playlist
+        setIsFav(false);
         try {
             setIsLoading(true);
             setError(null);
@@ -59,6 +76,10 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                     }));
                 }
                 setPlaylist(playlistData);
+                // update favorite banner after loading from server
+                if (playlistData && playlistData.id) {
+                    setIsFav(isPlaylistFavorite(playlistData.id) || !!playlistData.isFavorite);
+                }
             } catch (err) {
                 if (!mounted) return;
                 setError(err.message);
@@ -71,6 +92,39 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
         doLoad();
         return () => { mounted = false; };
     }, [playlistId, user?.token]);
+
+    // update pinned status whenever playlist or storage changes
+    useEffect(() => {
+        const updatePinned = () => {
+            try {
+                const stored = localStorage.getItem('pinnedPlaylists');
+                if (stored && playlist && playlist.id) {
+                    const arr = JSON.parse(stored);
+                    setIsPinned(arr.some(id => String(id) === String(playlist.id)));
+                } else {
+                    setIsPinned(false);
+                }
+            } catch {
+                setIsPinned(false);
+            }
+        };
+        updatePinned();
+        const onStorage = (e) => {
+            if (e.key === 'pinnedPlaylists') {
+                updatePinned();
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, [playlist]);
+
+
+    // synchronize favorite flag when playlist object or context changes
+    useEffect(() => {
+        if (playlist && playlist.id) {
+            setIsFav(isPlaylistFavorite(playlist.id) || !!playlist.isFavorite);
+        }
+    }, [playlist, isPlaylistFavorite]);
 
     const handleRemoveSong = async (songId) => {
         if (!window.confirm('Remove this song from playlist?')) {
@@ -119,6 +173,50 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
             setToast({ type: 'error', message: err.message });
         }
     };
+
+    const handleTogglePin = async () => {
+        if (!user?.token || !playlistId) {
+            setToast({ type: 'error', message: 'Not authenticated' });
+            return;
+        }
+        try {
+            const result = await togglePinPlaylist(playlistId, user.token);
+            // update local storage copy
+            try {
+                const stored = localStorage.getItem('pinnedPlaylists');
+                let arr = [];
+                if (stored) {
+                    arr = JSON.parse(stored);
+                }
+                if (result.pinned) {
+                    if (!arr.some(id => String(id) === String(playlistId))) {
+                        arr.push(playlistId);
+                    }
+                } else {
+                    arr = arr.filter(id => String(id) !== String(playlistId));
+                }
+                localStorage.setItem('pinnedPlaylists', JSON.stringify(arr));
+            } catch {}
+            setIsPinned(result.pinned);
+            setToast({ type: 'success', message: result.pinned ? 'Pinned playlist' : 'Unpinned playlist' });
+        } catch (err) {
+            setToast({ type: 'error', message: 'Failed to toggle pin: ' + (err.message || err) });
+            console.error('Toggle pin error:', err);
+        }
+    };
+
+    // load following list for display toggle
+    useEffect(() => {
+        const token = user && user.token;
+        if (!token) return;
+        import('../api/userService').then(m => {
+            m.getFollowing(token).then(list => {
+                const map = {};
+                list.forEach(u => { map[String(u.id)] = true; });
+                setFollowingMap(map);
+            }).catch(() => {});
+        }).catch(() => {});
+    }, [user]);
 
     // auto-hide toast
     useEffect(() => {
@@ -237,8 +335,37 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                 <button onClick={onClose} className="inline-flex p-2 rounded-full bg-gray-800 hover:bg-gray-700 mr-2">
                     <ArrowLeft size={24} />
                 </button>
-                <div className="flex-1">
-                    <h1 className="text-lg md:text-lg font-bold mb-2">{playlist.name}</h1>
+                    <div className="flex-1 flex flex-col">
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-lg md:text-lg font-bold mb-2">{playlist.name}</h1>
+                        {playlist.owner && (
+                            <div className="flex items-center gap-2">
+                                {playlist.owner !== currentUserId && (
+                                    <button
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            const token = user && user.token;
+                                            if (!token) return;
+                                            try {
+                                                const us = await import('../api/userService');
+                                                if (followingMap[playlist.owner]) {
+                                                    await us.unfollowUser(playlist.owner, token);
+                                                    setFollowingMap(prev => ({ ...prev, [playlist.owner]: false }));
+                                                } else {
+                                                    await us.followUser(playlist.owner, token);
+                                                    setFollowingMap(prev => ({ ...prev, [playlist.owner]: true }));
+                                                }
+                                            } catch (err) {
+                                                console.error('follow toggle error', err);
+                                            }
+                                        }}
+                                        className="text-xs text-blue-400 hover:text-blue-200"
+                                    >{followingMap[playlist.owner] ? 'Unfollow' : 'Follow'}</button>
+                                )}
+                            </div>
+                        )}
+                        {/* removed inline heart button - replaced by action grid on the right */}
+                    </div>
                     {playlist.description && (
                         <p className="text-gray-400">{playlist.description}</p>
                     )}
@@ -246,36 +373,63 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                         {playlist.songCount} song{playlist.songCount !== 1 ? 's' : ''}
                     </p>
                 </div>
-                {/* Shuffle toggle button in top right */}
-                {playlist.songs && playlist.songs.length > 0 && (
-                    <button 
-                        onClick={() => handleToggleShuffleMode(!isShuffleMode)}
-                        className={`p-2 rounded-full transition-all ${
-                            isShuffleMode 
-                                ? 'bg-blue-600 shadow-lg shadow-blue-500/50 animate-pulse' 
-                                : 'bg-gray-600 hover:bg-gray-500'
-                        }`}
-                        title={isShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
+                {/* Action grid: 2x2 (Shuffle | Favorite) / (Public/Private | Pin) */}
+                <div className="ml-auto grid grid-cols-2 gap-2">
+                    {/* Top-left: Public / Private (was bottom-left) */}
+                    <button
+                        onClick={handleToggleVisibility}
+                        className={`p-2 rounded-full transition-all ${playlist.isPublic ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
+                        title={playlist.isPublic ? "Make private" : "Make public"}
                     >
-                        <Shuffle size={24} className="text-white" />
+                        {playlist.isPublic ? (
+                            <Globe size={24} className="text-white" />
+                        ) : (
+                            <Lock size={24} className="text-white" />
+                        )}
                     </button>
-                )}
-                {/* Visibility toggle button */}
-                <button 
-                    onClick={handleToggleVisibility}
-                    className={`p-2 rounded-full transition-all ${
-                        playlist.isPublic
-                            ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30'
-                            : 'bg-gray-600 hover:bg-gray-500'
-                    }`}
-                    title={playlist.isPublic ? "Make private" : "Make public"}
-                >
-                    {playlist.isPublic ? (
-                        <Globe size={24} className="text-white" />
+
+                    {/* Top-right: Pin (was top-right Favorite) */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleTogglePin(); }}
+                        disabled={!user?.token}
+                        title={isPinned ? "Unpin playlist" : "Pin playlist"}
+                        className={`p-2 rounded-full transition-all ${!user?.token ? 'bg-gray-500 cursor-not-allowed opacity-50' : isPinned ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
+                    >
+                        <Pin size={24} className="text-white" />
+                    </button>
+
+                    {/* Bottom-left: Shuffle (was top-left) */}
+                    {playlist.songs && playlist.songs.length > 0 ? (
+                        <button
+                            onClick={() => handleToggleShuffleMode(!isShuffleMode)}
+                            className={`p-2 rounded-full transition-all ${isShuffleMode ? 'bg-blue-600 shadow-lg shadow-blue-500/50 animate-pulse' : 'bg-gray-600 hover:bg-gray-500'}`}
+                            title={isShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
+                        >
+                            <Shuffle size={24} className="text-white" />
+                        </button>
                     ) : (
-                        <Lock size={24} className="text-white" />
+                        <div />
                     )}
-                </button>
+
+                    {/* Bottom-right: Favorite (was bottom-right Pin) */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); (async () => {
+                            try {
+                                const newState = await togglePlaylistFavorite(playlist.id);
+                                setIsFav(newState);
+                                setToast({ type: 'success', message: newState ? 'Added playlist to favorites' : 'Removed playlist from favorites' });
+                            } catch (err) {
+                                console.error('favorite toggle error:', err);
+                                setToast({ type: 'error', message: err.message || 'Failed to update favorite' });
+                            }
+                        })(); }}
+                        disabled={!user?.token}
+                        title={isFav ? 'Unfavorite playlist' : 'Favorite playlist'}
+                        className={`p-2 rounded-full transition-all ${!user?.token ? 'bg-gray-500 cursor-not-allowed opacity-50' : isFav ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
+                    >
+                        <Heart size={20} className="text-white" fill={isFav ? 'currentColor' : 'none'} strokeWidth={isFav ? 0 : 2} />
+                    </button>
+                </div>
             </div>
 
             {/* Thin search bar for filtering songs in this playlist */}

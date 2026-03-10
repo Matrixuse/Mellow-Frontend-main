@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { MoreVertical } from 'lucide-react';
+import { FavoritesContext } from '../contexts/FavoritesContext';
 
 export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, onNavigateToArtist, onReport }) {
   const [open, setOpen] = useState(false);
@@ -12,6 +13,8 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
+
+  const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
   const handleToggle = (e) => {
     e.stopPropagation();
@@ -26,6 +29,7 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
       {open && (
         <div className="absolute right-0 mt-2 w-44 bg-gray-900 text-white rounded-md shadow-lg z-50 overflow-hidden">
           <button onClick={(e) => { e.stopPropagation(); setOpen(false); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to Queue</button>
+          <button onClick={(e) => { e.stopPropagation(); setOpen(false); toggleSongFavorite && toggleSongFavorite(song.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">{isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}</button>
           <button onClick={(e) => { e.stopPropagation(); setOpen(false); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to Playlist</button>
           <button onClick={(e) => { e.stopPropagation(); setOpen(false); onNavigateToArtist && onNavigateToArtist(Array.isArray(song.artist) ? song.artist[0] : song.artist); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Artist</button>
           <button onClick={(e) => { e.stopPropagation(); setOpen(false); onReport && onReport(song); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Report</button>

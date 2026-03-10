@@ -174,8 +174,9 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     
                                     {upNextItems.map((song, index) => {
                                         const isActive = currentSong && String(song.id) === String(currentSong.id);
+                                        const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
                                         return (
-                                        <div key={`${song.id}-${index}`} className={`flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-blue-900/25 to-transparent' : 'hover:bg-gray-700/30'}`}>
+                                        <div key={`${song.id}-${index}`} className={`flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-blue-900/25 to-transparent' : 'hover:bg_gray-700/30'}`}>
                                             <img 
                                                 src={song.coverUrl} 
                                                 alt={song.title}
@@ -199,6 +200,16 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                                     <div className="absolute right-3 top-12 w-48 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1 z-50">
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenMenuId(null);
+                                                                toggleSongFavorite(song.id).catch(() => {});
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                                                        >
+                                                            {isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}
+                                                        </button>
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onShowArtist && onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onReportSong && onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
                                                     </div>
@@ -219,7 +230,9 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                             {relatedItems.length > 0 ? (
                                 <div className="space-y-2">
                                     
-                                    {relatedItems.map((song, index) => (
+                                    {relatedItems.map((song, index) => {
+                                        const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
+                                        return (
                                         <div key={`${song.id}-${index}`} className="flex items-center gap-2 p-2 rounded hover:bg-gray-700/30 transition-colors relative">
                                             <img 
                                                 src={song.coverUrl} 
@@ -239,13 +252,24 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                                     <div className="absolute right-3 top-12 w-48 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1 z-50">
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenMenuId(null);
+                                                                toggleSongFavorite(song.id).catch(() => {});
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                                                        >
+                                                            {isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}
+                                                        </button>
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onShowArtist && onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
                                                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onReportSong && onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-                                    ))}
+                                    );
+                                })}
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-32">
