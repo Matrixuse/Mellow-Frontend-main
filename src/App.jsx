@@ -63,8 +63,6 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                 <div className="relative flex items-center gap-3">
                     <div className="hidden md:flex items-center gap-2">
                         <Link to="/playlists" className="px-3 py-2 bg-blue-600 rounded-full text-white hover:bg-blue-500">Playlists</Link>
-                        <Link to="/recommendations" className="px-3 py-2 bg-green-600 rounded-full text-white hover:bg-green-500">Recommendations</Link>
-                        <Link to="/feed" className="px-3 py-2 bg-purple-600 rounded-full text-white hover:bg-purple-500">Feed</Link>
                     </div>
                 </div>
             </div>
@@ -163,30 +161,32 @@ const LibraryPage = React.memo(() => {
     return (
         <div className="p-4 flex-1 overflow-auto">
             <div className="flex items-center justify-between mb-4">
-                <div className="hidden md:flex items-center ml-3 w-full">
-                    {/* Desktop search bar - placed left of the profile greeting */}
-                    <div className="relative mr-6 w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <input
-                            id="global-search-input"
-                            type="text"
-                            placeholder="Search songs or artists"
-                            value={searchTerm || ''}
-                            onChange={(e) => { try { onSearchChange && onSearchChange(e); } catch (err) {} }}
-                            onFocus={() => { try { onSearchBarClick && onSearchBarClick(); } catch (err) {} }}
-                            className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
-                            autoComplete="off"
-                        />
-                        {searchTerm && (
-                            <button onClick={() => { try { onClearSearch && onClearSearch(); } catch (err) {} }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                                <X size={18} />
-                            </button>
-                        )}
-
+                <div className="hidden md:flex items-center ml-3 w-full justify-between">
+                    {/* Left: Desktop search bar */}
+                    <div className="flex items-center">
+                        <div className="relative mr-6 w-80">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input
+                                id="global-search-input"
+                                type="text"
+                                placeholder="Search songs or artists"
+                                value={searchTerm || ''}
+                                onChange={(e) => { try { onSearchChange && onSearchChange(e); } catch (err) {} }}
+                                onFocus={() => { try { onSearchBarClick && onSearchBarClick(); } catch (err) {} }}
+                                className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                                autoComplete="off"
+                            />
+                            {searchTerm && (
+                                <button onClick={() => { try { onClearSearch && onClearSearch(); } catch (err) {} }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                                    <X size={18} />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center">
-                        <span className="text-gray-300 font-medium mr-2">Hi,</span>
+                    {/* Right: profile + action buttons (desktop) */}
+                    <div className="flex items-center gap-3">
+                        <span className="text-gray-300 font-medium">Hi,</span>
                         <div className="relative">
                             <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer overflow-hidden" onClick={toggleLogoutVisible}>
                                 <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" />
@@ -200,6 +200,12 @@ const LibraryPage = React.memo(() => {
                                     <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700">Logout</button>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Desktop-only Recommendations & Feed links to the right of profile */}
+                        <div className="hidden md:flex items-center gap-2">
+                            <Link to="/recommendations" className="px-3 py-2 bg-green-600 rounded-full text-white hover:bg-green-500">Recommendations</Link>
+                            <Link to="/feed" className="px-3 py-2 bg-purple-600 rounded-full text-white hover:bg-purple-500">Recently Played</Link>
                         </div>
                     </div>
                 </div>
@@ -294,6 +300,81 @@ function App() {
 
     const audioRef = useRef(null);
     const currentSong = songs[currentSongIndex];
+
+    // Expose queueService for debugging in browser console (temporary)
+    useEffect(() => {
+        try { window.__queueService = queueService; } catch (e) {}
+        return () => { try { delete window.__queueService; } catch (e) {} };
+    }, []);
+
+    // Ensure recents are recorded when the currently playing song changes
+    useEffect(() => {
+        if (!currentSong) return;
+        try {
+                const songObj = currentSong;
+                const existing = JSON.parse(localStorage.getItem('recents') || '[]');
+                const filtered = existing.filter(e => String(e.id) !== String(songObj.id) && String(e.songId || '') !== String(songObj.id));
+            const entry = {
+                id: songObj.id || songObj.songId || null,
+                title: songObj.title || songObj.name || songObj.songTitle || '',
+                artist: songObj.artist || songObj.artists || songObj.artistName || '',
+                coverUrl: songObj.coverUrl || songObj.cover || '' ,
+                playedAt: Date.now()
+            };
+            filtered.unshift(entry);
+            const limited = filtered.slice(0, 200);
+                    try {
+                        localStorage.setItem('recents', JSON.stringify(limited));
+                        try { console.debug('App: wrote recents (playback), count=', limited.length); } catch (e) {}
+                    } catch (e) {
+                        console.debug('App: localStorage write failed for recents (playback)', e && e.message);
+                    }
+                    try { queueService.addRecentEntry && queueService.addRecentEntry(entry); } catch (e) {}
+                    try { window.dispatchEvent(new CustomEvent('recents-updated', { detail: entry })); } catch (e) {}
+        } catch (e) {
+            // ignore localStorage errors
+        }
+
+        // also attempt to notify backend when user is logged in
+        try {
+            const tok = (user && user.token) ? user.token : (() => { try { const u = JSON.parse(localStorage.getItem('user')||'{}'); return u.token; } catch { return null; } })();
+            if (tok && currentSong && (currentSong.id || currentSong.songId)) {
+                import('./api/userService').then(m => { m.addListenHistory(currentSong.id || currentSong.songId, tok).catch(() => {}); }).catch(() => {});
+            }
+        } catch (e) {}
+    }, [currentSong]);
+
+    // Write recents when playback starts (isPlaying transitions to true)
+    const prevIsPlayingRef = useRef(false);
+    useEffect(() => {
+        const prev = prevIsPlayingRef.current;
+        if (!prev && isPlaying && currentSong) {
+            try {
+                const songObj = currentSong;
+                const existing = JSON.parse(localStorage.getItem('recents') || '[]');
+                // avoid duplicate if most recent is same song
+                const topId = existing && existing[0] ? (existing[0].id || existing[0].songId) : null;
+                if (String(topId) !== String(songObj.id || songObj.songId)) {
+                    const filtered = (Array.isArray(existing) ? existing.filter(e => String(e.id) !== String(songObj.id) && String(e.songId || '') !== String(songObj.id)) : []);
+                    const entry = {
+                        id: songObj.id || songObj.songId || null,
+                        title: songObj.title || songObj.name || songObj.songTitle || '',
+                        artist: songObj.artist || songObj.artists || songObj.artistName || '',
+                        coverUrl: songObj.coverUrl || songObj.cover || '' ,
+                        playedAt: Date.now()
+                    };
+                    filtered.unshift(entry);
+                    const limited = filtered.slice(0, 200);
+                    localStorage.setItem('recents', JSON.stringify(limited));
+                    try { console.debug('App: wrote recents (onPlay), count=', limited.length); } catch (e) {}
+                    try { window.dispatchEvent(new CustomEvent('recents-updated', { detail: entry })); } catch (e) {}
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+        prevIsPlayingRef.current = isPlaying;
+    }, [isPlaying, currentSong]);
     
     // Utility: shuffle array copy
     const shuffleArray = (arr) => {
@@ -1491,7 +1572,14 @@ function App() {
             filtered.unshift(entry);
             // limit to 200 entries
             const limited = filtered.slice(0, 200);
-            localStorage.setItem('recents', JSON.stringify(limited));
+            try {
+                localStorage.setItem('recents', JSON.stringify(limited));
+                try { console.debug('App: wrote recents (select), count=', limited.length); } catch (e) {}
+            } catch (e) {
+                console.debug('App: localStorage write failed for recents (select)', e && e.message);
+            }
+            try { queueService.addRecentEntry && queueService.addRecentEntry(entry); } catch (e) {}
+            try { window.dispatchEvent(new CustomEvent('recents-updated', { detail: entry })); } catch (e) {}
         } catch (e) {
             // ignore localStorage errors (e.g., private mode)
         }

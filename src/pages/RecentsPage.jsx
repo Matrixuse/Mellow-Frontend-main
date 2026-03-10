@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef, useContext } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import ImageWithFallback from '../components/ImageWithFallback';
 import { getListenHistory } from '../api/userService';
-import { MoreHorizontal, MoreVertical, Play } from 'lucide-react';
+import { MoreHorizontal, MoreVertical, Play, ArrowLeft } from 'lucide-react';
 import { Pause } from 'lucide-react';
 import { FavoritesContext } from '../contexts/FavoritesContext';
+import queueService from '../services/queueService';
 
 const RecentsPage = ({}) => {
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,16 @@ const RecentsPage = ({}) => {
       } catch (e) {
         // ignore parse errors
       }
+      // localStorage may be blocked (tracking prevention) — fallback to in-memory queueService
+      try {
+        const fallback = queueService.getRecentEntries && queueService.getRecentEntries();
+        if (Array.isArray(fallback) && fallback.length > 0) {
+          setSongs(fallback);
+          setError(null);
+          setLoading(false);
+          return true;
+        }
+      } catch (e) {}
       return false;
     };
 
@@ -95,6 +106,38 @@ const RecentsPage = ({}) => {
     return () => { mounted = false; };
   }, []);
 
+  // Update recents when localStorage changes (other tabs) or app dispatches an event
+  useEffect(() => {
+    const reload = () => {
+      try {
+        const raw = JSON.parse(localStorage.getItem('recents') || '[]');
+        console.debug('RecentsPage: reload from storage, items=', Array.isArray(raw) ? raw.length : 'invalid');
+        if (Array.isArray(raw) && raw.length > 0) {
+          setSongs(raw);
+          return;
+        }
+      } catch (e) { console.debug('RecentsPage: reload parse error', e); }
+      // fallback to in-memory queueService entries
+      try {
+        const fallback = queueService.getRecentEntries && queueService.getRecentEntries();
+        if (Array.isArray(fallback) && fallback.length > 0) {
+          setSongs(fallback);
+          console.debug('RecentsPage: reload from in-memory fallback, items=', fallback.length);
+        }
+      } catch (e) { /* ignore */ }
+    };
+    const onStorage = (e) => {
+      if (!e || e.key === 'recents') reload();
+    };
+    const onCustom = (ev) => { console.debug('RecentsPage: received recents-updated', ev && ev.detail); reload(); };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('recents-updated', onCustom);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('recents-updated', onCustom);
+    };
+  }, []);
+
   useEffect(() => {
     function onDocClick() { setActiveMenuId(null); }
     document.addEventListener('click', onDocClick);
@@ -106,9 +149,17 @@ const RecentsPage = ({}) => {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold text-white mb-4">Recents</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-500">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+          <h2 className="text-lg font-semibold text-white">Recents</h2>
+        </div>
+      </div>
       {songs.length === 0 ? (
-        <p className="text-gray-400">No recent plays yet.</p>
+        <p className="text-gray-400">No recently played songs</p>
       ) : (
         <div className="space-y-2">
           {songs.map((s) => {
@@ -141,7 +192,7 @@ const RecentsPage = ({}) => {
                           <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof onAddToPlaylist === 'function') onAddToPlaylist(s.id || s.songId || s); else { const e = new CustomEvent('open-add-to-playlist', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to playlist</button>
                           <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof toggleSongFavorite === 'function') toggleSongFavorite(s.id || s.songId || s); else { const e = new CustomEvent('toggle-favorite', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to favourites</button>
                           <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const artistName = Array.isArray(s.artist) ? s.artist[0] : (s.artist || s.artists || s.artistName || ''); if (artistName) { if (typeof onShowArtist === 'function') onShowArtist(artistName); else navigate(`/artist/${encodeURIComponent(artistName)}`); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Artist</button>
-                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const raw = JSON.parse(localStorage.getItem('recents')||'[]'); const list = raw.filter(item => String(item.id) !== String(idVal)); localStorage.setItem('recents', JSON.stringify(list)); setSongs(list); } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Remove from recents</button>
+                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const raw = JSON.parse(localStorage.getItem('recents')||'[]'); const list = raw.filter(item => String(item.id) !== String(idVal)); localStorage.setItem('recents', JSON.stringify(list)); setSongs(list); try { console.debug('RecentsPage: removed item, newCount=', list.length); } catch(e){} try { window.dispatchEvent(new CustomEvent('recents-updated', { detail: { removedId: idVal } })); } catch(e){} } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Remove from recents</button>
                         </div>
                       )}
                     </div>

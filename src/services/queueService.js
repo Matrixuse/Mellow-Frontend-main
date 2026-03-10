@@ -7,6 +7,31 @@ class QueueService {
         this.originalQueue = []; // Store original order when shuffle is active
         this._nextInsertOffset = 0; // number of items inserted after currentIndex (for 'next' position)
         this._recentlyPlayed = []; // for smart shuffle (avoid repeats)
+        this._recentEntries = []; // fallback storage for recents (objects)
+    }
+
+    // Add a recent entry (object) to in-memory recents fallback
+    addRecentEntry(entry) {
+        try {
+            if (!entry) return;
+            // normalize id
+            const id = entry.id || entry.songId || null;
+            if (!id) return;
+            // remove existing with same id
+            this._recentEntries = this._recentEntries.filter(e => String(e.id) !== String(id));
+            this._recentEntries.unshift({ ...entry, id });
+            if (this._recentEntries.length > 200) this._recentEntries = this._recentEntries.slice(0, 200);
+            // also keep a minimal id history for shuffle avoidance
+            this._recentlyPlayed.push(id);
+            if (this._recentlyPlayed.length > 50) this._recentlyPlayed.shift();
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    // Return recent entries (objects) from in-memory fallback
+    getRecentEntries() {
+        return [...this._recentEntries];
     }
 
     // Add songs to queue

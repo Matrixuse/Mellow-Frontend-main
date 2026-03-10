@@ -1,49 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import ImageWithFallback from '../components/ImageWithFallback';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import queueService from '../services/queueService';
 
 // Recents: show recently played songs for the current user (session-local)
 const FeedPage = () => {
     const outlet = useOutletContext() || {};
     const { onPlaySong, songs: allSongs = [] } = outlet;
-    const [recents, setRecents] = useState([]);
-
-    useEffect(() => {
-        // Try persistent storage first, fall back to in-memory queueService history
+    // Compute recents from localStorage 'recents' (fallback to queueService) and map to song objects
+    const recents = useMemo(() => {
         let ids = [];
         try {
-            const raw = localStorage.getItem('recentlyPlayed');
+            const raw = localStorage.getItem('recents') || localStorage.getItem('recentlyPlayed');
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) ids = parsed;
+                if (Array.isArray(parsed)) {
+                    // parsed may be an array of entries (objects) or ids
+                    if (parsed.length > 0 && typeof parsed[0] === 'object') ids = parsed.map(p => p.id || p.songId).filter(Boolean);
+                    else ids = parsed.slice();
+                }
             }
-        } catch (e) {
-            ids = [];
-        }
+        } catch (e) { ids = []; }
 
         if (!ids || ids.length === 0) {
-            // queueService keeps recent ids in memory as a fallback
             ids = Array.isArray(queueService._recentlyPlayed) ? [...queueService._recentlyPlayed] : [];
         }
 
         // Show newest first
         ids = ids.slice().reverse();
 
-        // Build map of songs from available songs in outlet/context
         const map = {};
         (allSongs || []).forEach(s => { if (s && s.id) map[s.id] = s; });
 
-        // Map ids to song objects when possible. If song object missing, skip.
         const entries = ids.map(id => map[id]).filter(Boolean);
-        setRecents(entries);
+        return entries;
     }, [allSongs]);
+
+    const navigate = useNavigate();
 
     return (
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-gray-900">
             <div className="p-2 md:p-4 border-b border-gray-700 bg-gray-800/30">
-                <h1 className="text-lg ml-2 font-bold text-white">Recents</h1>
-                <p className="text-gray-400 mt-1 ml-2">Songs you've listened recently</p>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-600 text-white hover:bg-gray-500">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                        <span>Back</span>
+                    </button>
+                    <div>
+                        <h1 className="text-lg font-bold text-white">Recents</h1>
+                        <p className="text-gray-400 mt-1">Songs you've listened recently</p>
+                    </div>
+                </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
                 {recents.length === 0 && (
