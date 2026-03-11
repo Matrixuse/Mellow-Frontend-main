@@ -92,7 +92,7 @@ const TopArtists = () => (
                         src={artist.imageUrl}
                         alt={artist.name}
                         className="w-24 h-24 sm:w-40 sm:h-40 rounded-full object-cover shadow-lg transition-transform duration-300"
-                        onError={(e) => { e.target.onerror = null; e.target.src=`https://placehold.co/200x200/4A5568/FFFFFF?text=${artist.name.charAt(0)}`; }}
+                        onError={(e) => { e.target.onerror = null; e.target.src='/artists/kk.png'; }}
                     />
                     <div className="text-center">
                         <p className="text-sm sm:text-base font-semibold truncate w-full">{artist.name}</p>
