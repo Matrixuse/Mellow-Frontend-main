@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 
-const DEFAULT_ARTIST_IMAGE = '/artists/default-artist.png';
+const DEFAULT_ARTIST_IMAGE = '/artists/kk.png';
 
 const topArtists = [
     { name: 'KK', imageUrl: '/artists/kk.png' },
