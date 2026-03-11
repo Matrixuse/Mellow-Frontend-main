@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 
+const DEFAULT_ARTIST_IMAGE = '/artists/default-artist.png';
+
 const topArtists = [
     { name: 'KK', imageUrl: '/artists/kk.png' },
     { name: 'Arijit Singh', imageUrl: '/artists/arijit.png' },
@@ -217,7 +219,12 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                         return (
                                         <div key={song.id} className={`w-full flex items-center gap-2 p-1 rounded-md transition ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/60 hover:bg-gray-700/80'}`}>
                                             <button onClick={() => onSelectSong(song.id)} className="flex items-center gap-2 flex-1 text-left">
-                                                <ImageWithFallback src={song.coverUrl} alt={song.title} className={`w-8 h-8 rounded-md object-cover ${isActive ? 'ring-2 ring-blue-500' : ''}`} fallback={'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'} />
+                                                <ImageWithFallback
+                                                    src={song.coverUrl}
+                                                    fallback={DEFAULT_ARTIST_IMAGE}
+                                                    alt={song.title}
+                                                    className="w-8 h-8 rounded-md object-cover"
+                                                />
                                                 <div className="flex-1 text-left">
                                                     <div className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</div>
                                                     <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
@@ -244,7 +251,12 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                         className={`group relative p-4 rounded-lg cursor-pointer transition-all duration-300 flex flex-col ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
                                     >
                                         <div className="relative mb-3">
-                                            <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-auto aspect-square rounded-md object-cover" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
+                                            <ImageWithFallback
+                                                src={song.coverUrl}
+                                                fallback={DEFAULT_ARTIST_IMAGE}
+                                                alt={song.title}
+                                                className="w-full h-auto aspect-square rounded-md object-cover"
+                                            />
                                             <div className={`absolute bottom-2 right-14 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}>
                                                 <Play size={24} className="text-white fill-current" />
                                             </div>
@@ -301,7 +313,12 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                     className="group relative bg-gray-800/50 hover:bg-gray-700/80 p-4 rounded-lg cursor-pointer transition-all duration-300 flex flex-col"
                                 >
                                     <div className="relative mb-3">
-                                        <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-auto aspect-square rounded-md object-cover" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
+                                        <ImageWithFallback
+                                            src={song.coverUrl}
+                                            fallback={DEFAULT_ARTIST_IMAGE}
+                                            alt={song.title}
+                                            className="w-full h-auto aspect-square rounded-md object-cover"
+                                        />
                                         <div className={`absolute bottom-2 right-14 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${currentSongId === song.id && isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}>
                                             <Play size={24} className="text-white fill-current" />
                                         </div>
