@@ -1,13 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useContext } from 'react';
 import { Play, Pause, Shuffle, MoreVertical } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { useSpring } from '@react-spring/web';
+import { FavoritesContext } from '../contexts/FavoritesContext';
 
 const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onNext, onPrev, queue = [], relatedSongs = [], initialTab = 'upnext', onTogglePlayerExpand = () => {}, isShuffle = false, onShuffleToggle = () => {}, onSelectSong = () => {}, onAddToQueue = () => {}, onAddToPlaylist = () => {}, onShowArtist = () => {}, onReportSong = () => {} }) => {
     const [activeTab, setActiveTab] = React.useState(initialTab); // 'upnext' or 'related'
     const [openMenuId, setOpenMenuId] = useState(null);
     const contentRef = useRef(null);
     const containerRef = useRef(null);
+    const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
     // spring for y translation (slower gesture animation: lower tension, higher friction)
     const SPRING_CONFIG = { tension: 1200, friction: 40 };
@@ -174,7 +176,6 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     
                                     {upNextItems.map((song, index) => {
                                         const isActive = currentSong && String(song.id) === String(currentSong.id);
-                                        const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
                                         return (
                                         <div key={`${song.id}-${index}`} className={`flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-blue-900/25 to-transparent' : 'hover:bg_gray-700/30'}`}>
                                             <img 
@@ -231,7 +232,6 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                 <div className="space-y-2">
                                     
                                     {relatedItems.map((song, index) => {
-                                        const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
                                         return (
                                         <div key={`${song.id}-${index}`} className="flex items-center gap-2 p-2 rounded hover:bg-gray-700/30 transition-colors relative">
                                             <img 
