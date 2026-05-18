@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Play, Pause, Shuffle, Search, Home, List, X, ChevronDown, Globe, Lock, Heart } from 'lucide-react';
 // Context menus intentionally hidden in search results overlay
@@ -164,6 +164,17 @@ const SearchResults = ({
         };
     }, [initialSearchTerm, performSearch]);
     
+    // Get random songs for default display
+    const getRandomSongs = useCallback((count = 30) => {
+        if (!allSongs || allSongs.length === 0) return [];
+        const shuffled = [...allSongs].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    }, [allSongs]);
+
+    const randomSongs = useMemo(() => {
+        return getRandomSongs(30);
+    }, [getRandomSongs]);
+    
     // Get current song from allSongs or from prop
     const currentSong = propCurrentSong || allSongs.find(s => String(s.id) === String(currentSongId));
     
@@ -245,13 +256,13 @@ const SearchResults = ({
                                 </div>
                             )}
 
-                            {/* Songs Section */}
+                            {/* Songs Section - Card View */}
                             {searchResults.songs.length > 0 ? (
                                 <div>
                                     {(searchResults.artists.length > 0 || searchResults.playlists.length > 0) && (
                                         <h2 className="text-sm font-bold text-white"></h2>
                                     )}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 gap-2">
                                     {searchResults.songs.map((song) => {
                                     const fav = isSongFavorite(song.id) || song.isFavorite;
                                     return (
@@ -260,16 +271,20 @@ const SearchResults = ({
                                             onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
                                             role="button"
                                             tabIndex={0}
-                                            className="flex items-center gap-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 p-2 transition-colors cursor-pointer"
+                                            className="group relative p-1 rounded-lg cursor-pointer bg-gray-800/50 hover:bg-gray-700/80 transition-colors"
                                         >
-                                            <div className="w-8 h-8 rounded-md overflow-hidden bg-gray-700 flex-shrink-0">
-                                                <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
+                                            <div className="relative mb-1">
+                                                <ImageWithFallback
+                                                    src={song.coverUrl}
+                                                    alt={song.title}
+                                                    className="w-full h-auto aspect-square rounded-md object-cover"
+                                                    fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                                                />
+                                                <div className="absolute bottom-1 right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Play size={14} className="text-white fill-current" />
+                                                </div>
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="font-semibold text-xs truncate text-white">{song.title}</h3>
-                                                <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : song.artist}</p>
-                                            </div>
-                                            {/* context menu hidden in search results */}
+                                            <h4 className="text-xs font-semibold truncate text-white">{song.title}</h4>
                                         </div>
                                     );
                                 })}
@@ -337,8 +352,34 @@ const SearchResults = ({
                             )}
 
                             {!searchTerm && !isSearching && (
-                                <div className="h-full flex items-center justify-center text-gray-400">
-                                    <p>Search songs, artists, or playlists</p>
+                                <div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {randomSongs.map((song) => {
+                                            const fav = isSongFavorite(song.id) || song.isFavorite;
+                                            return (
+                                                <div
+                                                    key={song.id}
+                                                    onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    className="group relative p-1 rounded-lg cursor-pointer bg-gray-800/50 hover:bg-gray-700/80 transition-colors"
+                                                >
+                                                    <div className="relative mb-1">
+                                                        <ImageWithFallback
+                                                            src={song.coverUrl}
+                                                            alt={song.title}
+                                                            className="w-full h-auto aspect-square rounded-md object-cover"
+                                                            fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                                                        />
+                                                        <div className="absolute bottom-1 right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Play size={14} className="text-white fill-current" />
+                                                        </div>
+                                                    </div>
+                                                    <h4 className="text-xs font-semibold truncate text-white">{song.title}</h4>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </>

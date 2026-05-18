@@ -53,7 +53,7 @@ const UploadSongForm = ({ onSongUploaded }) => {
     // Available mood options
     const moodOptions = [
         'Punjabi', 'Traditional', 'Chill', 'Hip Hop Mix', 
-        'Soft & HeartBreak', 'Smooth', 'Party', 'Romantic'
+        'Soft & HeartBreak', 'Smooth', 'Party', 'Romantic', "Old is Gold", "Hollywood Mix"
     ];
 
     const handleMoodToggle = (mood) => {

@@ -147,22 +147,25 @@ const RecentsPage = ({}) => {
   if (loading) return <div className="p-4">Loading recents...</div>;
   if (error) return <div className="p-4 text-red-400">{error}</div>;
 
+  // Limit to recent 30 songs
+  const recentSongs = songs.slice(0, 30);
+
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col h-full min-h-0 min-w-0">
+      <div className="p-4 border-b border-gray-700 bg-gray-800/30 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-500">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-900">
             <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
           </button>
           <h2 className="text-lg font-semibold text-white">Recents</h2>
         </div>
       </div>
-      {songs.length === 0 ? (
-        <p className="text-gray-400">No recently played songs</p>
-      ) : (
-        <div className="space-y-2">
-          {songs.map((s) => {
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+        {recentSongs.length === 0 ? (
+          <p className="text-gray-400">No recently played songs</p>
+        ) : (
+          <div className="space-y-2">
+            {recentSongs.map((s) => {
             const key = s.id || s.songId || JSON.stringify(s);
             const title = s.title || s.name || s.songTitle || 'Unknown';
             const artist = Array.isArray(s.artist) ? s.artist.join(', ') : (s.artist || s.artists || s.artistName || '');
@@ -201,8 +204,9 @@ const RecentsPage = ({}) => {
               </div>
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

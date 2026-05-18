@@ -29,8 +29,11 @@ const nativeMediaService = {
     };
     const payloadKey = `${payload.title}|${payload.artist}|${payload.cover}`;
 
+    console.debug('[nativeMediaService] start called with track:', track.title, 'isPlaying:', isPlaying);
+
     try {
       if (NativeMedia && NativeMedia.startService) {
+        console.debug('[nativeMediaService] Using NativeMedia plugin');
         if (_serviceStarted && _lastPayloadKey === payloadKey) {
           try { await NativeMedia.updateMetadata(payload); } catch (e) {}
           return true;
@@ -49,10 +52,12 @@ const nativeMediaService = {
     }
 
     if (musicControlsService.isAvailable()) {
+      console.debug('[nativeMediaService] Falling back to musicControlsService');
       _serviceStarted = true;
       _lastPayloadKey = `${track.title || 'Mellow'}|${Array.isArray(track.artist) ? track.artist.join(', ') : track.artist || ''}|${track.coverUrl || ''}`;
       return musicControlsService.start(track, isPlaying);
     }
+    console.debug('[nativeMediaService] No media service available');
     return false;
   },
 

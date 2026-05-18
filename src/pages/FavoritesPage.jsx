@@ -186,7 +186,7 @@ const FavoritesPage = () => {
                                     const isCurrent = String(song.id) === String(currentSongId);
                                     return (
                                         <div key={song.id} onClick={() => safeSelectSong(song)} className={`flex items-center bg-gray-800/50 rounded-lg p-2 transition-colors cursor-pointer ${isCurrent ? 'bg-blue-700' : 'hover:bg-gray-700/50'}`}>
-                                            <div className="relative w-7 h-7 rounded-md overflow-hidden flex-shrink-0 mr-3">
+                                            <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0 mr-3">
                                                 <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -232,10 +232,14 @@ const FavoritesPage = () => {
                                         <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0 mr-3">
                                             <ImageWithFallback src={playlist.coverUrl} alt={playlist.name} className="w-full h-full object-cover" />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium text-sm truncate text-white">{playlist.name}</h3>
-                                            <p className="text-xs text-gray-400 truncate">{playlist.owner || 'Unknown'}</p>
+                                        <div className="flex justify-between flex-1 min-w-0">
+                                           <div>
+                                             <h3 className="font-medium text-sm truncate text-white">{playlist.name}</h3>
+                                             <p className="text-xs text-gray-400 truncate">{playlist.owner || 'Unknown'}</p>
+                                           </div>
+                                           <div className='mt-2.5 mr-1'>
                                             <p className="text-xs text-gray-500">{playlist.songs ? playlist.songs.length : 0} song{playlist.songs && playlist.songs.length !== 1 ? 's' : ''}</p>
+                                           </div>
                                         </div>
                                         <div className="relative playlist-menu">
                                             <button onClick={(e) => { e.stopPropagation(); setMenuOpenPlaylistId(menuOpenPlaylistId === playlist.id ? null : playlist.id); }} className="p-2 text-gray-400 hover:text-white transition-colors" aria-label="More options"><MoreVertical size={16} /></button>

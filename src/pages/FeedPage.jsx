@@ -42,9 +42,8 @@ const FeedPage = () => {
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-gray-900">
             <div className="p-2 md:p-4 border-b border-gray-700 bg-gray-800/30">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-600 text-white hover:bg-gray-500">
+                    <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-900">
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                        <span>Back</span>
                     </button>
                     <div>
                         <h1 className="text-lg font-bold text-white">Recents</h1>

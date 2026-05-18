@@ -9,7 +9,9 @@ class MusicControlsService {
   }
 
   isAvailable() {
-    return this.available;
+    const available = !!window.MusicControls || !!(window.cordova && window.cordova.plugins && window.cordova.plugins.MusicControls);
+    console.debug('[musicControlsService] isAvailable:', available, 'window.MusicControls:', !!window.MusicControls, 'cordova plugin:', !!(window.cordova && window.cordova.plugins && window.cordova.plugins.MusicControls));
+    return available;
   }
 
   // Create the notification and show controls on lock screen
@@ -44,6 +46,7 @@ class MusicControlsService {
               // action will be an object with message property
               const message = action && action.message ? action.message : action;
               // forward events via a simple event system
+              console.debug('[musicControls] received action:', action, 'message:', message);
               this.onEvent && this.onEvent(message);
             });
             this.subscribed = true;

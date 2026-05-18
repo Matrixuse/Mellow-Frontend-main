@@ -1,0 +1,57 @@
+/* Marquee scrolling effect for long text */
+.marquee {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.marquee-animate {
+    animation: scroll-text 20s linear infinite;
+}
+
+.marquee-animate:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scroll-text {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Marquee for player title - scrolls when hovered */
+.player-title-marquee {
+    display: inline-block;
+    white-space: nowrap;
+    max-width: 100%;
+    animation: none;
+}
+
+.player-title-marquee.is-long {
+    animation: scroll-player-title 15s linear infinite;
+}
+
+.player-title-marquee.is-long:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scroll-player-title {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* For mobile player bar truncation */
+.text-truncate-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

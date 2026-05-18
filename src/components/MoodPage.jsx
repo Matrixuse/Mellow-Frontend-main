@@ -55,7 +55,9 @@ const MoodPage = () => {
                 'Chill': ['chill', 'relaxing', 'ambient', 'indie', 'acoustic', 'folk', 'peaceful', 'calm', 'mellow', 'soft'],
                 'Hip Hop Mix': ['hip hop', 'rap', 'trap', 'urban', 'street', 'gangsta', 'freestyle', 'beat', 'rhyme', 'flow'],
                 'Romantic': ['romantic', 'love', 'couple', 'valentine', 'wedding', 'proposal', 'intimate', 'passionate', 'sweet', 'tender'],
-                'Soft & HeartBreak': ['sad', 'emotional', 'melancholy', 'heartbreak', 'depressing', 'tearful', 'gloomy', 'sorrowful', 'soft', 'gentle']
+                'Soft & HeartBreak': ['sad', 'emotional', 'melancholy', 'heartbreak', 'depressing', 'tearful', 'gloomy', 'sorrowful', 'soft', 'gentle'],
+                'Old is Gold': ['old', 'classic', 'vintage', 'golden', 'evergreen', 'retro', 'timeless', 'nostalgia', 'rafi', 'kishore', 'lata', 'mukesh', 'md', 'raj', 'anand', 'kalyanji'],
+                'Hollywood Mix': ['hollywood', 'english', 'western', 'pop', 'rock', 'foreign', 'international', 'bollywood english', 'bollywood mix']
             };
             
             const keywords = moodKeywords[mood] || moodKeywords[Object.keys(moodKeywords).find(k => k.toLowerCase() === normalizedMood)] || [];
@@ -204,7 +206,7 @@ const MoodPage = () => {
             <div className="flex-grow overflow-y-auto custom-scrollbar">
                 {filteredSongs.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                        <div className="grid grid-cols-6 gap-2">
                             {filteredSongs.map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 return (
@@ -212,7 +214,7 @@ const MoodPage = () => {
                                         key={song.id} 
                                         className={`group relative p-2 rounded-lg cursor-pointer ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
                                     >
-                                        <div className="relative mb-4">
+                                        <div className="relative mb-2">
                                             <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer">
                                                 <ImageWithFallback
                                                     src={song.coverUrl}

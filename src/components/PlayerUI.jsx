@@ -7,6 +7,7 @@ import nativeMediaService from '../services/nativeMediaService';
 import ImageWithFallback from './ImageWithFallback';
 import { useDrag } from '@use-gesture/react';
 import { useSpring } from '@react-spring/web';
+import '../styles/marquee.css';
 
 const PlayerUI = ({ 
     currentSong, isPlaying, onPlayPause, onNext, onPrev, 
@@ -325,8 +326,8 @@ const PlayerUI = ({
                                 />
                             </div>
                             <div>
-                                <h2 className="text-base md:text-lg font-semibold truncate">{currentSong.title}</h2>
-                                <p className="text-xs md:text-sm text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
+                                <h2 className={`text-base md:text-lg font-semibold player-title-marquee ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`}>{currentSong.title}</h2>
+                                <p className="text-xs md:text-sm text-gray-400 text-truncate-ellipsis">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
                             </div>
                     </>
                 ) : (

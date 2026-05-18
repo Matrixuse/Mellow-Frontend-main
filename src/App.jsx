@@ -6,6 +6,7 @@ import apiClient from './api/apiClient';
 import AuthForm from './components/AuthForm';
 import queueService from './services/queueService';
 import nativeMediaService from './services/nativeMediaService';
+import musicControlsService from './services/musicControlsService';
 import AudioEngine from './services/audioEngine';
 import lockScreenService from './services/lockScreenService';
 import gestureService from './services/gestureService';
@@ -17,6 +18,7 @@ import { getSongs } from './api/songService';
 import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shuffle, Users } from 'lucide-react';
 import QueuePanel from './components/QueuePanel';
 import PlaylistModal from './components/PlaylistModal';
+import { addToListeningHistory } from './utils/quickPicksAlgorithm';
 import PlaylistPage from './components/PlaylistPage';
 import PlaylistsPage from './components/PlaylistsPage';
 import FeedbackPage from './components/FeedbackPage';
@@ -160,7 +162,7 @@ const LibraryPage = React.memo(() => {
 
     return (
         <div className="p-4 flex-1 overflow-auto">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
                 <div className="hidden md:flex items-center ml-3 w-full justify-between">
                     {/* Left: Desktop search bar */}
                     <div className="flex items-center">
@@ -204,7 +206,7 @@ const LibraryPage = React.memo(() => {
 
                         {/* Desktop-only Recommendations & Feed links to the right of profile */}
                         <div className="hidden md:flex items-center gap-2">
-                            <Link to="/recommendations" className="px-3 py-2 bg-green-600 rounded-full text-white hover:bg-green-500">Recommendations</Link>
+                            <Link to="/recommendations" className="px-3 py-2 bg-blue-600 rounded-full text-white hover:bg-blue-500">Recommendations</Link>
                             <Link to="/feed" className="px-3 py-2 bg-purple-600 rounded-full text-white hover:bg-purple-500">Recently Played</Link>
                         </div>
                     </div>
@@ -1422,9 +1424,30 @@ function App() {
             },
             onStop: () => { setIsPlaying(false); }
         });
+
+        if (musicControlsService.isAvailable()) {
+            console.debug('[App] Setting up musicControlsService event handler');
+            musicControlsService.setEventHandler((message) => {
+                console.debug('[App] musicControlsService event:', message);
+                if (!message || typeof message !== 'string') return;
+                const action = message.toLowerCase();
+                if (action.includes('play')) { setIsPlaying(true); }
+                else if (action.includes('pause')) { setIsPlaying(false); }
+                else if (action.includes('next')) { handleNext(); }
+                else if (action.includes('prev') || action.includes('previous')) { handlePrev(); }
+                else if (action.includes('toggle')) { setIsPlaying(prev => !prev); }
+                else if (action.includes('destroy')) {
+                    musicControlsService.stop();
+                }
+            });
+        } else {
+            console.debug('[App] musicControlsService not available');
+        }
+
         // cleanup: clear handlers
         return () => {
             try { lockScreenService.setEventHandlers({}); } catch (e) {}
+            try { musicControlsService.setEventHandler(null); } catch (e) {}
         };
     }, [handleNext, handlePrev]);
     const handleVolumeChange = useCallback((v) => { setVolume(v); if (audioRef.current) audioRef.current.volume = v; }, []);
@@ -1549,6 +1572,13 @@ function App() {
         // Initialize player when song is selected
         setIsPlayerInitialized(true);
         try { AudioEngine.resumeContextIfNeeded && AudioEngine.resumeContextIfNeeded(); } catch (e) {}
+        
+        // Track for Quick Picks recommendations
+        const selectedSong = songs.find(s => String(s.id) === String(id));
+        if (selectedSong) {
+            try { addToListeningHistory(selectedSong); } catch (e) {}
+        }
+        
         // record listen history
         if (user && user.token) {
             import('./api/userService').then(m => {
@@ -2014,7 +2044,7 @@ function App() {
     return (
         <div className="h-screen bg-gray-900 text-white font-sans overflow-hidden">
             {!apiHealthy && (
-                <div className="w-full bg-rose-600 text-white text-center py-2 z-50">Backend unreachable — start the backend or set <span className="font-semibold">VITE_API_URL</span> to your API host.</div>
+                <div className="w-full bg-rose-600 text-white text-center py-2 z-50">Server unreachable — start the server or set <span className="font-semibold">VITE_API_URL</span> to your API host.</div>
             )}
             <FavoritesProvider token={user?.token}>
                 <Routes>
