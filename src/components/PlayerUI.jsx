@@ -289,7 +289,7 @@ const PlayerUI = ({
     
     return (
         <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="p-4 flex flex-col h-full">
-            <div className="flex-grow flex flex-col items-center justify-center text-center space-y-3 my-3 relative">
+            <div className="flex-grow flex flex-col items-center justify-center text-center space-y-3 my-3 relative overflow-hidden">
                 {currentSong ? (
                     <>
                         {/* Menu button positioned at the card top-rightmost corner (transparent background) */}
@@ -317,18 +317,18 @@ const PlayerUI = ({
                                 </div>
                             )}
                         </div>
-                            <div className="relative">
-                                <ImageWithFallback
-                                    src={currentSong.coverUrl}
-                                    alt="Album Cover"
-                                    className="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl shadow-md object-cover"
-                                    fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
-                                />
-                            </div>
-                            <div>
-                                <h2 className={`text-base md:text-lg font-semibold player-title-marquee ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`}>{currentSong.title}</h2>
-                                <p className="text-xs md:text-sm text-gray-400 text-truncate-ellipsis">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
-                            </div>
+                        <div className="relative z-10">
+                            <ImageWithFallback
+                                src={currentSong.coverUrl}
+                                alt="Album Cover"
+                                className="w-full h-40 sm:w-full sm:h-48 md:w-full md:h-56 rounded-2xl shadow-md object-cover"
+                                fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                            />
+                        </div>
+                        <div className="w-full px-2 z-10 max-w-sm">
+                            <h2 className={`text-base md:text-lg font-semibold player-title-marquee ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`} style={{overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%'}}>{currentSong.title}</h2>
+                            <p className="text-xs md:text-sm text-gray-300 text-truncate-ellipsis" style={{maxWidth: '100%'}}>{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
+                        </div>
                     </>
                 ) : (
                      <div className="w-48 h-48 md:w-64 md:h-64 rounded-2xl bg-gray-700/50 border border-gray-600 flex flex-col justify-center items-center p-4">

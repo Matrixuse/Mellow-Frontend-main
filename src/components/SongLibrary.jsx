@@ -252,12 +252,12 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className={`text-xs font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
-                                <p className="text-xs text-gray-400 truncate max-w-[70px]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
+                                <p className="text-xs text-gray-400 truncate max-w-[full]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
                             </div>
                             <div className="flex-shrink-0 flex items-center gap-1">
-                                <div className={`w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                                {/* <div className={`w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100'}`}>
                                     <Play size={12} className="text-white fill-current" />
-                                </div>
+                                </div> */}
                                 <QuickPickMenu song={song} />
                             </div>
                         </div>
@@ -368,9 +368,9 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                     );
                             })}
                         </div>
-                        {/* Desktop/tablet: horizontal card scroller with menu aligned to the right of the title */}
-                        <div className="hidden md:grid grid-rows-2 grid-flow-col auto-cols-[6rem] sm:auto-cols-[6rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
-                            {songs.map((song) => {
+                        {/* Desktop/tablet: horizontal card scroller with 4 rows, 2 columns left-right scroll */}
+                        <div className="hidden md:grid grid-rows-4 grid-flow-col auto-cols-[6rem] sm:auto-cols-[6rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
+                            {songs.slice(0, 8).map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
                                 const fav = isSongFavorite(song.id);

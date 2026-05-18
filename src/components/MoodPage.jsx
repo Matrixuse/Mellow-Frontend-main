@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Shuffle, Search, X } from 'lucide-react';
 import ImageWithFallback from './ImageWithFallback';
 import SongContextMenu from './SongContextMenu';
 import { Footer } from './OtherComponents';
+import { detectSongMood } from '../utils/moodDetection';
 
 const MoodPage = () => {
     const navigate = useNavigate();
@@ -39,6 +40,12 @@ const MoodPage = () => {
             if (song.moods && Array.isArray(song.moods) && song.moods.length > 0) {
                 const lowerMoods = song.moods.map(m => String(m || '').toLowerCase());
                 if (lowerMoods.includes(normalizedMood)) return true;
+            }
+            
+            // Use AI mood detection for Old is Gold and Hollywood Mix
+            const detectedMoods = detectSongMood(song);
+            if (detectedMoods.map(m => m.toLowerCase()).includes(normalizedMood)) {
+                return true;
             }
             
             const title = (song.title || '').toLowerCase();

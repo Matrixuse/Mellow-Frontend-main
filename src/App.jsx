@@ -19,6 +19,7 @@ import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shu
 import QueuePanel from './components/QueuePanel';
 import PlaylistModal from './components/PlaylistModal';
 import { addToListeningHistory } from './utils/quickPicksAlgorithm';
+import { detectSongMood } from './utils/moodDetection';
 import PlaylistPage from './components/PlaylistPage';
 import PlaylistsPage from './components/PlaylistsPage';
 import FeedbackPage from './components/FeedbackPage';
@@ -1577,6 +1578,17 @@ function App() {
         const selectedSong = songs.find(s => String(s.id) === String(id));
         if (selectedSong) {
             try { addToListeningHistory(selectedSong); } catch (e) {}
+            
+            // Auto-detect moods for "Old is Gold" and "Hollywood Mix"
+            try {
+                const detectedMoods = detectSongMood(selectedSong);
+                if (detectedMoods.length > 0) {
+                    // Log detected moods for analytics
+                    console.debug('Moods detected for song:', { songId: id, title: selectedSong.title, moods: detectedMoods });
+                }
+            } catch (e) {
+                console.debug('Error detecting song moods:', e && e.message);
+            }
         }
         
         // record listen history
@@ -2186,7 +2198,7 @@ function App() {
                         </button>
                     </div>
                     <div className="h-full pt-16 pb-8 px-4">
-                        <div className="bg-gray-800 rounded-2xl h-full">
+                        <div className="bg-gray-800 rounded-2xl h-full" style={currentSong ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('${currentSong.coverUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
                             <PlayerUI 
                                 currentSong={currentSong}
                                 isPlaying={isPlaying}

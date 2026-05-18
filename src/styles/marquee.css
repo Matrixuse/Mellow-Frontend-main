@@ -54,4 +54,38 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 100%;
+}
+
+/* Mobile player title - marquee effect */
+.mobile-player-title {
+    display: inline-block;
+    white-space: nowrap;
+    max-width: 100%;
+    animation: none;
+}
+
+.mobile-player-title.is-long {
+    animation: scroll-mobile-title 15s linear infinite;
+}
+
+.mobile-player-title.is-long:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scroll-mobile-title {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Title with max width and truncation fallback */
+.title-with-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
