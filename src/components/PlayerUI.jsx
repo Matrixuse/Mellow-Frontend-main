@@ -325,9 +325,9 @@ const PlayerUI = ({
                                 fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
                             />
                         </div>
-                        <div className="w-full px-2 z-10 max-w-sm">
+                        <div className="w-full px-2 z-10 max-w-full">
                             <h2 className={`text-base md:text-lg font-semibold player-title-marquee ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`} style={{overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%'}}>{currentSong.title}</h2>
-                            <p className="text-xs md:text-sm text-gray-300 text-truncate-ellipsis" style={{maxWidth: '100%'}}>{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
+                            <p className="text-xs md:text-sm text-gray-400 text-truncate-ellipsis mt-1" style={{maxWidth: '100%', display: 'block'}}>{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
                         </div>
                     </>
                 ) : (

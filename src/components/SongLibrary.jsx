@@ -342,34 +342,38 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                     </div>
                 ) : (
                     <>
-                        {/* Mobile: horizontal bars list limited to 5 items */}
-                        <div className="md:hidden space-y-2.5">
-                            {songs.slice(0, 4).map((song) => {
-                                        const isActive = currentSongId === song.id && isPlaying;
-                                        return (
-                                        <div key={song.id} className={`w-full flex items-center gap-2 p-1 rounded-md transition ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/60 hover:bg-gray-700/80'}`}>
-                                            <button onClick={() => onSelectSong(song.id)} className="flex items-center gap-2 flex-1 text-left min-w-0">
-                                                <ImageWithFallback
-                                                    src={song.coverUrl}
-                                                    fallback={DEFAULT_ARTIST_IMAGE}
-                                                    alt={song.title}
-                                                    className="w-8 h-8 rounded-md object-cover flex-shrink-0"
-                                                />
-                                                <div className="flex-1 text-left min-w-0">
-                                                    <div className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</div>
-                                                    <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
-                                                </div>
-                                            </button>
+                        {/* Mobile: grid with 4 rows, 2 columns, horizontal scrolling for 8 songs */}
+                        <div className="md:hidden grid grid-rows-5 grid-flow-col auto-cols-[18.7rem] gap-1 overflow-x-auto custom-scrollbar-h pb-2">
+                            {songs.slice(0, 10).map((song) => {
+                                const isActive = currentSongId === song.id && isPlaying;
+                                return (
+                                    <div 
+                                        key={song.id} 
+                                        onClick={() => onSelectSong(song.id)}
+                                        className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/60 hover:bg-gray-700/80'}`}
+                                    >
+                                        <div className="relative flex-shrink-0">
+                                            <ImageWithFallback
+                                                src={song.coverUrl}
+                                                fallback={DEFAULT_ARTIST_IMAGE}
+                                                alt={song.title}
+                                                className="w-10 h-10 rounded-md object-cover"
+                                            />
                                             {isActive && (
-                                                <Play className="text-blue-400" size={16} />
+                                                <Play className="absolute inset-0 m-auto text-blue-400" size={16} />
                                             )}
-                                            <SongMenu song={song} className="ml-2" />
                                         </div>
-                                    );
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                            <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
+                                        </div>
+                                        <SongMenu song={song} className="flex-shrink-0" />
+                                    </div>
+                                );
                             })}
                         </div>
                         {/* Desktop/tablet: horizontal card scroller with 4 rows, 2 columns left-right scroll */}
-                        <div className="hidden md:grid grid-rows-4 grid-flow-col auto-cols-[6rem] sm:auto-cols-[6rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
+                        <div className="hidden md:grid grid-rows-4 grid-flow-col auto-cols-[11rem] sm:auto-cols-[11rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
                             {songs.slice(0, 8).map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
