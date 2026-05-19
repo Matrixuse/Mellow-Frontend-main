@@ -343,8 +343,8 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                 ) : (
                     <>
                         {/* Mobile: grid with 4 rows, 2 columns, horizontal scrolling for 8 songs */}
-                        <div className="md:hidden grid grid-rows-5 grid-flow-col auto-cols-[18.7rem] gap-1 overflow-x-auto custom-scrollbar-h pb-2">
-                            {songs.slice(0, 10).map((song) => {
+                        <div className="md:hidden grid grid-rows-4 grid-flow-col auto-cols-[18.7rem] gap-1 overflow-x-auto custom-scrollbar-h pb-2">
+                            {songs.slice(0, 8).map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 return (
                                     <div 
