@@ -204,7 +204,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
             <h3 className="text-l font-semibold mb-3">Quick Picks</h3>
             
             {/* Mobile view: 3 columns x 3 rows, left-right scrolling */}
-            <div className="md:hidden grid grid-flow-col auto-cols-[6rem] grid-rows-3 gap-1 overflow-x-auto custom-scrollbar-h pb-3">
+            <div className="md:hidden grid grid-flow-col auto-cols-[6rem] grid-rows-3 gap-1 overflow-x-auto overflow-y-hidden custom-scrollbar-h pb-3">
                 {quickPickSongs.map((song) => {
                     const isActive = currentSongId === song.id && isPlaying;
                     return (
@@ -233,7 +233,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
             </div>
 
             {/* Desktop/Tablet view: 4 rows horizontal bars, scrollable with artist names and menu */}
-            <div className="hidden md:grid grid-flow-col auto-cols-[20rem] grid-rows-4 gap-1 overflow-x-auto custom-scrollbar-h pb-2">
+            <div className="hidden md:grid grid-flow-col auto-cols-[20rem] grid-rows-4 gap-1 overflow-x-auto overflow-y-hidden custom-scrollbar-h pb-2">
                 {quickPickSongs.map((song) => {
                     const isActive = currentSongId === song.id && isPlaying;
                     return (
@@ -343,7 +343,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                 ) : (
                     <>
                         {/* Mobile: grid with 4 rows, 2 columns, horizontal scrolling for 8 songs */}
-                        <div className="md:hidden grid grid-rows-5 grid-flow-col auto-cols-[18rem] gap-1.5 overflow-x-auto custom-scrollbar-h pb-2">
+                        <div className="md:hidden grid grid-rows-5 grid-flow-col auto-cols-[18rem] gap-1.5 overflow-x-auto overflow-y-hidden pb-2">
                             {songs.slice(0, 10).map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 return (
@@ -373,7 +373,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                             })}
                         </div>
                         {/* Desktop/tablet: horizontal card scroller with 4 rows, 2 columns left-right scroll */}
-                        <div className="hidden md:grid grid-rows-4 grid-flow-col auto-cols-[11rem] sm:auto-cols-[11rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
+                        <div className="hidden md:grid grid-rows-4 grid-flow-col auto-cols-[11rem] sm:auto-cols-[11rem] gap-3 overflow-x-auto overflow-y-hidden pb-4">
                             {songs.slice(0, 8).map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);

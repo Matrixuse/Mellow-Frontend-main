@@ -37,9 +37,13 @@ html {
 .custom-scrollbar-h {
   -ms-overflow-style: none;  /* IE and Edge ke liye */
   scrollbar-width: none;  /* Firefox ke liye */
+  overflow-y: hidden !important;  /* Remove vertical scrollbar */
 }
 .custom-scrollbar-h::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera ke liye */
+  display: none !important; /* Chrome, Safari, Opera ke liye */
+}
+.custom-scrollbar-h::-webkit-scrollbar-horizontal {
+  display: none !important;
 }
 
 /* Mobile (<=767px) par vertical scrollbar ko hide karna */

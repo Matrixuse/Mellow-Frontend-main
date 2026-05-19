@@ -5,6 +5,65 @@
 
 const STORAGE_KEY = 'mellow_listening_history';
 const MAX_HISTORY = 100;
+const QUICK_PICKS_CACHE_KEY = 'mellow_quick_picks_cache';
+const QUICK_PICKS_TIMESTAMP_KEY = 'mellow_quick_picks_timestamp';
+
+/**
+ * Check if we should refresh quick picks (only at 3:00 AM)
+ */
+const shouldRefreshQuickPicks = () => {
+    try {
+        const lastTimestamp = localStorage.getItem(QUICK_PICKS_TIMESTAMP_KEY);
+        if (!lastTimestamp) return true;
+        
+        const lastDate = new Date(parseInt(lastTimestamp));
+        const now = new Date();
+        
+        // Get today at 3:00 AM
+        const today3AM = new Date(now);
+        today3AM.setHours(3, 0, 0, 0);
+        
+        // If current time is past 3:00 AM and last refresh was before today's 3:00 AM, refresh
+        return now >= today3AM && lastDate < today3AM;
+    } catch {
+        return true;
+    }
+};
+
+/**
+ * Get cached quick picks or generate new ones
+ */
+export const getCachedQuickPicks = (allSongs, count = 24) => {
+    try {
+        // Check if we need to refresh
+        if (shouldRefreshQuickPicks()) {
+            // Generate new picks
+            const newPicks = generateQuickPicksInternal(allSongs, count);
+            
+            // Cache them
+            localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(newPicks));
+            localStorage.setItem(QUICK_PICKS_TIMESTAMP_KEY, Date.now().toString());
+            
+            return newPicks;
+        }
+        
+        // Return cached picks
+        const cached = localStorage.getItem(QUICK_PICKS_CACHE_KEY);
+        if (cached) {
+            return JSON.parse(cached);
+        }
+        
+        // Fallback: generate new picks if cache is empty
+        const newPicks = generateQuickPicksInternal(allSongs, count);
+        localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(newPicks));
+        localStorage.setItem(QUICK_PICKS_TIMESTAMP_KEY, Date.now().toString());
+        
+        return newPicks;
+    } catch {
+        // If caching fails, just generate picks
+        return generateQuickPicksInternal(allSongs, count);
+    }
+};
 
 export const getListeningHistory = () => {
     try {
@@ -79,7 +138,7 @@ export const getFrequentMoods = (limit = 3) => {
  * Get Quick Picks - smart recommendation algorithm
  * Always returns songs - either based on user taste or random
  */
-export const getQuickPicks = (allSongs, count = 9) => {
+const generateQuickPicksInternal = (allSongs, count = 9) => {
     if (!allSongs || allSongs.length === 0) return [];
     
     const history = getListeningHistory();
@@ -111,4 +170,11 @@ export const getQuickPicks = (allSongs, count = 9) => {
     // Default: return random songs
     const available = allSongs.filter(song => !recentSongIds.has(song.id));
     return available.sort(() => 0.5 - Math.random()).slice(0, count);
+};
+
+/**
+ * Wrapper function for caching with 3:00 AM daily refresh
+ */
+export const getQuickPicks = (allSongs, count = 9) => {
+    return getCachedQuickPicks(allSongs, count);
 };
