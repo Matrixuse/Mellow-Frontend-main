@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { useParams, Link, useOutletContext, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Shuffle, Search, X } from 'lucide-react';
+import { ArrowLeft, Play, Shuffle, Search, X, MoreVertical, Bookmark, Plus } from 'lucide-react';
 import ImageWithFallback from './ImageWithFallback';
 import SongContextMenu from './SongContextMenu';
 import { Footer } from './OtherComponents';
@@ -27,6 +27,9 @@ const MoodPage = () => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const searchInputRef = useRef(null);
+    const scrollContainerRef = useRef(null);
+    const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
+    const [moodMenuOpen, setMoodMenuOpen] = useState(false);
     
     if (!allSongs) {
         return <div className="text-center p-10">Loading mood songs...</div>;
@@ -148,6 +151,21 @@ const MoodPage = () => {
         }
     }, [searchOpen]);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            if (scrollContainerRef.current) {
+                const scrollTop = scrollContainerRef.current.scrollTop;
+                setIsHeaderExpanded(scrollTop < 50);
+            }
+        };
+
+        const container = scrollContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', handleScroll);
+            return () => container.removeEventListener('scroll', handleScroll);
+        }
+    }, []);
+
     const toggleSearch = useCallback(() => {
         setSearchOpen(v => {
             const next = !v;
@@ -156,40 +174,136 @@ const MoodPage = () => {
         });
     }, []);
 
+    const getMoodImageUrl = (mood) => {
+        const moodImageMap = {
+            'Punjabi': '/moods/punjabi.jpg',
+            'Traditional': '/moods/traditional.jpg',
+            'Smooth': '/moods/smooth.jpg',
+            'Party': '/moods/party.jpg',
+            'Chill': '/moods/chill.jpg',
+            'Hip Hop Mix': '/moods/hiphop.jpg',
+            'Romantic': '/moods/romantic.jpg',
+            'Soft & HeartBreak': '/moods/softheartbreak.jpg',
+            'Old is Gold': '/moods/oldgold.jpg',
+            'Hollywood Mix': '/moods/hollywood.jpg'
+        };
+        return moodImageMap[mood] || '/moods/default.jpg';
+    };
+
     return (
-        <div className="flex-grow p-4 flex flex-col min-h-0 min-w-0">
-            <div className="flex items-center gap-3 mb-3 flex-shrink-0">
-                <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700">
-                    <ArrowLeft size={20} />
-                </Link>
-                <h1 className="text-xl font-bold flex-1">{moodName} Mood</h1>
-                <div className="flex items-center gap-2">
-                    {/* Search toggle button placed left of shuffle */}
-                    {moodSongs.length > 0 && (
-                        <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700">
-                            {searchOpen ? <X size={18} /> : <Search size={18} />}
-                        </button>
+        <div className="flex-grow flex flex-col min-h-0 min-w-0">
+            {/* Expandable Header */}
+            <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-gray-900/80 p-6' : 'bg-gray-900/80 p-3'}`}>
+                {/* Compact Header (always visible) */}
+                <div className="flex items-center gap-3 mb-0">
+                    <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                        <ArrowLeft size={20} />
+                    </Link>
+                    {isHeaderExpanded ? (
+                        <h1 className="flex-1"></h1>
+                    ) : (
+                        <h1 className="text-xl font-bold flex-1">{moodName}</h1>
                     )}
-                    {/* Shuffle toggle button in top right */}
-                    {moodSongs.length > 0 && (
-                        <button 
-                            onClick={handleToggleShuffle}
-                            className={`p-2 rounded-full transition-all ${
-                                isMoodShuffleMode 
-                                    ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' 
-                                    : 'bg-gray-900 hover:bg-gray-500'
-                            }`}
-                            title={isMoodShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
-                        >
-                            <Shuffle size={20} className="text-white" />
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {/* Search toggle button */}
+                        {moodSongs.length > 0 && (
+                            <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                                {searchOpen ? <X size={18} /> : <Search size={18} />}
+                            </button>
+                        )}
+                        {/* Shuffle toggle button */}
+                        {moodSongs.length > 0 && (
+                            <button 
+                                onClick={handleToggleShuffle}
+                                className={`p-2 rounded-full transition-all flex-shrink-0 ${
+                                    isMoodShuffleMode 
+                                        ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' 
+                                        : 'bg-gray-900 hover:bg-gray-500'
+                                }`}
+                                title={isMoodShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
+                            >
+                                <Shuffle size={20} className="text-white" />
+                            </button>
+                        )}
+                    </div>
                 </div>
+
+                {/* Expanded Header Content */}
+                {isHeaderExpanded && moodSongs.length > 0 && (
+                    <div className="mt-4 flex gap-4 items-end">
+                        <ImageWithFallback
+                            src={getMoodImageUrl(moodName)}
+                            alt={moodName}
+                            className="w-24 h-24 rounded-lg object-cover shadow-lg"
+                            fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                        />
+                        <div className="flex-1">
+                            <h2 className="text-xl font-bold mb-3">{moodName}</h2>
+                            <div className="flex items-center gap-5">
+                                <button
+                                    onClick={() => {
+                                        if (moodSongs.length > 0) {
+                                            handleSelectSong(moodSongs[0].id);
+                                        }
+                                    }}
+                                    className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center shadow-lg transition-colors"
+                                >
+                                    <Play size={24} className="text-white fill-current" />
+                                </button>
+                                
+                                {/* Mood Menu */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setMoodMenuOpen(!moodMenuOpen)}
+                                        className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
+                                    >
+                                        <MoreVertical size={20} className="text-white" />
+                                    </button>
+                                    {moodMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-lg shadow-lg z-20">
+                                            <button
+                                                onClick={() => {
+                                                    handleToggleShuffle();
+                                                    setMoodMenuOpen(false);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-t-lg flex items-center gap-2 text-white transition-colors"
+                                            >
+                                                <Shuffle size={16} />
+                                                <span>Shuffle</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setMoodMenuOpen(false);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2 text-white transition-colors"
+                                            >
+                                                <Bookmark size={16} />
+                                                <span>Save</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (onAddToQueue && moodSongs.length > 0) {
+                                                        onAddToQueue(moodSongs);
+                                                    }
+                                                    setMoodMenuOpen(false);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-b-lg flex items-center gap-2 text-white transition-colors"
+                                            >
+                                                <Plus size={16} />
+                                                <span>Add to Queue</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Search bar shown when toggled */}
             {searchOpen && (
-                <div className="mb-4">
+                <div className="flex-shrink-0 bg-gray-900/80 px-4 pb-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
@@ -210,41 +324,46 @@ const MoodPage = () => {
                 </div>
             )}
 
-            <div className="flex-grow overflow-y-auto custom-scrollbar">
+            {/* Songs Grid/List */}
+            <hr className='h-px bg-gray-500'/>
+            <div ref={scrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4">
                 {filteredSongs.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-6 gap-2">
+                        <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
                             {filteredSongs.map((song) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 return (
                                     <div 
                                         key={song.id} 
-                                        className={`group relative p-2 rounded-lg cursor-pointer ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
+                                        className={`group relative p-1 cursor-pointer md:p-2 transition-colors ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/50 hover:bg-gray-700/80'}`}
                                     >
-                                        <div className="relative mb-2">
-                                            <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer">
+                                        <div className="relative md:mb-2 flex gap-3 md:flex-col md:gap-0 items-start">
+                                            <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer flex-shrink-0 md:w-full">
                                                 <ImageWithFallback
                                                     src={song.coverUrl}
                                                     alt={song.title}
-                                                    className="w-full h-auto aspect-square rounded-md object-cover"
+                                                    className="w-10 h-10 md:w-full md:h-auto md:aspect-square rounded-md object-cover"
                                                     fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
                                                 />
-                                                <div className={`absolute bottom-2 right-2 w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                    <Play size={18} className="text-white fill-current" />
-                                                </div>
+                                                {/* <div className={`absolute bottom-1 right-1 md:bottom-2 md:right-2 w-8 h-8 md:w-9 md:h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                                    <Play size={16} className="text-white fill-current" />
+                                                </div> */}
+                                            </div>
+                                            <div className="flex-grow min-w-0 md:flex-grow-0">
+                                                <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                                <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
+                                            </div>
+                                            {/* Three-dot menu positioned at right */}
+                                            <div className="flex-shrink-0 ml-auto md:absolute md:bottom-0 md:right-0 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity md:z-10">
+                                                <SongContextMenu
+                                                    song={song}
+                                                    onAddToQueue={onAddToQueue}
+                                                    onAddToPlaylist={onAddToPlaylist}
+                                                    onNavigateToArtist={handleNavigateToArtist}
+                                                    onReport={handleReport}
+                                                />
                                             </div>
                                         </div>
-                                        <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                            <SongContextMenu
-                                                song={song}
-                                                onAddToQueue={onAddToQueue}
-                                                onAddToPlaylist={onAddToPlaylist}
-                                                onNavigateToArtist={handleNavigateToArtist}
-                                                onReport={handleReport}
-                                            />
-                                        </div>
-                                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
-                                        <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                                     </div>
                                 );
                             })}

@@ -350,7 +350,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                     <div 
                                         key={song.id} 
                                         onClick={() => onSelectSong(song.id)}
-                                        className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/60 hover:bg-gray-700/80'}`}
+                                        className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/80 hover:bg-gray-700/80'}`}
                                     >
                                         <div className="relative flex-shrink-0">
                                             <ImageWithFallback
