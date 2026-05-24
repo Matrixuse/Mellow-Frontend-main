@@ -6,7 +6,7 @@ import ImageWithFallback from './ImageWithFallback';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 import { getQuickPicks } from '../utils/quickPicksAlgorithm';
 
-const DEFAULT_ARTIST_IMAGE = '/artists/kk.png';
+const DEFAULT_ARTIST_IMAGE = '/artists/default.png';
 
 const topArtists = [
     { name: 'KK', imageUrl: '/artists/kk.png' },

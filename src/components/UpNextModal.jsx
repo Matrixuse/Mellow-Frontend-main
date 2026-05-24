@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
 
-const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onNext, onPrev, queue }) => {
+const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onNext, onPrev, queue, currentTime = 0, duration = 0 }) => {
     if (!isOpen) return null;
 
     const queueItems = Array.isArray(queue) ? queue : [];
@@ -10,7 +10,17 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
         <div className="fixed inset-0 bg-black/40 md:hidden z-50 animate-in fade-in duration-300">
             <div className="fixed inset-0 top-0 bg-gradient-to-b from-gray-900 to-gray-950 z-50 flex flex-col slide-in-from-bottom duration-300 rounded-t-3xl max-h-screen">
                 {/* Mini Player Bar at Top */}
-                <div className="bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-700 p-3 flex items-center justify-between flex-shrink-0">
+                <div className="bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-700 flex-shrink-0">
+                    {/* Thin Progress Bar */}
+                    <div className="w-full h-0.5 bg-gray-700 overflow-hidden">
+                        <div 
+                            className="h-full bg-blue-400 transition-all duration-100 ease-linear"
+                            style={{
+                                width: isFinite(duration) && duration > 0 ? `${Math.min((currentTime / duration) * 100, 100)}%` : '0%'
+                            }}
+                        />
+                    </div>
+                    <div className="p-3 flex items-center justify-between">
                     <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full">
                         <X size={20} className="text-white" />
                     </button>
@@ -18,6 +28,7 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
                         <h3 className="text-xs font-bold text-white uppercase">UP NEXT</h3>
                     </div>
                     <div className="w-10" />
+                    </div>
                 </div>
 
                 {/* Current Song Mini Display */}

@@ -2290,6 +2290,8 @@ function App() {
                             onPlayPause={handlePlayPause}
                             onNext={handleNext}
                             onPrev={handlePrev}
+                            currentTime={currentTime}
+                            duration={duration}
                             queue={upNextRelatedModalMode === 'upnext'
                                 ? (
                                     (isUsingUpNext && Array.isArray(upNextQueue) && upNextQueue.length > 0)
@@ -2315,11 +2317,21 @@ function App() {
     );
 }
 // --- Mobile mini player bar component ---
-const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand, isShuffle, onShuffleToggle, isPlayerInitialized }) => {
+const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand, isShuffle, onShuffleToggle, isPlayerInitialized, currentTime = 0, duration = 0 }) => {
     // Hide player bar until a song has been played, then keep it visible
     if (!currentSong || !isPlayerInitialized) return null;
     return (
-        <div className="fixed bottom-14 left-0 right-0 bg-gray-800 border-t border-gray-700 p-1.5 z-40 animate-in slide-in-from-bottom-2 duration-500">
+        <div className="fixed bottom-14 left-0 right-0 bg-gray-800 border-t border-gray-700 z-40 animate-in slide-in-from-bottom-2 duration-500">
+            {/* Thin Progress Bar at Top */}
+            <div className="w-full h-0.5 bg-gray-700 overflow-hidden">
+                <div 
+                    className="h-full bg-blue-400 transition-all duration-100 ease-linear"
+                    style={{
+                        width: isFinite(duration) && duration > 0 ? `${Math.min((currentTime / duration) * 100, 100)}%` : '0%'
+                    }}
+                />
+            </div>
+            <div className="p-1.5">
             <div onClick={onTogglePlayerExpand} className="w-full flex items-center gap-2 cursor-pointer" role="button" tabIndex={0}>
                 <img src={currentSong.coverUrl} alt={currentSong.title} className="w-9 h-9 rounded-md object-cover flex-shrink-0" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x200/1F2937/FFFFFF?text=Music'; }} />
                 <div className="flex-1 min-w-0 text-left">
@@ -2332,6 +2344,7 @@ const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerEx
                 <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="bg-blue-600 text-white rounded-full p-3 hover:bg-blue-500">
                     {isPlaying ? <PauseIcon className="w-5.5 h-5.5" /> : <PlayIcon className="w-5.5 h-5.5" />}
                 </button>
+            </div>
             </div>
         </div>
     );

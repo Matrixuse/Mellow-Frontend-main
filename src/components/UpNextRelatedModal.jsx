@@ -4,7 +4,7 @@ import { useDrag } from '@use-gesture/react';
 import { useSpring } from '@react-spring/web';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 
-const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onNext, onPrev, queue = [], relatedSongs = [], initialTab = 'upnext', onTogglePlayerExpand = () => {}, isShuffle = false, onShuffleToggle = () => {}, onSelectSong = () => {}, onAddToQueue = () => {}, onAddToPlaylist = () => {}, onShowArtist = () => {}, onReportSong = () => {} }) => {
+const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onNext, onPrev, queue = [], relatedSongs = [], initialTab = 'upnext', onTogglePlayerExpand = () => {}, isShuffle = false, onShuffleToggle = () => {}, onSelectSong = () => {}, onAddToQueue = () => {}, onAddToPlaylist = () => {}, onShowArtist = () => {}, onReportSong = () => {}, currentTime = 0, duration = 0 }) => {
     const [activeTab, setActiveTab] = React.useState(initialTab); // 'upnext' or 'related'
     const [openMenuId, setOpenMenuId] = useState(null);
     const contentRef = useRef(null);
@@ -106,7 +106,17 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                 <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="fixed inset-0 top-0 bg-gradient-to-b from-gray-900 to-gray-950 z-50 flex flex-col slide-in-from-bottom duration-300 rounded-t-3xl max-h-screen">
                 {/* Mini Player Bar at Top (click to expand) */}
                 {currentSong && (
-                    <div ref={dragHandleRef} style={{ touchAction: 'none' }} className="bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-700 p-2 flex-shrink-0">
+                    <div ref={dragHandleRef} style={{ touchAction: 'none' }} className="bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-700 flex-shrink-0">
+                        {/* Thin Progress Bar */}
+                        <div className="w-full h-0.5 bg-gray-700 overflow-hidden">
+                            <div 
+                                className="h-full bg-blue-400 transition-all duration-100 ease-linear"
+                                style={{
+                                    width: isFinite(duration) && duration > 0 ? `${Math.min((currentTime / duration) * 100, 100)}%` : '0%'
+                                }}
+                            />
+                        </div>
+                        <div className="p-2">
                         <div role="button" tabIndex={0} onClick={(e) => {
                                 e.stopPropagation();
                                 // animate modal down then open expanded player
@@ -132,6 +142,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                                 </button>
                             </div>
+                        </div>
                         </div>
                     </div>
                 )}
