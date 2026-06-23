@@ -28,7 +28,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
             }
         } catch (e) {}
         return () => {
-            try { document.body.style.overflow = ''; } catch (e) {}
+            try { document.body.style.overflow = ''; } catch (e) { console.log(e) }
         };
     }, [isOpen, initialTab, api]);
 

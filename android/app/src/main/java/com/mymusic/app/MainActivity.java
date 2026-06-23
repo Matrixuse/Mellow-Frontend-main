@@ -16,4 +16,30 @@ public class MainActivity extends BridgeActivity {
 		registerPlugin(NativeMediaPlugin.class);
 		super.onCreate(savedInstanceState);
 	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		// Save the state before activity is destroyed
+		super.onSaveInstanceState(outState);
+		Log.d(TAG, "onSaveInstanceState called - saving app state");
+	}
+
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		// Restore the saved state
+		super.onRestoreInstanceState(savedInstanceState);
+		Log.d(TAG, "onRestoreInstanceState called - restoring app state");
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		Log.d(TAG, "onPause called - app paused but not destroyed");
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(TAG, "onResume called - app resumed from background");
+	}
 }
