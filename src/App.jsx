@@ -300,8 +300,11 @@ function App() {
     const [playlistSongId, setPlaylistSongId] = useState(null);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
+    const [isAudioReady, setIsAudioReady] = useState(false);
+    const [audioLoadError, setAudioLoadError] = useState(null);
 
     const audioRef = useRef(null);
+    const audioLoadTimeoutRef = useRef(null);
     const currentSong = songs[currentSongIndex];
 
     // Expose queueService for debugging in browser console (temporary)
@@ -703,46 +706,145 @@ function App() {
     }, [user]);
     useEffect(() => {
         const a = audioRef.current;
+        if (!a) return;
+
+        // Cleanup previous timeout
+        if (audioLoadTimeoutRef.current) clearTimeout(audioLoadTimeoutRef.current);
+        setIsAudioReady(false);
+        setAudioLoadError(null);
+
         // ensure audio engine is initialized with the primary audio element
         try {
             if (a) {
                 AudioEngine.init(a);
-                // do NOT resume/create AudioContext here to avoid automatic
-                // context creation before a user gesture. Creation/resume
-                // will be attempted on user play gestures via handleSelectSong.
             }
-        } catch (e) {}
-
-        if (a && currentSong) {
-            // Simple audio element swap (no crossfade)
-            try {
-                if (a.src !== currentSong.songUrl) { a.src = currentSong.songUrl; a.load(); }
-                // Start or update native media service when song changes
-                (async () => {
-                    try {
-                        await nativeMediaService.start(currentSong, isPlaying);
-                        try { lockScreenService.setMetadata(currentSong); } catch (e) { console.warn('lockScreenService.setMetadata error', e); }
-                    } catch(e) { console.warn('nativeMediaService.start error', e); }
-                })();
-            } catch (e) {
-                console.warn('AudioEngine play error, falling back', e);
-                if (a.src !== currentSong.songUrl) { a.src = currentSong.songUrl; a.load(); }
-            }
+        } catch (e) {
+            console.warn('AudioEngine init error', e);
         }
-    }, [currentSong, isPlaying]);
-    useEffect(() => { const a = audioRef.current; if (a) { if (isPlaying) { a.play().catch(err => { if (err && err.name === 'AbortError') return; console.error(err); }); } else { a.pause(); } 
+
+        if (!currentSong || !currentSong.songUrl) {
+            setIsAudioReady(false);
+            return;
+        }
+
+        // Add event listeners for proper audio state management
+        const handleCanPlay = () => {
+            console.debug('Audio canplay event - audio is ready to play');
+            setIsAudioReady(true);
+            setAudioLoadError(null);
+        };
+
+        const handleLoadedMetadata = () => {
+            console.debug('Audio loadedmetadata event');
+            setIsAudioReady(true);
+            setAudioLoadError(null);
+        };
+
+        const handleLoadStart = () => {
+            console.debug('Audio loadstart event - loading started');
+            setIsAudioReady(false);
+        };
+
+        const handleError = (e) => {
+            const errorMsg = `Audio error: ${e.target?.error?.code || 'unknown'} - ${a.src}`;
+            console.error(errorMsg);
+            setAudioLoadError(errorMsg);
+            setIsAudioReady(false);
+        };
+
+        // Attach listeners
+        a.addEventListener('canplay', handleCanPlay);
+        a.addEventListener('loadedmetadata', handleLoadedMetadata);
+        a.addEventListener('loadstart', handleLoadStart);
+        a.addEventListener('error', handleError);
+
+        // Load the new song
+        try {
+            if (a.src !== currentSong.songUrl) {
+                a.src = currentSong.songUrl;
+                a.load();
+                console.debug('Loading song:', currentSong.title);
+            }
+
+            // Set a timeout to mark as ready if events don't fire (fallback)
+            audioLoadTimeoutRef.current = setTimeout(() => {
+                if (!isAudioReady) {
+                    console.debug('Audio ready timeout - marking as ready');
+                    setIsAudioReady(true);
+                }
+            }, 1500);
+
+            // Start native media service
+            (async () => {
+                try {
+                    await nativeMediaService.start(currentSong, isPlaying);
+                    try { lockScreenService.setMetadata(currentSong); } catch (e) { console.warn('lockScreenService.setMetadata error', e); }
+                } catch(e) { console.warn('nativeMediaService.start error', e); }
+            })();
+        } catch (e) {
+            console.error('Error loading song:', e);
+            setAudioLoadError(e.message);
+        }
+
+        // Cleanup
+        return () => {
+            if (audioLoadTimeoutRef.current) clearTimeout(audioLoadTimeoutRef.current);
+            a.removeEventListener('canplay', handleCanPlay);
+            a.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            a.removeEventListener('loadstart', handleLoadStart);
+            a.removeEventListener('error', handleError);
+        };
+    }, [currentSong]);
+    useEffect(() => {
+        const a = audioRef.current;
+        if (!a) return;
+
+        // Only attempt playback if audio is ready or if we've timed out
+        const attemptPlay = async () => {
+            try {
+                if (isPlaying) {
+                    // Wait for audio to be ready, with a maximum timeout
+                    let attempts = 0;
+                    while (!isAudioReady && attempts < 20) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        attempts++;
+                    }
+
+                    // Try to play
+                    if (a && a.paused) {
+                        const playPromise = a.play();
+                        if (playPromise && typeof playPromise.catch === 'function') {
+                            playPromise.catch(err => {
+                                if (err && err.name === 'AbortError') {
+                                    console.debug('Play aborted (expected)');
+                                    return;
+                                }
+                                console.error('Play error:', err);
+                                setAudioLoadError(err.message);
+                            });
+                        }
+                    }
+                } else {
+                    if (a && !a.paused) {
+                        a.pause();
+                    }
+                }
+            } catch (err) {
+                console.error('Playback control error:', err);
+                setAudioLoadError(err.message);
+            }
+        };
+
+        attemptPlay();
+
         // Update native notification play state
         (async () => {
             try {
                 await nativeMediaService.updateIsPlaying(isPlaying);
-                // Update web lock screen playback state
                 try { lockScreenService.setPlaybackState(isPlaying ? 'playing' : 'paused'); } catch (e) { console.warn('lockScreenService.setPlaybackState error', e); }
-                if (!isPlaying) {
-                    // leave notification but mark paused; don't stop service
-                }
             } catch(e) { console.warn('nativeMediaService.updateIsPlaying error', e); }
         })();
-    } }, [isPlaying, currentSong]);
+    }, [isPlaying, isAudioReady]);
 
     
 
@@ -1475,97 +1577,140 @@ function App() {
     };
     const handleSongEnd = useCallback(() => {
             try {
-                // eslint-disable-next-line no-console
-                console.debug('handleSongEnd: state', {
-                    isRepeat,
-                    isUsingUpNext,
-                    isUsingMoodQueue,
-                    isUsingPlaylistQueue,
-                    isUsingArtistQueue,
-                    isMoodShuffleMode,
-                    isShuffle,
-                    moodQueueLength: Array.isArray(moodQueue) ? moodQueue.length : 0,
-                    moodQueueIndex,
-                    currentSongIndex,
-                    currentSongId: currentSong && currentSong.id ? currentSong.id : null,
-                    upNextIndex,
-                    upNextQueueIds: Array.isArray(upNextQueue) ? upNextQueue.map(s => s && s.id) : [],
-                    queueServiceIds: queueService.getQueue().map(s => s && s.id)
-                });
-            } catch (e) {}
-            if (isRepeat) {
-            if (audioRef.current) {
-                audioRef.current.currentTime = 0;
-                audioRef.current.play().catch(err => { if (err && err.name === 'AbortError') return; console.error(err); });
-            }
-            return;
-        }
-        // Prioritize deterministic UP NEXT first - handle directly here to avoid
-        // any accidental reliance on queueService or other branches.
-        if (isUsingUpNext && Array.isArray(upNextQueue) && upNextQueue.length > 0) {
-            try { console.debug('handleSongEnd: advancing directly from UP NEXT'); } catch (e) {}
-            try {
-                const currentId = currentSong && currentSong.id ? String(currentSong.id) : null;
-                let currentIdx = -1;
-                if (currentId) currentIdx = upNextQueue.findIndex(s => String(s.id) === String(currentId));
-                if (currentIdx < 0) currentIdx = (typeof upNextIndex === 'number') ? upNextIndex : 0;
-                // deterministic next: sequentially move forward, loop to start
-                const nextIdx = (currentIdx + 1) < upNextQueue.length ? (currentIdx + 1) : 0;
-                const nextSong = upNextQueue[nextIdx];
-                if (nextSong) {
-                    const globalIndex = songs.findIndex(s => String(s.id) === String(nextSong.id));
-                    if (globalIndex !== -1) {
-                        setCurrentSongIndex(globalIndex);
-                    } else {
-                        setSongs(prev => {
-                            if (prev.find(s => String(s.id) === String(nextSong.id))) return prev;
-                            const insertIndex = prev.length;
-                            const newArr = [...prev, nextSong];
-                            setTimeout(() => { setCurrentSongIndex(insertIndex); setIsPlaying(true); }, 0);
-                            return newArr;
-                        });
+                // Reset audio state for next song
+                setIsAudioReady(false);
+                setAudioLoadError(null);
+
+                try {
+                    // eslint-disable-next-line no-console
+                    console.debug('handleSongEnd: state', {
+                        isRepeat,
+                        isUsingUpNext,
+                        isUsingMoodQueue,
+                        isUsingPlaylistQueue,
+                        isUsingArtistQueue,
+                        isMoodShuffleMode,
+                        isShuffle,
+                        moodQueueLength: Array.isArray(moodQueue) ? moodQueue.length : 0,
+                        moodQueueIndex,
+                        currentSongIndex,
+                        currentSongId: currentSong && currentSong.id ? currentSong.id : null,
+                        upNextIndex,
+                        upNextQueueIds: Array.isArray(upNextQueue) ? upNextQueue.map(s => s && s.id) : [],
+                        queueServiceIds: queueService.getQueue().map(s => s && s.id)
+                    });
+                } catch (e) { console.log(e) }
+
+                if (isRepeat) {
+                    if (audioRef.current) {
+                        try {
+                            audioRef.current.currentTime = 0;
+                            // Don't play immediately - let the state update trigger playback
+                            setIsPlaying(true);
+                        } catch (err) {
+                            console.error('Repeat playback error:', err);
+                        }
                     }
-                    setUpNextIndex(nextIdx);
-                    setIsPlaying(true);
                     return;
                 }
-            } catch (e) {
-                console.warn('handleSongEnd: UP NEXT direct advance failed', e);
+
+                // Prioritize deterministic UP NEXT first
+                if (isUsingUpNext && Array.isArray(upNextQueue) && upNextQueue.length > 0) {
+                    try { console.debug('handleSongEnd: advancing directly from UP NEXT'); } catch (e) { console.log(e) }
+                    try {
+                        const currentId = currentSong && currentSong.id ? String(currentSong.id) : null;
+                        let currentIdx = -1;
+                        if (currentId) currentIdx = upNextQueue.findIndex(s => String(s.id) === String(currentId));
+                        if (currentIdx < 0) currentIdx = (typeof upNextIndex === 'number') ? upNextIndex : 0;
+                        
+                        const nextIdx = (currentIdx + 1) < upNextQueue.length ? (currentIdx + 1) : 0;
+                        const nextSong = upNextQueue[nextIdx];
+                        
+                        if (nextSong) {
+                            const globalIndex = songs.findIndex(s => String(s.id) === String(nextSong.id));
+                            if (globalIndex !== -1) {
+                                setCurrentSongIndex(globalIndex);
+                            } else {
+                                setSongs(prev => {
+                                    if (prev.find(s => String(s.id) === String(nextSong.id))) return prev;
+                                    const insertIndex = prev.length;
+                                    const newArr = [...prev, nextSong];
+                                    setTimeout(() => { setCurrentSongIndex(insertIndex); setIsPlaying(true); }, 0);
+                                    return newArr;
+                                });
+                            }
+                            setUpNextIndex(nextIdx);
+                            setIsPlaying(true);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('handleSongEnd: UP NEXT direct advance failed', e);
+                    }
+                }
+
+                // Then playlist queue
+                if (isUsingPlaylistQueue && Array.isArray(playlistQueue) && playlistQueue.length > 0) {
+                    handleNext();
+                    return;
+                }
+
+                // Then check artist queue
+                if (isUsingArtistQueue && Array.isArray(artistQueue) && artistQueue.length > 0) {
+                    handleNext();
+                    return;
+                }
+
+                // Then check mood queue
+                if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
+                    handleNext();
+                    return;
+                }
+
+                // Finally check global queue
+                const q = queueService.getQueue();
+                if (q.length > 0) {
+                    handleNext();
+                    return;
+                }
+
+                handleNext();
+            } catch (err) {
+                console.error('handleSongEnd error:', err);
+                // Fallback: just advance to next song
+                try { handleNext(); } catch (e) { console.error('handleSongEnd fallback error:', e); }
             }
-        }
-        // Then playlist queue
-        if (isUsingPlaylistQueue && Array.isArray(playlistQueue) && playlistQueue.length > 0) {
-            handleNext();
-            return;
-        }
-        // Then check artist queue
-        if (isUsingArtistQueue && Array.isArray(artistQueue) && artistQueue.length > 0) {
-            handleNext();
-            return;
-        }
-        // Then check mood queue
-        if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
-            handleNext();
-            return;
-        }
-        // Finally check global queue
-        const q = queueService.getQueue();
-        if (q.length > 0) {
-            handleNext();
-            return;
-        }
-        handleNext();
     }, [isRepeat, isUsingPlaylistQueue, playlistQueue, isUsingArtistQueue, artistQueue, isUsingMoodQueue, moodQueue, isUsingUpNext, upNextQueue, handleNext]);
 
     // Handle audio errors (missing/deleted songs from Cloudinary)
     const handleAudioError = useCallback(() => {
+        console.error('Audio element error detected');
+        setAudioLoadError('Failed to load audio');
+        setIsAudioReady(false);
+
+        // Remove the broken song if it exists in the current position
         if (currentSongIndex >= 0 && songs[currentSongIndex]) {
-            const failedSong = songs[currentSongIndex];
-            // Remove the broken song from the list silently
-            setSongs(prevSongs => prevSongs.filter((_, idx) => idx !== currentSongIndex));
-            // Skip to next song
-            setCurrentSongIndex(prev => Math.max(0, prev - 1));
-            handleNext();
+            try {
+                const failedSong = songs[currentSongIndex];
+                console.warn(`Removing broken song: ${failedSong.title}`);
+                
+                setSongs(prevSongs => {
+                    const filtered = prevSongs.filter((_, idx) => idx !== currentSongIndex);
+                    return filtered;
+                });
+
+                // Skip to next song after a short delay to allow state update
+                setTimeout(() => {
+                    try {
+                        handleNext();
+                    } catch (err) {
+                        console.error('Error advancing to next song:', err);
+                        setIsPlaying(false);
+                    }
+                }, 100);
+            } catch (err) {
+                console.error('Error removing broken song:', err);
+                setIsPlaying(false);
+            }
         }
     }, [currentSongIndex, songs, handleNext]);
     const handleSongUploaded = (s) => setSongs(p => [...p, s]);
@@ -2050,6 +2195,16 @@ function App() {
     
     if (isInitializing) return <div className="h-screen bg-gray-900 flex items-center justify-center"><Loader /></div>;
     
+    // Cleanup effect for audio timeout reference
+    useEffect(() => {
+        return () => {
+            if (audioLoadTimeoutRef.current) {
+                clearTimeout(audioLoadTimeoutRef.current);
+                audioLoadTimeoutRef.current = null;
+            }
+        };
+    }, []);
+
     // determine token for favorites provider
     const token = (user && user.token) ? user.token : null;
 
@@ -2228,7 +2383,16 @@ function App() {
                     </div>
                 </div>
             )}
-            <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} onEnded={handleSongEnd} onError={handleAudioError} />
+            <audio 
+                ref={audioRef} 
+                onTimeUpdate={handleTimeUpdate} 
+                onLoadedMetadata={handleTimeUpdate} 
+                onEnded={handleSongEnd} 
+                onError={handleAudioError}
+                preload="auto"
+                crossOrigin="anonymous"
+                style={{ display: 'none' }}
+            />
             {isQueueOpen && (
                 <QueuePanel queue={queue} onClose={() => setIsQueueOpen(false)} onPlaySongAtIndex={handlePlaySongAtIndex} onRemove={handleRemoveFromQueue} onReorder={handleReorderQueue} />
             )}
