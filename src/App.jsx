@@ -300,11 +300,8 @@ function App() {
     const [playlistSongId, setPlaylistSongId] = useState(null);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
-    const [isAudioReady, setIsAudioReady] = useState(false);
-    const [audioLoadError, setAudioLoadError] = useState(null);
 
     const audioRef = useRef(null);
-    const audioLoadTimeoutRef = useRef(null);
     const currentSong = songs[currentSongIndex];
 
     // Expose queueService for debugging in browser console (temporary)
@@ -706,73 +703,20 @@ function App() {
     }, [user]);
     useEffect(() => {
         const a = audioRef.current;
-        if (!a) return;
+        if (!a || !currentSong || !currentSong.songUrl) return;
 
-        // Cleanup previous timeout
-        if (audioLoadTimeoutRef.current) clearTimeout(audioLoadTimeoutRef.current);
-        setIsAudioReady(false);
-        setAudioLoadError(null);
-
-        // ensure audio engine is initialized with the primary audio element
         try {
-            if (a) {
-                AudioEngine.init(a);
-            }
+            AudioEngine.init(a);
         } catch (e) {
             console.warn('AudioEngine init error', e);
         }
 
-        if (!currentSong || !currentSong.songUrl) {
-            setIsAudioReady(false);
-            return;
-        }
-
-        // Add event listeners for proper audio state management
-        const handleCanPlay = () => {
-            console.debug('Audio canplay event - audio is ready to play');
-            setIsAudioReady(true);
-            setAudioLoadError(null);
-        };
-
-        const handleLoadedMetadata = () => {
-            console.debug('Audio loadedmetadata event');
-            setIsAudioReady(true);
-            setAudioLoadError(null);
-        };
-
-        const handleLoadStart = () => {
-            console.debug('Audio loadstart event - loading started');
-            setIsAudioReady(false);
-        };
-
-        const handleError = (e) => {
-            const errorMsg = `Audio error: ${e.target?.error?.code || 'unknown'} - ${a.src}`;
-            console.error(errorMsg);
-            setAudioLoadError(errorMsg);
-            setIsAudioReady(false);
-        };
-
-        // Attach listeners
-        a.addEventListener('canplay', handleCanPlay);
-        a.addEventListener('loadedmetadata', handleLoadedMetadata);
-        a.addEventListener('loadstart', handleLoadStart);
-        a.addEventListener('error', handleError);
-
-        // Load the new song
         try {
             if (a.src !== currentSong.songUrl) {
                 a.src = currentSong.songUrl;
                 a.load();
                 console.debug('Loading song:', currentSong.title);
             }
-
-            // Set a timeout to mark as ready if events don't fire (fallback)
-            audioLoadTimeoutRef.current = setTimeout(() => {
-                if (!isAudioReady) {
-                    console.debug('Audio ready timeout - marking as ready');
-                    setIsAudioReady(true);
-                }
-            }, 1500);
 
             // Start native media service
             (async () => {
@@ -783,60 +727,20 @@ function App() {
             })();
         } catch (e) {
             console.error('Error loading song:', e);
-            setAudioLoadError(e.message);
         }
-
-        // Cleanup
-        return () => {
-            if (audioLoadTimeoutRef.current) clearTimeout(audioLoadTimeoutRef.current);
-            a.removeEventListener('canplay', handleCanPlay);
-            a.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            a.removeEventListener('loadstart', handleLoadStart);
-            a.removeEventListener('error', handleError);
-        };
     }, [currentSong]);
-    useEffect(() => {
-        const a = audioRef.current;
-        if (!a) return;
-
-        // Only attempt playback if audio is ready or if we've timed out
-        const attemptPlay = async () => {
-            try {
-                if (isPlaying) {
-                    // Wait for audio to be ready, with a maximum timeout
-                    let attempts = 0;
-                    while (!isAudioReady && attempts < 20) {
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                        attempts++;
-                    }
-
-                    // Try to play
-                    if (a && a.paused) {
-                        const playPromise = a.play();
-                        if (playPromise && typeof playPromise.catch === 'function') {
-                            playPromise.catch(err => {
-                                if (err && err.name === 'AbortError') {
-                                    console.debug('Play aborted (expected)');
-                                    return;
-                                }
-                                console.error('Play error:', err);
-                                setAudioLoadError(err.message);
-                            });
-                        }
-                    }
-                } else {
-                    if (a && !a.paused) {
-                        a.pause();
-                    }
-                }
-            } catch (err) {
-                console.error('Playback control error:', err);
-                setAudioLoadError(err.message);
-            }
-        };
-
-        attemptPlay();
-
+    useEffect(() => { 
+        const a = audioRef.current; 
+        if (a) { 
+            if (isPlaying) { 
+                a.play().catch(err => { 
+                    if (err && err.name === 'AbortError') return; 
+                    console.error(err); 
+                }); 
+            } else { 
+                a.pause(); 
+            } 
+        }
         // Update native notification play state
         (async () => {
             try {
@@ -844,7 +748,7 @@ function App() {
                 try { lockScreenService.setPlaybackState(isPlaying ? 'playing' : 'paused'); } catch (e) { console.warn('lockScreenService.setPlaybackState error', e); }
             } catch(e) { console.warn('nativeMediaService.updateIsPlaying error', e); }
         })();
-    }, [isPlaying, isAudioReady]);
+    }, [isPlaying]);
 
     
 
@@ -1684,8 +1588,6 @@ function App() {
     // Handle audio errors (missing/deleted songs from Cloudinary)
     const handleAudioError = useCallback(() => {
         console.error('Audio element error detected');
-        setAudioLoadError('Failed to load audio');
-        setIsAudioReady(false);
 
         // Remove the broken song if it exists in the current position
         if (currentSongIndex >= 0 && songs[currentSongIndex]) {
@@ -2195,16 +2097,6 @@ function App() {
     
     if (isInitializing) return <div className="h-screen bg-gray-900 flex items-center justify-center"><Loader /></div>;
     
-    // Cleanup effect for audio timeout reference
-    useEffect(() => {
-        return () => {
-            if (audioLoadTimeoutRef.current) {
-                clearTimeout(audioLoadTimeoutRef.current);
-                audioLoadTimeoutRef.current = null;
-            }
-        };
-    }, []);
-
     // determine token for favorites provider
     const token = (user && user.token) ? user.token : null;
 
