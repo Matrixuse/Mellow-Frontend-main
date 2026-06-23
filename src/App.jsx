@@ -1481,10 +1481,6 @@ function App() {
     };
     const handleSongEnd = useCallback(() => {
             try {
-                // Reset audio state for next song
-                setIsAudioReady(false);
-                setAudioLoadError(null);
-
                 try {
                     // eslint-disable-next-line no-console
                     console.debug('handleSongEnd: state', {
