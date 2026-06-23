@@ -60,8 +60,8 @@ const Footer = ({ onDeveloperClick }) => (
                 <button className="hover:text-white">Accessibility</button>
             </div>
             <div className="flex flex-col items-center mt-6 md:mt-4">
-                <span>© 2025 Musious</span>
-                <span>Creators: Naman, Shreyas</span>
+                <span>© 2026 Mellow</span>
+                <span>Creators: Naman</span>
             </div>
             <div></div>
         </div>

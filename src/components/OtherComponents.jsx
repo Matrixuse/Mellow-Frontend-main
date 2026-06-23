@@ -137,7 +137,7 @@ export const Footer = ({ onDeveloperClick }) => (
                 <button className="hover:text-white">Accessibility</button>
             </div>
             <div className="flex flex-col items-center mt-6 md:mt-4">
-                <span>© 2025 Mellow</span>
+                <span>© 2026 Mellow</span>
                 <span>Created by Naman</span>
             </div>
             <div></div>
