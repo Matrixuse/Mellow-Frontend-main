@@ -4,12 +4,64 @@ import { Routes, Route, Link, Outlet, useOutletContext, useNavigate, useLocation
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import apiClient from './api/apiClient';
 import AuthForm from './components/AuthForm';
+
+// ⚡ LAZY LOAD SERVICES - Initialize only when needed
+const lazyLoadService = async (servicePath) => {
+  const module = await import(servicePath);
+  return module.default;
+};
+
+// Only load critical services synchronously
 import queueService from './services/queueService';
-import nativeMediaService from './services/nativeMediaService';
-import musicControlsService from './services/musicControlsService';
 import AudioEngine from './services/audioEngine';
-import lockScreenService from './services/lockScreenService';
-import gestureService from './services/gestureService';
+
+// Lazy load non-critical services
+let nativeMediaService = null;
+let musicControlsService = null;
+let lockScreenService = null;
+let gestureService = null;
+
+const loadNativeMediaService = () => {
+  if (!nativeMediaService) {
+    return import('./services/nativeMediaService').then(m => {
+      nativeMediaService = m.default;
+      return nativeMediaService;
+    });
+  }
+  return Promise.resolve(nativeMediaService);
+};
+
+const loadMusicControlsService = () => {
+  if (!musicControlsService) {
+    return import('./services/musicControlsService').then(m => {
+      musicControlsService = m.default;
+      return musicControlsService;
+    });
+  }
+  return Promise.resolve(musicControlsService);
+};
+
+const loadLockScreenService = () => {
+  if (!lockScreenService) {
+    return import('./services/lockScreenService').then(m => {
+      lockScreenService = m.default;
+      return lockScreenService;
+    });
+  }
+  return Promise.resolve(lockScreenService);
+};
+
+const loadGestureService = () => {
+  if (!gestureService) {
+    return import('./services/gestureService').then(m => {
+      gestureService = m.default;
+      return gestureService;
+    });
+  }
+  return Promise.resolve(gestureService);
+};
+
+// ⚡ LAZY LOAD COMPONENTS - Only load when route is accessed
 import PlayerUI from './components/PlayerUI';
 import SongLibrary from './components/SongLibrary';
 import AdminPanel from './components/Admin';
@@ -20,27 +72,34 @@ import QueuePanel from './components/QueuePanel';
 import PlaylistModal from './components/PlaylistModal';
 import { addToListeningHistory } from './utils/quickPicksAlgorithm';
 import { detectSongMood } from './utils/moodDetection';
-import PlaylistPage from './components/PlaylistPage';
-import PlaylistsPage from './components/PlaylistsPage';
-import FeedbackPage from './components/FeedbackPage';
-import RecommendationsPage from './pages/RecommendationsPage';
-import FeedPage from './pages/FeedPage';
-import RecentsPage from './pages/RecentsPage';
-import UserProfilePage from './pages/UserProfilePage';
-import FavoritesPage from './pages/FavoritesPage';
 import BottomNav from './components/BottomNav';
 import SearchResults from './components/SearchResults';
-import ProfilePage from './pages/ProfilePage';
-import EqualizerPage from './pages/EqualizerPage';
 import UpNextRelatedModal from './components/UpNextRelatedModal';
 import SongContextMenu from './components/SongContextMenu';
 import { createFuzzySearch, getFuzzySuggestions } from './utils/fuzzySearch';
 
 const PLAYBACK_STATE_STORAGE_KEY = 'mellow_playback_state';
 
-// Lazy load heavy components for better initial load time
+// ⚡ LAZY LOAD HEAVY PAGE COMPONENTS
 const ArtistPage = lazy(() => import('./components/ArtistPage'));
 const MoodPage = lazy(() => import('./components/MoodPage'));
+const PlaylistPage = lazy(() => import('./components/PlaylistPage'));
+const PlaylistsPage = lazy(() => import('./components/PlaylistsPage'));
+const FeedbackPage = lazy(() => import('./components/FeedbackPage'));
+const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
+const FeedPage = lazy(() => import('./pages/FeedPage'));
+const RecentsPage = lazy(() => import('./pages/RecentsPage'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const EqualizerPage = lazy(() => import('./pages/EqualizerPage'));
+
+// Loading fallback component
+const LazyLoadingFallback = () => (
+  <div className="flex items-center justify-center h-full">
+    <Loader />
+  </div>
+);
 
 // No global fallbacks for handlers. Handlers should be passed explicitly via props or outlet context.
 
@@ -574,38 +633,37 @@ function App() {
     //  - If player is not expanded: swipe-down should expand the player UI
     //  - If player is expanded: swipe-down should collapse player and navigate home
     useEffect(() => {
-        try {
-            if (!gestureService || !gestureService.isAvailable()) return;
-            gestureService.setEventHandlers({
-                onSwipeDown: () => {
-                    // If Up Next / Related modal is open, expand the player and close the modal
-                    if (isUpNextRelatedModalOpen) {
-                        try { setIsUpNextRelatedModalOpen(false); } catch (e) {}
-                        try { setIsPlayerExpanded(true); } catch (e) {}
-                        return;
+        (async () => {
+            try {
+                const gs = await loadGestureService();
+                if (!gs || !gs.isAvailable()) return;
+                gs.setEventHandlers({
+                    onSwipeDown: () => {
+                        // If Up Next / Related modal is open, expand the player and close the modal
+                        if (isUpNextRelatedModalOpen) {
+                            try { setIsUpNextRelatedModalOpen(false); } catch (e) {}
+                            try { setIsPlayerExpanded(true); } catch (e) {}
+                            return;
+                        }
+                        // ignore if playlist modal is open
+                        if (isPlaylistOpen) return;
+                        if (!isPlayerExpanded) {
+                            setIsPlayerExpanded(true);
+                        } else {
+                            setIsPlayerExpanded(false);
+                            try { navigate('/'); } catch (e) {}
+                        }
                     }
-                    // ignore if playlist modal is open
-                    if (isPlaylistOpen) return;
-                    if (!isPlayerExpanded) {
-                        setIsPlayerExpanded(true);
-                    } else {
-                        setIsPlayerExpanded(false);
-                        try { navigate('/'); } catch (e) {}
-                    }
-                }
-            });
-            // Do not call preventDefault on touchmove by default so the app can
-            // use native scrolling on mobile devices. Only enable preventDefault
-            // for specific interactions that intentionally lock scrolling.
-            try { gestureService.setPreventDefaultOnMove(false); } catch (e) {}
-            gestureService.enable();
-            return () => {
-                try { gestureService.disable(); } catch (e) {}
-                try { gestureService.setEventHandlers({}); } catch (e) {}
-            };
-        } catch (e) {
-            // ignore
-        }
+                });
+                // Do not call preventDefault on touchmove by default so the app can
+                // use native scrolling on mobile devices. Only enable preventDefault
+                // for specific interactions that intentionally lock scrolling.
+                try { gs.setPreventDefaultOnMove(false); } catch (e) {}
+                gs.enable();
+            } catch (e) {
+                // ignore
+            }
+        })();
     }, [isUpNextRelatedModalOpen, isPlaylistOpen, isPlayerExpanded, navigate]);
 
     // New state for fuzzy search
@@ -1088,8 +1146,14 @@ function App() {
         // Update native notification play state
         (async () => {
             try {
-                await nativeMediaService.updateIsPlaying(isPlaying);
-                try { lockScreenService.setPlaybackState(isPlaying ? 'playing' : 'paused'); } catch (e) { console.warn('lockScreenService.setPlaybackState error', e); }
+                const nms = await loadNativeMediaService();
+                if (nms) {
+                    await nms.updateIsPlaying(isPlaying);
+                    try {
+                        const lss = await loadLockScreenService();
+                        if (lss) lss.setPlaybackState(isPlaying ? 'playing' : 'paused');
+                    } catch (e) { console.warn('lockScreenService.setPlaybackState error', e); }
+                }
             } catch(e) { console.warn('nativeMediaService.updateIsPlaying error', e); }
         })();
     }, [isPlaying]);
@@ -1747,8 +1811,11 @@ function App() {
     }, [songs, currentSongIndex, isUsingPlaylistQueue, playlistQueue, playlistQueueIndex, isPlaylistShuffleMode, isUsingArtistQueue, artistQueue, artistQueueIndex, isArtistShuffleMode, isUsingUpNext, upNextQueue, upNextIndex, isUsingMoodQueue, moodQueue, moodQueueIndex, isMoodShuffleMode]);
     // Register lockScreenService event handlers once (after handlers are defined)
     useEffect(() => {
-        if (!lockScreenService.isAvailable()) return;
-        lockScreenService.setEventHandlers({
+        (async () => {
+            try {
+                const lss = await loadLockScreenService();
+                if (!lss || !lss.isAvailable()) return;
+                lss.setEventHandlers({
             onPlay: () => { setIsPlaying(true); },
             onPause: () => { setIsPlaying(false); },
             onPrevious: () => { handlePrev(); },
@@ -1779,9 +1846,10 @@ function App() {
             onStop: () => { setIsPlaying(false); }
         });
 
-        if (musicControlsService.isAvailable()) {
+        const mcs = await loadMusicControlsService();
+        if (mcs && mcs.isAvailable()) {
             console.debug('[App] Setting up musicControlsService event handler');
-            musicControlsService.setEventHandler((message) => {
+            mcs.setEventHandler((message) => {
                 console.debug('[App] musicControlsService event:', message);
                 if (!message || typeof message !== 'string') return;
                 const action = message.toLowerCase();
@@ -1791,7 +1859,7 @@ function App() {
                 else if (action.includes('prev') || action.includes('previous')) { handlePrev(); }
                 else if (action.includes('toggle')) { setIsPlaying(prev => !prev); }
                 else if (action.includes('destroy')) {
-                    musicControlsService.stop();
+                    mcs.stop();
                 }
             });
         } else {
@@ -1800,9 +1868,13 @@ function App() {
 
         // cleanup: clear handlers
         return () => {
-            try { lockScreenService.setEventHandlers({}); } catch (e) {}
-            try { musicControlsService.setEventHandler(null); } catch (e) {}
+            try { lss.setEventHandlers({}); } catch (e) {}
+            try { if (mcs) mcs.setEventHandler(null); } catch (e) {}
         };
+            } catch (e) {
+                console.warn('Error initializing lock screen / music controls services', e);
+            }
+        })();
     }, [handleNext, handlePrev]);
     const handleVolumeChange = useCallback((v) => { setVolume(v); if (audioRef.current) audioRef.current.volume = v; }, []);
     const handleProgressChange = useCallback((p) => { if (audioRef.current && isFinite(audioRef.current.duration)) audioRef.current.currentTime = (p / 100) * audioRef.current.duration; }, []);
@@ -1833,14 +1905,18 @@ function App() {
             }
             // Update native media service (Android) with position in ms
             try {
-                const posMs = Math.floor(pos * 1000);
-                nativeMediaService.updatePosition(posMs);
+                if (nativeMediaService) {
+                    const posMs = Math.floor(pos * 1000);
+                    nativeMediaService.updatePosition(posMs);
+                }
             } catch (e) {
                 // non-fatal
             }
             // Update web Media Session position state
             try {
-                lockScreenService.setPositionState({ duration: dur, position: pos, playbackRate: audioRef.current.playbackRate || 1.0 });
+                if (lockScreenService) {
+                    lockScreenService.setPositionState({ duration: dur, position: pos, playbackRate: audioRef.current.playbackRate || 1.0 });
+                }
             } catch (e) {}
         }
     };
@@ -2484,18 +2560,18 @@ function App() {
                             />
                         }>
                         <Route index element={<LibraryPage />} />
-                        <Route path="profile" element={<ProfilePage />} />
-                        <Route path="artist/:artistName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><ArtistPage /></Suspense>} />
-                        <Route path="mood/:moodName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><MoodPage /></Suspense>} />
-                        <Route path="equalizer" element={<EqualizerPage />} />
-                        <Route path="playlists" element={<PlaylistsPage />} />
-                        <Route path="playlists/:id" element={<PlaylistPage />} />
-                        <Route path="favorites" element={<FavoritesPage />} />
-                        <Route path="recommendations" element={<RecommendationsPage />} />
-                        <Route path="feed" element={<FeedPage />} />
-                        <Route path="recents" element={<RecentsPage />} />
-                        <Route path="users/:id" element={<UserProfilePage />} />
-                        <Route path="feedback" element={<FeedbackPage />} />
+                        <Route path="profile" element={<Suspense fallback={<LazyLoadingFallback />}><ProfilePage /></Suspense>} />
+                        <Route path="artist/:artistName" element={<Suspense fallback={<LazyLoadingFallback />}><ArtistPage /></Suspense>} />
+                        <Route path="mood/:moodName" element={<Suspense fallback={<LazyLoadingFallback />}><MoodPage /></Suspense>} />
+                        <Route path="equalizer" element={<Suspense fallback={<LazyLoadingFallback />}><EqualizerPage /></Suspense>} />
+                        <Route path="playlists" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistsPage /></Suspense>} />
+                        <Route path="playlists/:id" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistPage /></Suspense>} />
+                        <Route path="favorites" element={<Suspense fallback={<LazyLoadingFallback />}><FavoritesPage /></Suspense>} />
+                        <Route path="recommendations" element={<Suspense fallback={<LazyLoadingFallback />}><RecommendationsPage /></Suspense>} />
+                        <Route path="feed" element={<Suspense fallback={<LazyLoadingFallback />}><FeedPage /></Suspense>} />
+                        <Route path="recents" element={<Suspense fallback={<LazyLoadingFallback />}><RecentsPage /></Suspense>} />
+                        <Route path="users/:id" element={<Suspense fallback={<LazyLoadingFallback />}><UserProfilePage /></Suspense>} />
+                        <Route path="feedback" element={<Suspense fallback={<LazyLoadingFallback />}><FeedbackPage /></Suspense>} />
                     </Route>
                 )}
             </Routes>
