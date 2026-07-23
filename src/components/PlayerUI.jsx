@@ -328,7 +328,7 @@ const PlayerUI = ({
                                 )}
                             </div>
                         </div>
-                        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+                        <div className="flex-1 min-h-0 overflow-y-auto pr-1 mt-5">
                             <div className="flex min-h-full flex-col items-center justify-start">
                                 {currentSong ? (
                                     <>
@@ -355,7 +355,7 @@ const PlayerUI = ({
                                     </div>
                                 )}
 
-                                <div className="w-full max-w-md px-1">
+                                <div className="w-full max-w-md px-1 mt-3">
                                     <ProgressBar
                                         progress={progress}
                                         onProgressChange={onProgressChange}
@@ -364,7 +364,7 @@ const PlayerUI = ({
                                     />
                                 </div>
 
-                                <div className="w-full max-w-md mb-4">
+                                <div className="w-full max-w-md mt-3 mb-4">
                                     <Controls
                                         isPlaying={isPlaying}
                                         onPlayPause={onPlayPause}
@@ -377,7 +377,7 @@ const PlayerUI = ({
                                     />
                                 </div>
 
-                                <div className="w-full max-w-md px-1">
+                                <div className="w-full max-w-md px-1 mt-2">
                                     <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
                                 </div>
 
