@@ -3,6 +3,10 @@ import { FavoritesContext } from '../contexts/FavoritesContext';
 import { Capacitor } from '@capacitor/core';
 import { Controls, ProgressBar, VolumeControl } from './OtherComponents';
 import { ChevronDown, Music, MoreVertical } from 'lucide-react';
+import { Link } from 'react-router-dom';
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+// import { byPrefixAndName } from '@fortawesome/fontawesome-svg-core';
+// import { Home } from 'lucide-react';
 import nativeMediaService from '../services/nativeMediaService';
 import ImageWithFallback from './ImageWithFallback';
 import { useDrag } from '@use-gesture/react';
@@ -396,88 +400,19 @@ const PlayerUI = ({
     
     return (
         <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="p-4 flex flex-col h-full">
-            <div className="flex-grow flex flex-col items-center justify-center text-center space-y-3 my-3 relative overflow-hidden">
-                {currentSong ? (
-                    <>
-                        {/* Menu button positioned at the card top-rightmost corner (transparent background) */}
-                        <div ref={menuRef} className="absolute -top-3 -right-3 z-50">
-                            <button aria-label="Open menu" onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v); }} className="p-2 rounded-full bg-transparent hover:bg-black/10 text-white">
-                                <MoreVertical size={18} />
-                            </button>
-                            {menuOpen && (
-                                // render dropdown as fixed positioned element so it doesn't affect layout
-                                <div style={dropdownStyle} className="w-44 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1">
-                                    <button onClick={() => { setMenuOpen(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
-                                    <button onClick={() => { setMenuOpen(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
-                                    <button
-                                        onClick={() => {
-                                            setMenuOpen(false);
-                                            const { toggleSongFavorite, isSongFavorite } = currentFav;
-                                            toggleSongFavorite(currentSong.id).catch(() => {});
-                                        }}
-                                        className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
-                                    >
-                                        {currentFav && currentFav.isSongFavorite(currentSong.id) ? 'Remove Favourite' : 'Add Favourite'}
-                                    </button>
-                                    <button onClick={() => { setMenuOpen(false); onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
-                                    <button onClick={() => { setMenuOpen(false); onReportSong && onReportSong(currentSong.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
-                                </div>
-                            )}
-                        </div>
-                        <div className="relative z-10">
-                            <ImageWithFallback
-                                src={currentSong.coverUrl}
-                                alt="Album Cover"
-                                className="w-full h-40 sm:w-full sm:h-48 md:w-full md:h-56 rounded-2xl shadow-md object-cover"
-                                fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
-                            />
-                        </div>
-                        <div className="w-full px-2 z-10 max-w-full">
-                            <h2 className={`text-base md:text-lg font-semibold player-title-marquee ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`} style={{overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%'}}>{currentSong.title}</h2>
-                            <p className="text-xs md:text-sm text-gray-400 text-truncate-ellipsis mt-1" style={{maxWidth: '100%', display: 'block'}}>{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
-                        </div>
-                    </>
-                ) : (
-                     <div className="w-48 h-48 md:w-64 md:h-64 rounded-2xl bg-gray-700/50 border border-gray-600 flex flex-col justify-center items-center p-4">
-                        <Music size={48} className="text-gray-500 mb-4"/>
-                        <h2 className="text-xl font-bold">Song</h2>
-                        <p className="text-gray-400 text-sm">Select a song to start playing.</p>
-                    </div>
-                )}
-            </div>
-            <div className="space-y-2 pb-8 md:pb-0">
-                <ProgressBar 
-                    progress={progress} 
-                    onProgressChange={onProgressChange} 
-                    duration={duration} 
-                    currentTime={currentTime} 
-                />
-                <div className="w-full flex items-center justify-center">
-                    <Controls
-                    isPlaying={isPlaying}
-                    onPlayPause={onPlayPause}
-                    onNext={onNext}
-                    onPrev={onPrev}
-                    isShuffle={isShuffle}
-                    onShuffleToggle={onShuffleToggle}
-                    isRepeat={isRepeat}
-                    onRepeatToggle={onRepeatToggle}
-                    />
-                </div>
-                <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
-                <div className="mt-10 md:hidden flex items-center justify-between px-2">
-                    <div className="bg-black/5 hover:bg-black/10 active:bg-black/20 p-2 transition-colors">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: UP NEXT clicked'); try { onOpenUpNext && onOpenUpNext(); } catch(e){} }} className="text-xs uppercase text-gray-300 hover:text-white active:text-white block whitespace-nowrap">UP NEXT</button>
-                    </div>
-                    <div className="bg-black/5 hover:bg-black/10 active:bg-black/20 p-2 transition-colors">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: RELATED clicked'); try { onOpenRelated && onOpenRelated(); } catch(e){} }} className="text-xs uppercase text-gray-300 hover:text-white active:text-white block whitespace-nowrap">RELATED</button>
-                    </div>
-                </div>
+            {/* Replace user profile area with Playlist button in the left column header (desktop) */}
+            <div className="relative flex flex-col items-center gap-1">
+                {/* <FontAwesomeIcon icon={byPrefixAndName.fas['house']} /> */}
+                <Link to="/" className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white hover:bg-blue-500">Home</Link>
+                {/* <FontAwesomeIcon icon={byPrefixAndName.fas['list-ul']} /> */}
+                <Link to="/recommendations" className="w-full px-3 rounded-lg py-2 bg-gray-700 text-white hover:bg-blue-500">Recommendations</Link>
+                {/* <FontAwesomeIcon icon={byPrefixAndName.fas['hourglass-half']} /> */}
+                <Link to="/feed" className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white hover:bg-blue-500">Recently Played</Link>
+                {/* <FontAwesomeIcon icon={byPrefixAndName.fas['lines-leaning']} /> */}
+                <Link to="/playlists" className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white hover:bg-blue-500">Playlists</Link>
             </div>
         </div>
     );
 };
 
 export default PlayerUI;
-
-// NOTE: debug button removed to prevent accidental repeated native start calls from the WebView.
