@@ -17,15 +17,12 @@ export default function BottomNav() {
   };
 
   const openSearch = () => {
-    closeSearchOverlayIfOpen();
-    navigate('/search');
-    setTimeout(() => {
-      const el = document.getElementById('global-search-input') || document.querySelector('input[placeholder^="Search songs"]');
-      if (el) {
-        try { el.focus(); } catch (e) {}
-        try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
-      }
-    }, 150);
+    // Focus the search bar without navigating or showing overlay
+    const el = document.getElementById('global-search-input') || document.querySelector('input[placeholder^="Search songs"]');
+    if (el) {
+      try { el.focus(); } catch (e) {}
+      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+    }
   };
 
   const openPlaylists = () => {

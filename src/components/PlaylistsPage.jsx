@@ -27,6 +27,7 @@ const PlaylistsPage = () => {
     const { search } = useLocation();
     const params = new URLSearchParams(search);
     const addSongId = params.get('add');
+    const createParam = params.get('create');
 
     const [playlists, setPlaylists] = useState([]);
     const [pinnedPlaylistIds, setPinnedPlaylistIds] = useState([]);
@@ -72,6 +73,11 @@ const PlaylistsPage = () => {
         window.addEventListener('storage', onStorage);
         return () => window.removeEventListener('storage', onStorage);
     }, [token]);
+
+    // Open create form if ?create=1 is present in the URL
+    useEffect(() => {
+        if (createParam) setShowCreate(true);
+    }, [createParam]);
 
     // Mobile right-swipe to go back gesture. Lightweight and only active on small screens.
     useEffect(() => {

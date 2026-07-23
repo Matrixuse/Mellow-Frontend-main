@@ -57,7 +57,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
     <div className="flex flex-col md:flex-row h-full">
         {/* Left Column desktop/tablet par hi dikhega - hide on favorites */}
         {!isFavoritesPage && (
-        <div className="hidden md:flex md:w-80 p-3 flex-shrink-0 flex-col bg-gray-800/30">
+        <div className="hidden md:flex md:w-90 p-3 flex-shrink-0 flex-col bg-gray-800/30">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Link to="/" className="flex items-center gap-3">
@@ -65,17 +65,11 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                         <h1 className="text-2xl font-bold text-gray-200">Mellow</h1>
                     </Link>
                 </div>
-                {/* Replace user profile area with Playlist button in the left column header (desktop) */}
-                <div className="relative flex items-center gap-3">
-                    <div className="hidden md:flex items-center gap-2">
-                        <Link to="/playlists" className="px-3 py-2 bg-blue-600 rounded-full text-white hover:bg-blue-500">Playlists</Link>
-                    </div>
-                </div>
             </div>
-            <div className="bg-gray-800 rounded-2xl flex flex-col shadow-2xl flex-grow">
+            <div className="bg-gray-800 rounded-lg flex flex-col shadow-xl flex-grow">
                 {/* Forward modal open handlers from props (App supplies them). Avoid referencing
                     App-scoped setters directly here to prevent undefined reference errors. */}
-                <PlayerUI {...props} onOpenUpNext={props.onOpenUpNext} onOpenRelated={props.onOpenRelated} />
+                <PlayerUI {...props} user={user} onOpenUpNext={props.onOpenUpNext} onOpenRelated={props.onOpenRelated} />
             </div>
         </div>
         )}
@@ -216,12 +210,6 @@ const LibraryPage = React.memo(() => {
                                     <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700">Logout</button>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Desktop-only Recommendations & Feed links to the right of profile */}
-                        <div className="hidden md:flex items-center gap-2">
-                            <Link to="/recommendations" className="px-3 py-2 bg-blue-600 rounded-full text-white hover:bg-blue-500">Recommendations</Link>
-                            <Link to="/feed" className="px-3 py-2 bg-purple-600 rounded-full text-white hover:bg-purple-500">Recently Played</Link>
                         </div>
                     </div>
                 </div>
@@ -1834,20 +1822,15 @@ function App() {
                     const roundedDuration = Math.round(dur);
                     updateDurationForSong(currentSong.id || currentSong._id, roundedDuration);
                     // Send duration to backend in the background (non-blocking)
-                    fetch(`${typeof window !== 'undefined' && window.__API_URL ? window.__API_URL : 'https://mellow-backend-main.onrender.com'}/api/songs/update-duration`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${user?.token || ''}`
-                        },
-                        body: JSON.stringify({
+                    apiClient.fetchWithFallback('POST', '/songs/update-duration', {
+                        body: {
                             songId: currentSong.id || currentSong._id,
                             duration: roundedDuration
-                        })
-                    }).catch(() => {}); // Silent fail - don't interrupt playback
+                        },
+                        token: user?.token || null
+                    }).catch(() => {});
                 }
             }
-            
             // Update native media service (Android) with position in ms
             try {
                 const posMs = Math.floor(pos * 1000);
@@ -2516,30 +2499,33 @@ function App() {
                     </Route>
                 )}
             </Routes>
-            <DesktopPlayerBar
-                currentSong={currentSong}
-                isPlaying={isPlaying}
-                onPlayPause={handlePlayPause}
-                onNext={handleNext}
-                onPrev={handlePrev}
-                progress={progress}
-                onProgressChange={handleProgressChange}
-                duration={duration}
-                currentTime={currentTime}
-                volume={volume}
-                onVolumeChange={handleVolumeChange}
-                isShuffle={isShuffle}
-                onShuffleToggle={handleShuffleToggle}
-                isRepeat={isRepeat}
-                onRepeatToggle={handleRepeatToggle}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
-                onShowArtist={(artistName) => { window.location.href = `/artist/${encodeURIComponent(artistName)}`; }}
-                onReportSong={(songId) => { const reason = prompt('Report song reason (optional):'); if (reason !== null) { console.log('Reported song', songId, 'reason:', reason); alert('Thank you. The song has been reported.'); } }}
-                onTogglePlayerExpand={toggleBottomPlayerClicked}
-                isPlayerInitialized={isPlayerInitialized}
-            />
+            
             </FavoritesProvider>
+            {user && (
+                <DesktopPlayerBar
+                    currentSong={currentSong}
+                    isPlaying={isPlaying}
+                    onPlayPause={handlePlayPause}
+                    onNext={handleNext}
+                    onPrev={handlePrev}
+                    progress={progress}
+                    onProgressChange={handleProgressChange}
+                    duration={duration}
+                    currentTime={currentTime}
+                    volume={volume}
+                    onVolumeChange={handleVolumeChange}
+                    isShuffle={isShuffle}
+                    onShuffleToggle={handleShuffleToggle}
+                    isRepeat={isRepeat}
+                    onRepeatToggle={handleRepeatToggle}
+                    onAddToQueue={handleAddToQueue}
+                    onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
+                    onShowArtist={(artistName) => { window.location.href = `/artist/${encodeURIComponent(artistName)}`; }}
+                    onReportSong={(songId) => { const reason = prompt('Report song reason (optional):'); if (reason !== null) { console.log('Reported song', songId, 'reason:', reason); alert('Thank you. The song has been reported.'); } }}
+                    onTogglePlayerExpand={toggleBottomPlayerClicked}
+                    isPlayerInitialized={isPlayerInitialized}
+                />
+            )}
             {isAdminPanelOpen && ( <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"><AdminPanel onClose={() => setIsAdminPanelOpen(false)} onSongUploaded={handleSongUploaded} /> </div> )}
             {isPlayerExpanded && (
                 <div className="fixed inset-0 bg-gray-900 z-50 md:hidden" style={{ transform: isPlayerEntered ? 'translateY(0%)' : 'translateY(-100%)', transition: 'transform 260ms cubic-bezier(.2,.8,.2,1)' }}>
@@ -2565,7 +2551,7 @@ function App() {
                                 duration={duration}
                                 currentTime={currentTime}
                                 volume={volume}
-                                onVolumeChange={handleVolumeChange}
+                                onVolumeChange={onVolumeChange}
                                 isShuffle={isShuffle}
                                 onShuffleToggle={() => setIsShuffle(!isShuffle)}
                                 isRepeat={isRepeat}

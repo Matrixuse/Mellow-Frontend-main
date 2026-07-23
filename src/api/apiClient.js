@@ -33,12 +33,14 @@ export async function fetchWithFallback(method, apiPath, { body = null, token = 
   const isLocalHost = (typeof window !== 'undefined') && (['localhost', '127.0.0.1', '::1'].includes(window.location.hostname));
   if (isLocalHost) {
     candidates.push('http://localhost:5000');
+    candidates.push('http://localhost:5001'); // Fallback if 5000 is in use
     if (configured) candidates.push(configured);
     candidates.push('');
   } else {
     // default: try configured host (prod or env override), then localhost, then relative
     candidates.push(configured);
     candidates.push('http://localhost:5000');
+    candidates.push('http://localhost:5001'); // Fallback if 5000 is in use
     candidates.push('');
   }
 

@@ -1,12 +1,18 @@
 import React, { useState, useRef, useEffect, useContext, useMemo } from 'react';
 import { Play, MoreVertical } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 import { FavoritesContext } from '../contexts/FavoritesContext';
-import { getQuickPicks } from '../utils/quickPicksAlgorithm';
+import { getQuickPicks, getListeningHistory } from '../utils/quickPicksAlgorithm';
 
 const DEFAULT_ARTIST_IMAGE = '/artists/default.png';
+
+// CSS to hide scrollbars for specific containers
+const hideScrollbarCSS = `
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+`;
 
 const topArtists = [
     { name: 'KK', imageUrl: '/artists/kk.png' },
@@ -97,7 +103,7 @@ const moodCategories = [
 
 const TopArtists = () => (
     <div className="mb-5">
-        <h3 className="text-l font-semibold mb-2 mt-2">Top Artists</h3>
+        <h3 className="text-2xl font-bold mb-5 mt-2">Popular Artists</h3>
     <div className="grid grid-flow-col auto-cols-[7.5rem] sm:auto-cols-[11rem] gap-5 overflow-x-auto custom-scrollbar-h pb-4">
             {topArtists.map((artist) => (
                 <Link to={`/artist/${encodeURIComponent(artist.name)}`} key={artist.name} className="flex flex-col items-center gap-3 cursor-pointer group">
@@ -121,7 +127,7 @@ const TopArtists = () => (
 const YourMood = () => {
     return (
         <div className="mb-8">
-            <h3 className="text-l font-semibold mb-2">Your Mood</h3>
+            <h3 className="text-2xl font-bold mb-5">Your Mood</h3>
             
             {/* Mood Cards - Single Row with Images */}
             <div className="grid grid-flow-col auto-cols-[9.25rem] sm:auto-cols-[10.25rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
@@ -154,14 +160,172 @@ const YourMood = () => {
     );
 };
 
+// Helper: parse duration strings like "mm:ss" or "hh:mm:ss" into seconds
+const parseDurationToSeconds = (dur) => {
+    if (!dur) return 0;
+    try {
+        const parts = String(dur).split(':').map(p => parseInt(p, 10));
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return Number(parts[0]) || 0;
+    } catch (e) { return 0; }
+};
+
+// Helper: format seconds to hh:mm:ss or mm:ss
+const formatSecondsToDuration = (sec) => {
+    if (sec === undefined || sec === null) return '0:00';
+    const totalSeconds = parseDurationToSeconds(sec);
+    if (!totalSeconds || isNaN(totalSeconds)) return '0:00';
+    const total = Math.round(totalSeconds);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const pad = (n) => n.toString().padStart(2, '0');
+    if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+    return `${m}:${pad(s)}`;
+};
+
+// Listen Again section: shows recent history with a fixed 'Start playing' tile then recent songs
+const ListenAgainSection = ({ songs = [], onSelectSong, onSearchBarClick }) => {
+    const history = getListeningHistory();
+    if (!Array.isArray(history) || history.length === 0) return null;
+
+    // Build unique recent song list mapped to current library
+    const seen = new Set();
+    const recentSongs = [];
+    for (const entry of history) {
+        const id = String(entry.songId);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const s = songs.find(x => String(x.id) === id);
+        if (s) recentSongs.push(s);
+        if (recentSongs.length >= 20) break;
+    }
+
+    if (recentSongs.length === 0) return null;
+
+    const firstRow = recentSongs.slice(0, 10);
+    const squareRow = recentSongs.slice(0, 8);
+
+    return (
+        <div className="mb-2 mt-2">
+            <h3 className="text-2xl font-bold mb-3">Listen again</h3>
+            <div className="flex items-start gap-4">
+                {/* Scrollable rectangular cards - only this part scrolls horizontally (hidden scrollbar) */}
+                <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar h-40 items-stretch">
+                    {firstRow.map((song) => (
+                        <div
+                            key={song.id}
+                            onClick={() => onSelectSong(song.id)}
+                            className="flex flex-col justify-between flex-shrink-0 w-40 h-40 bg-gray-900/50 rounded-lg cursor-pointer"
+                        >
+                            <div className="flex flex-col items-center gap-2 h-full">
+                                <ImageWithFallback
+                                    src={song.coverUrl || song.cover}
+                                    fallback={DEFAULT_ARTIST_IMAGE}
+                                    alt={song.title}
+                                    className="w-full h-20 mt-3 mb-2 rounded-md object-cover"
+                                />
+                                <div className="w-full min-w-0 text-center">
+                                    <h4 className="text-sm font-semibold truncate">{song.title}</h4>
+                                    <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist[0] : song.artist}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Long to Listen: songs longer than 10 minutes (show up to 8)
+const LongToListenSection = ({ songs = [], onSelectSong }) => {
+    if (!Array.isArray(songs) || songs.length === 0) return null;
+    
+    // Filter songs longer than 10 minutes (600 seconds)
+    // Handle both string "mm:ss" format and numeric seconds
+    const longSongs = songs.filter(s => {
+        // Try multiple field names for duration
+        let dur = s.duration ?? s.durationSeconds ?? s.duration_seconds;
+        
+        // If still no duration, try to parse from player metadata (if available)
+        if (!dur && s.metadata?.duration) {
+            dur = s.metadata.duration;
+        }
+        
+        let seconds = 0;
+        
+        if (typeof dur === 'number') {
+            seconds = dur;
+        } else if (typeof dur === 'string' && dur.includes(':')) {
+            const parts = dur.split(':').map(p => parseInt(p, 10));
+            if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            else if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
+            else seconds = Number(parts[0]) || 0;
+        } else if (dur) {
+            seconds = Number(dur) || 0;
+        }
+        
+        // If duration is still 0 or very small, it's likely not set properly
+        // So we'll include it in the list with a note that user should play it
+        return seconds > 600; // 10 minutes = 600 seconds
+    }).slice(0, 8);
+    
+    if (longSongs.length === 0) {
+        return (
+            <div className="mb-5">
+                <h3 className="text-2xl font-bold mb-3">Long to Listen</h3>
+                <div className="flex items-center justify-center h-56 bg-gray-800/50 rounded-md p-4 text-gray-400 text-sm">
+                    No long songs available yet. Play a longer track to see recommendations here.
+                </div>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="mb-3">
+            <h3 className="text-2xl font-bold mb-3">Long to Listen</h3>
+
+            {/* Square row of long songs (hidden scrollbar) */}
+            <div className="flex gap-3 overflow-x-auto mt-3 hide-scrollbar h-52 items-stretch">
+                {longSongs.map(song => {
+                    const dur = song.duration ?? song.durationSeconds;
+                    return (
+                        <div key={song.id} onClick={() => onSelectSong(song.id)} className="flex flex-col justify-between flex-shrink-0 w-40 h-50 bg-gray-800/50 rounded-md p-2 cursor-pointer">
+                            <ImageWithFallback src={song.coverUrl || song.cover} fallback={DEFAULT_ARTIST_IMAGE} alt={song.title} className="w-full h-30 rounded-md object-cover" />
+                            <div className="min-w-0">
+                                <h5 className="text-sm font-semibold truncate">{song.title}</h5>
+                                <div className="flex items-start justify-between gap-1 mt-1">
+                                    <p className="text-[12px] text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist[0] : song.artist}</p>
+                                    <p className="text-[12px] text-gray-400 truncate">{formatSecondsToDuration(dur)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 // Quick Picks Component - Smart recommendations based on listening history
 const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, openMenuId, setOpenMenuId, handlers }) => {
     const quickPickSongs = useMemo(() => {
-        return getQuickPicks(songs, 24);
+        const picks = getQuickPicks(songs, 24);
+        if (Array.isArray(picks) && picks.length > 0) {
+            return picks;
+        }
+        return Array.isArray(songs) ? songs.slice(0, 24) : [];
     }, [songs]);
 
-    if (!quickPickSongs || quickPickSongs.length === 0) {
-        return null;
+    if (!Array.isArray(quickPickSongs) || quickPickSongs.length === 0) {
+        return (
+            <div className="mb-5">
+                <h3 className="text-2xl font-bold mb-3">Quick picks</h3>
+                <p className="text-gray-400 text-sm">Quick Picks are being generated for you. Please play a song to improve recommendations.</p>
+            </div>
+        );
     }
 
     const QuickPickMenu = ({ song }) => {
@@ -201,7 +365,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
 
     return (
         <div className="mb-5">
-            <h3 className="text-l font-semibold mb-3">Quick Picks</h3>
+            <h3 className="text-2xl font-bold mb-4">Quick picks</h3>
             
             {/* Mobile view: 3 columns x 3 rows, left-right scrolling */}
             <div className="md:hidden grid grid-flow-col auto-cols-[6rem] grid-rows-3 gap-1 overflow-x-auto overflow-y-hidden custom-scrollbar-h pb-3">
@@ -277,6 +441,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
         onAddToPlaylist: outlet.onAddToPlaylist,
         onShowArtist: outlet.onShowArtist,
         onReportSong: outlet.onReportSong,
+        onSearchBarClick: outlet.onSearchBarClick,
     };
 
     // Manage one open menu at a time using openMenuId at parent scope
@@ -330,110 +495,69 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
 
     return (
         <div>
-            {/* Mobile order: Recently Uploaded then Top Artists */}
+            <style>{hideScrollbarCSS}</style>
+            {/* Mobile layout: Listen Again -> Quick Picks -> Most Popular -> Popular Artists -> Your Mood -> Long to Listen */}
             <div className="md:hidden">
-                {/* Quick Picks Section - Mobile */}
                 <QuickPicksSection songs={songs} currentSongId={currentSongId} isPlaying={isPlaying} onSelectSong={onSelectSong} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} handlers={handlers} />
-                
-                <h3 className="text-l font-semibold mb-2 mt-2">Most Popular</h3>
+                <ListenAgainSection songs={songs} onSelectSong={onSelectSong} onSearchBarClick={handlers.onSearchBarClick} />
+
+                <h3 className="text-2xl font-bold mb-3 mt-2">Most Popular</h3>
                 {songs.length === 0 ? (
                     <div className="text-center text-gray-400 mt-10">
                         <p>Song not found.</p>
                     </div>
                 ) : (
-                    <>
-                        {/* Mobile: grid with 4 rows, 2 columns, horizontal scrolling for 8 songs */}
-                        <div className="md:hidden grid grid-rows-5 grid-flow-col auto-cols-[18rem] gap-1.5 overflow-x-auto overflow-y-hidden pb-2">
-                            {songs.slice(0, 10).map((song) => {
-                                const isActive = currentSongId === song.id && isPlaying;
-                                return (
-                                    <div 
-                                        key={song.id} 
-                                        onClick={() => onSelectSong(song.id)}
-                                        className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/80 hover:bg-gray-700/80'}`}
-                                    >
-                                        <div className="relative flex-shrink-0">
-                                            <ImageWithFallback
-                                                src={song.coverUrl}
-                                                fallback={DEFAULT_ARTIST_IMAGE}
-                                                alt={song.title}
-                                                className="w-10 h-10 rounded-md object-cover"
-                                            />
-                                            {isActive && (
-                                                <Play className="absolute inset-0 m-auto text-blue-400" size={16} />
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
-                                            <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
-                                        </div>
-                                        <SongMenu song={song} className="flex-shrink-0" />
+                    <div className="grid grid-rows-5 grid-flow-col auto-cols-[18rem] gap-1.5 overflow-x-auto overflow-y-hidden pb-2">
+                        {songs.slice(0, 10).map((song) => {
+                            const isActive = currentSongId === song.id && isPlaying;
+                            return (
+                                <div 
+                                    key={song.id} 
+                                    onClick={() => onSelectSong(song.id)}
+                                    className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/80 hover:bg-gray-700/80'}`}>
+                                    <div className="relative flex-shrink-0">
+                                        <ImageWithFallback
+                                            src={song.coverUrl}
+                                            fallback={DEFAULT_ARTIST_IMAGE}
+                                            alt={song.title}
+                                            className="w-10 h-10 rounded-md object-cover"
+                                        />
+                                        {isActive && (
+                                            <Play className="absolute inset-0 m-auto text-blue-400" size={16} />
+                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                        {/* Desktop/tablet: horizontal card scroller with 4 rows, 2 columns left-right scroll */}
-                        <div className="hidden md:grid grid-rows-4 grid-flow-col auto-cols-[11rem] sm:auto-cols-[11rem] gap-3 overflow-x-auto overflow-y-hidden pb-4">
-                            {songs.slice(0, 8).map((song) => {
-                                const isActive = currentSongId === song.id && isPlaying;
-                                const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
-                                const fav = isSongFavorite(song.id);
-                                return (
-                                    <div 
-                                        key={song.id} 
-                                        onClick={() => onSelectSong(song.id)}
-                                        className={`group relative p-4 rounded-lg cursor-pointer transition-all duration-300 flex flex-col ${isActive ? 'bg-blue-900/30' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
-                                    >
-                                        <div className="relative mb-3">
-                                            <ImageWithFallback
-                                                src={song.coverUrl}
-                                                fallback={DEFAULT_ARTIST_IMAGE}
-                                                alt={song.title}
-                                                className="w-full h-auto aspect-square rounded-md object-cover"
-                                            />
-                                            <div className={`absolute bottom-2 right-14 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'}`}>
-                                                <Play size={24} className="text-white fill-current" />
-                                            </div>
-                                        </div>
-                                        {/* Card content row: title/artist on left, three-dots menu aligned to the right corner of the title area */}
-                                        <div className="flex items-center justify-between mt-2">
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
-                                                <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
-                                            </div>
-                                            <div className="ml-3 flex-shrink-0">
-                                                <SongMenu song={song} onAddToQueue={handlers.onAddToQueue} onAddToPlaylist={handlers.onAddToPlaylist} onReport={handlers.onReportSong} />
-                                            </div>
-                                        </div>
-                                        {/* Keep mobile ThreeDots inside card for mobile layout */}
-                                        <div className="md:hidden mt-2">
-                                            <SongMenu song={song} />
-                                        </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                        <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </>
+                                    <SongMenu song={song} className="flex-shrink-0" />
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
-                {/* Top Artists visible on mobile below Recently Uploaded */}
-                <div className="mt-6">
+
+                <div className="mt-4">
                     <TopArtists />
                 </div>
-                
-                {/* Your Mood section on mobile - below Recently Uploaded */}
-                <div className="mt-6">
-                    <YourMood />
-                </div>
+
+                    <div className="mt-4">
+                        <YourMood />
+                    </div>
+
+                    <div className="mt-6">
+                        <LongToListenSection songs={songs} onSelectSong={onSelectSong} />
+                    </div>
             </div>
-            {/* Desktop/Tablet order: Top Artists, Recently Uploaded, then Your Mood */}
+
+            {/* Desktop layout: Listen Again -> Popular Artists -> Quick Picks -> Most Popular -> Your Mood */}
             <div className="hidden md:block">
+                <ListenAgainSection songs={songs} onSelectSong={onSelectSong} onSearchBarClick={handlers.onSearchBarClick} />
                 <TopArtists />
-                
-                {/* Quick Picks Section - Desktop */}
                 <QuickPicksSection songs={songs} currentSongId={currentSongId} isPlaying={isPlaying} onSelectSong={onSelectSong} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} handlers={handlers} />
-                
+
                 <div className="mt-3">
-                    <h3 className="text-xl font-semibold mb-2">Most Popular</h3>
+                    <h3 className="text-2xl font-bold mb-5">Most Popular</h3>
                     {songs.length === 0 ? (
                         <div className="text-center text-gray-400 mt-10">
                             <p>Song not found.</p>
@@ -460,18 +584,15 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                             <Play size={24} className="text-white fill-current" />
                                         </div>
                                     </div>
-                                    {/* Card content row: title/artist on left, three-dots menu outside on right (desktop) */}
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex-1 min-w-0 ml-1">
                                             <h4 className="text-sm font-semibold text-white truncate">{song.title}</h4>
                                             <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                                         </div>
                                         <div className="hidden md:block flex-shrink-0">
-                                            {/* Place SongMenu inside the card to the right of the song title on desktop */}
                                             <SongMenu song={song} />
                                         </div>
                                     </div>
-                                    {/* Keep mobile ThreeDots inside card for mobile layout */}
                                     <div className="md:hidden mt-2">
                                         <SongMenu song={song} />
                                     </div>
@@ -481,10 +602,12 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                         </div>
                     )}
                 </div>
-                
-                {/* Your Mood section on desktop - below Recently Uploaded */}
+
                 <div className="mt-6">
                     <YourMood />
+                </div>
+                <div className="mt-6">
+                    <LongToListenSection songs={songs} onSelectSong={onSelectSong} />
                 </div>
             </div>
         </div>

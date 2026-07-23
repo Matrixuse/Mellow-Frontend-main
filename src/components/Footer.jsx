@@ -63,7 +63,6 @@ const Footer = ({ onDeveloperClick }) => (
                 <span>© 2026 Mellow</span>
                 <span>Creators: Naman</span>
             </div>
-            <div></div>
         </div>
     </footer>
 );

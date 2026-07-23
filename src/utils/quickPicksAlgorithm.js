@@ -30,38 +30,64 @@ const shouldRefreshQuickPicks = () => {
     }
 };
 
+const shuffleArray = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return [...arr].sort(() => 0.5 - Math.random());
+};
+
 /**
  * Get cached quick picks or generate new ones
  */
 export const getCachedQuickPicks = (allSongs, count = 24) => {
     try {
-        // Check if we need to refresh
-        if (shouldRefreshQuickPicks()) {
-            // Generate new picks
-            const newPicks = generateQuickPicksInternal(allSongs, count);
-            
-            // Cache them
-            localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(newPicks));
+        const history = getListeningHistory();
+        const noHistory = !Array.isArray(history) || history.length === 0;
+
+        // If there's no listening history yet, still use a cached daily shuffle
+        if (noHistory) {
+            const cached = localStorage.getItem(QUICK_PICKS_CACHE_KEY);
+            if (cached && !shouldRefreshQuickPicks()) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed.slice(0, Math.min(count, parsed.length));
+                }
+            }
+            const shuffled = Array.isArray(allSongs) ? shuffleArray(allSongs) : [];
+            const picks = shuffled.slice(0, Math.min(count, shuffled.length));
+            localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(picks));
             localStorage.setItem(QUICK_PICKS_TIMESTAMP_KEY, Date.now().toString());
-            
-            return newPicks;
+            return picks;
         }
-        
-        // Return cached picks
+
+        if (shouldRefreshQuickPicks()) {
+            const newPicks = generateQuickPicksInternal(allSongs, count);
+            if (Array.isArray(newPicks)) {
+                // Save generated picks (preserve order) so they remain the same for the day
+                localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(newPicks));
+                localStorage.setItem(QUICK_PICKS_TIMESTAMP_KEY, Date.now().toString());
+                return newPicks.slice(0, Math.min(count, newPicks.length));
+            }
+            return [];
+        }
+
         const cached = localStorage.getItem(QUICK_PICKS_CACHE_KEY);
         if (cached) {
-            return JSON.parse(cached);
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                // return cached picks as-is (daily stable)
+                return parsed.slice(0, Math.min(count, parsed.length));
+            }
         }
-        
-        // Fallback: generate new picks if cache is empty
+
         const newPicks = generateQuickPicksInternal(allSongs, count);
-        localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(newPicks));
-        localStorage.setItem(QUICK_PICKS_TIMESTAMP_KEY, Date.now().toString());
-        
-        return newPicks;
+        if (Array.isArray(newPicks)) {
+            localStorage.setItem(QUICK_PICKS_CACHE_KEY, JSON.stringify(newPicks));
+            localStorage.setItem(QUICK_PICKS_TIMESTAMP_KEY, Date.now().toString());
+            return newPicks.slice(0, Math.min(count, newPicks.length));
+        }
+        return [];
     } catch {
-        // If caching fails, just generate picks
-        return generateQuickPicksInternal(allSongs, count);
+        return Array.isArray(allSongs) ? allSongs.slice(0, count) : [];
     }
 };
 
@@ -140,41 +166,41 @@ export const getFrequentMoods = (limit = 3) => {
  */
 const generateQuickPicksInternal = (allSongs, count = 9) => {
     if (!allSongs || allSongs.length === 0) return [];
-    
+
     const history = getListeningHistory();
-    const recentSongIds = new Set(history.slice(0, 20).map(h => h.songId));
-    
-    // If user has listening history, try to recommend based on taste
-    if (history.length > 0) {
-        const frequentArtists = getFrequentArtists(5);
-        const frequentMoods = getFrequentMoods(3);
-        
-        // Filter songs: match artists or moods, exclude recently played
-        const candidates = allSongs.filter(song => {
-            if (recentSongIds.has(song.id)) return false;
-            
-            const artists = Array.isArray(song.artist) ? song.artist : [song.artist];
-            const moods = song.moods || [];
-            
-            const matchesArtist = artists.some(a => frequentArtists.includes(a));
-            const matchesMood = moods.some(m => frequentMoods.includes(m));
-            
-            return matchesArtist || matchesMood;
-        });
-        
-        if (candidates.length >= count) {
-            return candidates.sort(() => 0.5 - Math.random()).slice(0, count);
-        }
-    }
-    
-    // Default: return random songs
-    const available = allSongs.filter(song => !recentSongIds.has(song.id));
-    return available.sort(() => 0.5 - Math.random()).slice(0, count);
+    const historySongIds = new Set(history.map(h => String(h.songId)));
+
+    // Rank songs by how well they match listening history.
+    const frequentArtists = getFrequentArtists(5);
+    const frequentMoods = getFrequentMoods(3);
+
+    const scored = allSongs.map((song) => {
+        const artists = Array.isArray(song.artist) ? song.artist : [song.artist];
+        const moods = song.moods || [];
+
+        const artistScore = artists.reduce((sum, artist) => sum + (frequentArtists.includes(artist) ? 1 : 0), 0);
+        const moodScore = moods.reduce((sum, mood) => sum + (frequentMoods.includes(mood) ? 1 : 0), 0);
+        const historyScore = historySongIds.has(String(song.id)) ? -1 : 0;
+
+        return {
+            song,
+            score: artistScore * 2 + moodScore + historyScore,
+        };
+    });
+
+    const prioritized = scored
+        .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return Math.random() - 0.5;
+        })
+        .map(entry => entry.song);
+
+    return prioritized.slice(0, Math.min(count, prioritized.length));
 };
 
 /**
  * Wrapper function for caching with 3:00 AM daily refresh
  */
-export const getQuickPicks = (allSongs, count = 9) => {
+export const getQuickPicks = (allSongs, count = 24) => {
     return getCachedQuickPicks(allSongs, count);
 };

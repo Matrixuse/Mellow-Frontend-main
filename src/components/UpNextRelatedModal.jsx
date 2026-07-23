@@ -11,6 +11,79 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
     const containerRef = useRef(null);
     const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
+    const parseDurationToSeconds = (dur) => {
+        if (dur === undefined || dur === null || dur === '') return 0;
+        if (typeof dur === 'string') {
+            const trimmed = dur.trim();
+            if (trimmed.includes(':')) {
+                const parts = trimmed.split(':').map((part) => Number(part));
+                if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                }
+                if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+                    return parts[0] * 60 + parts[1];
+                }
+            }
+            const numeric = Number(trimmed);
+            if (Number.isFinite(numeric)) {
+                return numeric > 10000 ? Math.round(numeric / 1000) : numeric;
+            }
+            return 0;
+        }
+        if (typeof dur === 'number' && Number.isFinite(dur)) {
+            return dur > 10000 ? Math.round(dur / 1000) : dur;
+        }
+        return 0;
+    };
+
+    const getSongDuration = (song) => {
+        if (!song) return 0;
+        const candidates = [
+            song.duration,
+            song.durationSeconds,
+            song.duration_seconds,
+            song.durationMs,
+            song.duration_ms,
+            song.durationMillis,
+            song.duration_millis,
+            song.length,
+            song.audioDuration,
+            song.metadata?.duration,
+            song.metadata?.durationSeconds,
+            song.metadata?.duration_seconds,
+            song.metadata?.durationMs,
+            song.metadata?.duration_ms
+        ];
+        for (const dur of candidates) {
+            const parsed = parseDurationToSeconds(dur);
+            if (parsed > 0) return parsed;
+        }
+        return 0;
+    };
+
+    const formatTime = (time) => {
+        if (time === null || time === undefined || time === '') return '0:00';
+        if (typeof time === 'string') {
+            const trimmed = time.trim();
+            const parts = trimmed.split(':').map((part) => Number(part));
+            if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+                return `${Math.floor(parts[0])}:${String(Math.floor(parts[1])).padStart(2, '0')}`;
+            }
+            if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+                const totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = Math.floor(totalSeconds % 60);
+                return `${minutes}:${String(seconds).padStart(2, '0')}`;
+            }
+            const numeric = Number(trimmed);
+            if (Number.isFinite(numeric)) time = numeric;
+        }
+        if (!isFinite(time) || time < 0) return '0:00';
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
     // spring for y translation (slower gesture animation: lower tension, higher friction)
     const SPRING_CONFIG = { tension: 1200, friction: 40 };
     const [{ y }, api] = useSpring(() => ({ y: 0, config: SPRING_CONFIG }));
@@ -188,7 +261,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     {upNextItems.map((song, index) => {
                                         const isActive = currentSong && String(song.id) === String(currentSong.id);
                                         return (
-                                        <div key={`${song.id}-${index}`} className={`flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-blue-900/25 to-transparent' : 'hover:bg_gray-700/30'}`}>
+                                        <div key={`${song.id}-${index}`} className={`group flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-blue-900/25 to-transparent' : 'hover:bg-gray-700/30'}`}>
                                             <img 
                                                 src={song.coverUrl} 
                                                 alt={song.title}
@@ -197,14 +270,15 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                             />
                                             <div onClick={() => { try { onSelectSong && onSelectSong(song.id); } catch (e) {} }} className="flex-1 min-w-0 cursor-pointer">
                                                 <div className={`text-sm font-medium ${isActive ? 'text-blue-300' : 'text-white'} truncate`}>{song.title}</div>
-                                                <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(',') : (song.artist || '')}</div>
+                                                <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
                                             </div>
+                                            <span className="text-xs text-gray-400 mr-2">{formatTime(getSongDuration(song))}</span>
                                             {isActive && (
                                                 <div className="flex items-center text-blue-400 ml-2">
                                                     <Play size={14} />
                                                 </div>
                                             )}
-                                            <div className="flex-shrink-0">
+                                            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                 <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="p-2 rounded hover:bg-gray-700/20 text-gray-300">
                                                     <MoreVertical size={16} />
                                                 </button>
@@ -244,7 +318,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     
                                     {relatedItems.map((song, index) => {
                                         return (
-                                        <div key={`${song.id}-${index}`} className="flex items-center gap-2 p-2 rounded hover:bg-gray-700/30 transition-colors relative">
+                                        <div key={`${song.id}-${index}`} className="group flex items-center gap-2 p-2 rounded hover:bg-gray-700/30 transition-colors relative">
                                             <img 
                                                 src={song.coverUrl} 
                                                 alt={song.title} 
@@ -255,7 +329,8 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                                 <div className="text-sm font-medium text-white truncate">{song.title}</div>
                                                 <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
                                             </div>
-                                            <div className="flex-shrink-0">
+                                            <span className="text-xs text-gray-400 mr-2">{formatTime(getSongDuration(song))}</span>
+                                            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                 <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="p-2 rounded hover:bg-gray-700/20 text-gray-300">
                                                     <MoreVertical size={16} />
                                                 </button>

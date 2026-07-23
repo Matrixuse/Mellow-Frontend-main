@@ -1,39 +1,12 @@
-// Local backend base URL for development
-// Prefer Vite env var, then runtime window injection, then the live Render URL.
-const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
-  ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-  : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-backend-main.onrender.com';
-const API_URL = `${BASE_URL}/api/playlists`;
-
-async function parseJsonSafe(response) {
-  const text = await response.text();
-  try {
-    return JSON.parse(text);
-  } catch (_) {
-    return { message: text?.slice(0, 140) || 'Unexpected response from server' };
-  }
-}
+import apiClient from './apiClient';
 
 // Get user's playlists
 export const getPlaylists = async (token) => {
   if (!token) {
-    console.warn('Authentication token not found, cannot fetch playlists.');
+    // no token: nothing to fetch
     return [];
   }
-
-  const response = await fetch(API_URL, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to fetch playlists');
-  }
-
-  const data = await response.json();
+  const data = await apiClient.fetchWithFallback('GET', '/playlists', { token }).catch(err => { throw err; });
   if (Array.isArray(data)) {
     return data.map(pl => ({
       ...pl,
@@ -45,28 +18,13 @@ export const getPlaylists = async (token) => {
       })) : []
     }));
   }
-  return data;
+  return data || [];
 };
 
 // Get playlist by ID with songs
 export const getPlaylistById = async (playlistId, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to fetch playlist');
-  }
-
-  const data = await response.json();
+  if (!token) throw new Error('Authentication token not found');
+  const data = await apiClient.fetchWithFallback('GET', `/playlists/${playlistId}`, { token });
   if (data) {
     if (Array.isArray(data.songs)) {
       data.songs = data.songs.map(s => ({
@@ -76,9 +34,7 @@ export const getPlaylistById = async (playlistId, token) => {
       }));
     }
     data.coverUrl = data.coverUrl || data.cover_url || '';
-    // ensure isFavorite is a boolean so consumers can rely on it
     data.isFavorite = !!data.isFavorite;
-    // owner info
     data.owner = data.owner || data.userId || null;
     data.ownerName = data.ownerName || data.userName || null;
   }
@@ -87,177 +43,49 @@ export const getPlaylistById = async (playlistId, token) => {
 
 // Create new playlist
 export const createPlaylist = async (playlistData, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(playlistData)
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to create playlist');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('POST', '/playlists', { body: playlistData, token });
 };
 
 // Update playlist
 export const updatePlaylist = async (playlistId, playlistData, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(playlistData)
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to update playlist');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('PUT', `/playlists/${playlistId}`, { body: playlistData, token });
 };
 
 // Delete playlist
 export const deletePlaylist = async (playlistId, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to delete playlist');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('DELETE', `/playlists/${playlistId}`, { token });
 };
 
 // Add song to playlist
 export const addSongToPlaylist = async (playlistId, songId, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}/songs`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ songId })
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to add song to playlist');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('POST', `/playlists/${playlistId}/songs`, { body: { songId }, token });
 };
 
 // Remove song from playlist
 export const removeSongFromPlaylist = async (playlistId, songId, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}/songs/${songId}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to remove song from playlist');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('DELETE', `/playlists/${playlistId}/songs/${songId}`, { token });
 };
 
 // Reorder songs in playlist
 export const reorderPlaylistSongs = async (playlistId, songIds, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}/songs/reorder`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ songIds })
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to reorder playlist songs');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('PUT', `/playlists/${playlistId}/songs/reorder`, { body: { songIds }, token });
 };
 
 // Toggle playlist visibility (public/private)
 export const togglePlaylistVisibility = async (playlistId, token) => {
-  if (!token) {
-    throw new Error('Authentication token not found');
-  }
-
-  const response = await fetch(`${API_URL}/${playlistId}/toggle-visibility`, {
-    method: 'PATCH',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to toggle playlist visibility');
-  }
-
-  return response.json();
+  if (!token) throw new Error('Authentication token not found');
+  return apiClient.fetchWithFallback('PATCH', `/playlists/${playlistId}/toggle-visibility`, { token });
 };
 
 // Search public playlists
 export const searchPublicPlaylists = async (query) => {
-  if (!query || !query.trim()) {
-    return [];
-  }
-
-  const response = await fetch(`${API_URL}/search/public?q=${encodeURIComponent(query)}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-    const errorData = await parseJsonSafe(response);
-    throw new Error(errorData.message || 'Failed to search playlists');
-  }
-
-  const data = await response.json();
+  if (!query || !query.trim()) return [];
+  const data = await apiClient.fetchWithFallback('GET', `/playlists/search/public?q=${encodeURIComponent(query)}`);
   return Array.isArray(data) ? data : [];
 };
