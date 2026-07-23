@@ -332,7 +332,7 @@ const PlayerUI = ({
                             <div className="flex min-h-full flex-col items-center justify-start">
                                 {currentSong ? (
                                     <>
-                                        <div className="relative w-[70%] max-w-[260px]">
+                                        <div className="relative w-[72%] max-w-[260px]">
                                             <div className="absolute -inset-3 rounded-lg bg-blue-500/20 blur-2xl" />
                                             <ImageWithFallback
                                                 src={currentSong.coverUrl}
@@ -342,7 +342,7 @@ const PlayerUI = ({
                                             />
                                         </div>
 
-                                        <div className="w-full text-center mt-2">
+                                        <div className="w-full text-center mt-4">
                                             <h2 className={`mobile-player-title text-lg font-bold text-white ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`} style={{ overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{currentSong.title}</h2>
                                             <p className="text-xs text-gray-300" style={{ maxWidth: '100%', display: 'block' }}>{artistName}</p>
                                         </div>
@@ -364,7 +364,7 @@ const PlayerUI = ({
                                     />
                                 </div>
 
-                                <div className="w-full max-w-md">
+                                <div className="w-full max-w-md mb-4">
                                     <Controls
                                         isPlaying={isPlaying}
                                         onPlayPause={onPlayPause}
@@ -381,7 +381,7 @@ const PlayerUI = ({
                                     <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
                                 </div>
 
-                                <div className="mt-2 flex w-full max-w-md items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-1 backdrop-blur-sm">
+                                <div className="mt-4 flex w-full max-w-md items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-1 backdrop-blur-sm">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: UP NEXT clicked'); try { onOpenUpNext && onOpenUpNext(); } catch (err) {} }} className="text-xs uppercase tracking-[0.18em] ml-6 text-gray-200 hover:text-white active:text-white">UP NEXT</button>
                                     <div className="h-6 w-px bg-white/10" />
                                     <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: RELATED clicked'); try { onOpenRelated && onOpenRelated(); } catch (err) {} }} className="text-xs uppercase tracking-[0.18em] mr-6 text-gray-200 hover:text-white active:text-white">RELATED</button>
