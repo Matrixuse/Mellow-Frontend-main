@@ -2776,10 +2776,16 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
     if (!currentSong) return null;
 
     return (
-        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#0f1720]/95 border-t border-gray-800 shadow-2xl backdrop-blur-sm">
-            <div className="w-full h-0.5 bg-gray-700">
-                <div className="h-full bg-blue-400 transition-all duration-100 ease-linear" style={{ width: isFinite(duration) && duration > 0 ? `${Math.min((currentTime / duration) * 100, 100)}%` : '0%' }} />
-            </div>
+        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#0f1720]/95 border-t border-gray-800 shadow-xl backdrop-blur-sm">
+            <input
+                type="range"
+                min="0"
+                max="100"
+                value={isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}
+                onChange={(e) => onProgressChange(Number(e.target.value))} style={{ background: `linear-gradient(to right, #3b82f6 ${isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}%, #4B5563 ${isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}%)` }}
+                className="w-full h-0.5 rounded-full appearance-none cursor-pointer range-sm [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                aria-label="Seek track"
+            />
             <div className="flex items-center justify-between gap-4 px-4 py-2">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 min-w-0">
@@ -2811,8 +2817,8 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
 
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => onVolumeChange(volume > 0 ? 0 : 0.5)} className="text-gray-400 hover:text-white">
-            {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </button>
+                        {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                    </button>
         <input
             type="range"
             min="0"
