@@ -16,13 +16,14 @@ export default defineConfig({
       mangle: true
     },
     rollupOptions: {
+      external: ['@capacitor/android', '@capacitor/push-notifications'], // Exclude mobile-only packages
       output: {
         // Split vendor libraries into separate chunk for better caching
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['lucide-react', '@fortawesome/fontawesome-svg-core', '@fortawesome/free-solid-svg-icons', '@fortawesome/react-fontawesome'],
           'vendor-other': ['axios', 'fuse.js'],
-          'vendor-capacitor': ['@capacitor/core', '@capacitor/android', '@capacitor/push-notifications']
+          'vendor-capacitor': ['@capacitor/core'] // Only include core, exclude mobile-specific packages
         }
       }
     },
