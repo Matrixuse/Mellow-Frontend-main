@@ -55,18 +55,22 @@ const SearchResults = ({
         window.dispatchEvent(evt);
     }
 
-    const goHome = () => navigate('/');
-    const openSearch = () => {
-        navigate('/search');
-        setTimeout(() => {
-            const el = searchInputRef.current || document.getElementById('global-search-input');
-            if (el) {
-                try { el.focus(); } catch {}
-                try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
-            }
-        }, 150);
+    const goHome = () => {
+        if (onClose) onClose();
+        closeSearchOverlayIfOpen();
     };
-    const openPlaylists = () => navigate('/playlists');
+    const openSearch = () => {
+        // Just focus the search input, don't navigate
+        const el = searchInputRef.current || document.getElementById('global-search-input');
+        if (el) {
+            try { el.focus(); } catch {}
+            try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+        }
+    };
+    const openPlaylists = () => {
+        if (onClose) onClose();
+        navigate('/playlists');
+    };
     const [hoveredSongId, setHoveredSongId] = useState(null);
     const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
     const [followingMap, setFollowingMap] = useState({});
@@ -436,6 +440,7 @@ const SearchResults = ({
                                 onRepeatToggle={onRepeatToggle}
                                 onOpenUpNext={onOpenUpNext}
                                 onOpenRelated={onOpenRelated}
+                                variant="mobile"
                             />
                         </div>
                     </div>

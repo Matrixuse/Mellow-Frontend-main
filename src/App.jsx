@@ -13,9 +13,9 @@ import gestureService from './services/gestureService';
 import PlayerUI from './components/PlayerUI';
 import SongLibrary from './components/SongLibrary';
 import AdminPanel from './components/Admin';
-import { Loader, Footer } from './components/OtherComponents';
+import { Loader, Footer, Controls, ProgressBar, VolumeControl } from './components/OtherComponents';
 import { getSongs } from './api/songService';
-import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shuffle, Users } from 'lucide-react';
+import { User, Search, X, Play as PlayIcon, Pause as PauseIcon, ChevronDown, Shuffle, MoreVertical, Users, SkipBack, SkipForward, Volume2, VolumeX, Repeat } from 'lucide-react';
 import QueuePanel from './components/QueuePanel';
 import PlaylistModal from './components/PlaylistModal';
 import { addToListeningHistory } from './utils/quickPicksAlgorithm';
@@ -33,7 +33,10 @@ import SearchResults from './components/SearchResults';
 import ProfilePage from './pages/ProfilePage';
 import EqualizerPage from './pages/EqualizerPage';
 import UpNextRelatedModal from './components/UpNextRelatedModal';
+import SongContextMenu from './components/SongContextMenu';
 import { createFuzzySearch, getFuzzySuggestions } from './utils/fuzzySearch';
+
+const PLAYBACK_STATE_STORAGE_KEY = 'mellow_playback_state';
 
 // Lazy load heavy components for better initial load time
 const ArtistPage = lazy(() => import('./components/ArtistPage'));
@@ -43,7 +46,7 @@ const MoodPage = lazy(() => import('./components/MoodPage'));
 
 // --- Main Layout Component ---
 // Yeh component left player aur right content area ka layout banata hai
-const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, user, ...props }) => {
+const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, toggleBottomPlayerClicked, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, user, ...props }) => {
     const location = useLocation();
     const isFavoritesPage = location.pathname.includes('/favorites');
     const isArtistPage = location.pathname.startsWith('/artist') || location.pathname.includes('/artist/');
@@ -78,6 +81,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
         )}
         {/* Right Column (Yahan ab Outlet aayega jo page badlega) */}
         {/* Hum yahan 'context' ke zariye saare props neeche bhej rahe hain */}
+
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
             {!isFavoritesPage && !isArtistPage && !isMoodPage && !isProfilePage && !isPlaylistsPage && (
             <div className="md:hidden bg-gray-900 border-b border-gray-800 p-3 flex items-center gap-3 relative">
@@ -117,10 +121,10 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                 )}
             </div>
             )}
-            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode }} /> 
+            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onSearchBarClick: props.onSearchBarClick, onSearchChange: props.onSearchChange, onClearSearch: props.onClearSearch, filteredSongs: props.filteredSongs, allSongs: props.allSongs, isPlayerExpanded: props.isPlayerExpanded, isBottomPlayerClicked: props.isBottomPlayerClicked }} /> 
             {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
             <div className="md:hidden">
-                <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} isPlayerInitialized={props.isPlayerInitialized} />
+                <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} onTogglePlayerExpand={props.onTogglePlayerExpand} isPlayerInitialized={props.isPlayerInitialized} />
                 <BottomNav />
             </div>
         </div>
@@ -137,6 +141,7 @@ const LibraryPage = React.memo(() => {
         filteredSongs,
         onSelectSong,
         currentSongId,
+        currentSong,
         isPlaying,
         isLoadingSongs,
         error,
@@ -153,7 +158,15 @@ const LibraryPage = React.memo(() => {
         onNavigateToAbout,
         onNavigateToEqualizer,
         onCloseLogoutMenu,
+        isBottomPlayerClicked,
+        modalRelatedCache,
+        modalQueueCache,
+        onAddToQueue,
+        onAddToPlaylist
     } = context;
+
+    const [activeTab, setActiveTab] = useState("upnext");
+    const [showQueuePanel, setShowQueuePanel] = useState(false);
 
     const safeAddToQueue = (song, position = 'end') => {
         if (context && typeof context.onAddToQueue === 'function') return context.onAddToQueue(song, position);
@@ -162,11 +175,11 @@ const LibraryPage = React.memo(() => {
     };
 
     return (
-        <div className="p-4 flex-1 overflow-auto">
-            <div className="flex items-center justify-between">
-                <div className="hidden md:flex items-center ml-3 w-full justify-between">
+        <div className="flex-1 overflow-auto">
+            <div className="sticky top-0 z-40 bg-slate-900/95 border-b border-gray-800 backdrop-blur-md px-4 py-3 -mx-4">
+                <div className="hidden md:flex items-center ml-3 w-full justify-center">
                     {/* Left: Desktop search bar */}
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                         <div className="relative mr-6 w-80">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
@@ -217,9 +230,71 @@ const LibraryPage = React.memo(() => {
             {isLoadingSongs ? (
                 <div className="w-full h-full flex items-center justify-center"><Loader /></div>
             ) : error ? (
-                <p className="text-red-400 text-center mt-10">Error: {error}.</p>
+                <p className="text-red-400 text-center mt-10">Error: {error}. Check you Internet Connection.</p>
+            ) : isBottomPlayerClicked ? (
+                <div className="flex-1 p-4 overflow-auto">
+                    <h1 className="text-white/90 text-2xl font-bold mt-1 ml-4 mb-2">Keep Listening</h1>
+                    <div className="flex flex-col lg:flex-row gap-8 mt-2">
+                        {/* LEFT : Album Cover */}
+                        <div className="lg:w-[55%] flex justify-center">
+                            <img src={currentSong?.coverUrl || "https://placehold.co/400x400/1F2937/FFFFFF?text=Music"} alt={currentSong?.title} className="w-[380px] h-[380px] rounded-xl object-cover mt-6 shadow-2xl"/>
+                        </div>
+                        {/* RIGHT : Up Next / Related */}
+                        <div className="lg:w-[40%] bg-gray-950 rounded overflow-hidden border border-gray-800">
+                            <div className="sticky top-0 bg-gray-950 z-10">
+                                <div className="flex border-b border-gray-800">
+                                    <button onClick={() => setActiveTab("upnext")} className={`flex-1 py-3 font-semibold text-sm transition ${activeTab === "upnext"
+                                    ? "text-white border-b-2 border-white"
+                                    : "text-gray-500"
+                                    }`}> UP NEXT</button>
+                                    <button onClick={() => setActiveTab("related")}
+                                    className={`flex-1 py-3 font-semibold text-sm transition
+                                    ${activeTab === "related" ? "text-white border-b-2 border-white" : "text-gray-500"}`}> RELATED
+                                    </button>
+                                </div>
+                            </div>
+                            {/* Song List */}
+
+                            <div className="h-[480px] overflow-y-auto">
+                                <div className="flex items-center justify-start gap-2 mt-2 px-3 mb-2">
+                                    <p className='text-xs font-bold text-gray-400'>Playing from</p>
+                                    <h3 className="text-md font-semibold text-white">Your Queue</h3>
+                                    <br />
+                                </div>
+                                {(activeTab === "upnext" ? modalQueueCache?.slice(1) : modalRelatedCache)?.map((s, idx) => {
+                                    const songDuration = getSongDuration(s);
+                                    return (
+                                    <div key={s?.id || idx} className="group flex items-center border-b border-gray-800 gap-3 px-3 py-2 hover:bg-[#414040] transition cursor-pointer relative" onClick={() => onSelectSong(s.id)}>
+                                        <img src={ s?.coverUrl || s?.cover || "https://placehold.co/48x48" } className="w-8 h-8 object-cover rounded"/>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="truncate text-white text-sm font-medium">{s?.title || s?.name}</h3>
+                                            <p className="truncate text-xs text-gray-400">{Array.isArray(s?.artist) ? s.artist.join(", ") : s?.artist}</p>
+                                        </div>
+                                        {/* <span className="text-xs text-gray-400 mr-2">{formatTime(songDuration)}</span> */}
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <SongContextMenu
+                                                song={s}
+                                                onAddToQueue={safeAddToQueue}
+                                                onAddToPlaylist={onAddToPlaylist}
+                                                onNavigateToArtist={(artistName) => { window.location.href = `/artist/${encodeURIComponent(artistName)}`; }}
+                                                onReport={(song) => {
+                                                    const reason = prompt('Report song reason (optional):');
+                                                    if (reason !== null) {
+                                                        console.log('Reported song', song.id || song, 'reason:', reason);
+                                                        alert('Thank you. The song has been reported.');
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             ) : (
-                <>
+                <div className="flex-1 p-2 overflow-auto">
                     <SongLibrary
                         songs={filteredSongs}
                         onSelectSong={onSelectSong}
@@ -228,7 +303,7 @@ const LibraryPage = React.memo(() => {
                         onAddToQueue={(context && typeof context.onAddToQueue === 'function') ? context.onAddToQueue : safeAddToQueue}
                     />
                     <Footer onDeveloperClick={onAdminClick} />
-                </>
+                </div>
             )}
         </div>
     );
@@ -255,6 +330,7 @@ function App() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+    const [isBottomPlayerClicked, setIsBottomPlayerClicked] = useState(false);
     const [isPlayerEntered, setIsPlayerEntered] = useState(false);
     const [apiHealthy, setApiHealthy] = useState(true);
     const [queue, setQueue] = useState([]);
@@ -300,10 +376,38 @@ function App() {
     const [playlistSongId, setPlaylistSongId] = useState(null);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
+    const [isPlaybackStateRestored, setIsPlaybackStateRestored] = useState(false);
+    const playbackRestoreRef = useRef(null);
 
     const audioRef = useRef(null);
     const currentSong = songs[currentSongIndex];
 
+    // Component-scoped helper to safely resolve an audio URL from a song object.
+    const getSongUrl = (song) => {
+        if (!song || typeof song !== 'object') return '';
+        return song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || song.file?.url || song.audio?.url || song.asset?.url || '';
+    };
+
+    // Update duration across app state and queueService for a single song
+    const updateDurationForSong = (songId, durationSeconds) => {
+        if (!songId || !durationSeconds || durationSeconds <= 0) return;
+        const updateId = String(songId);
+        const updateList = (arr) => Array.isArray(arr) ? arr.map(s => s && String(s.id) === updateId ? { ...s, duration: durationSeconds } : s) : arr;
+        setSongs(prev => updateList(prev));
+        setQueue(prev => updateList(prev));
+        setUpNextQueue(prev => updateList(prev));
+        setArtistQueue(prev => updateList(prev));
+        setMoodQueue(prev => updateList(prev));
+        setPlaylistQueue(prev => updateList(prev));
+        setModalQueueCache(prev => updateList(prev));
+        setModalRelatedCache(prev => updateList(prev));
+        try {
+            queueService.queue = updateList(queueService.queue);
+            queueService.originalQueue = updateList(queueService.originalQueue || []);
+        } catch (e) {
+            console.warn('Failed to update queueService with loaded duration', e);
+        }
+    };
     // Expose queueService for debugging in browser console (temporary)
     useEffect(() => {
         try { window.__queueService = queueService; } catch (e) {}
@@ -449,17 +553,21 @@ function App() {
     // Mood queues are created when the user selects/plays a song (see `handleSelectSong`).
     // This avoids reshuffling whenever the modal is opened.
 
-    // Compute & cache modal lists when currentSong changes (use currentSong.id only)
-    // so lists remain stable while the same song is playing even if `songs` array identity changes.
+    // Compute & cache modal lists when currentSong changes or an UP NEXT queue is active.
+    // If a deterministic UP NEXT queue already exists, keep it stable instead of
+    // rebuilding it whenever the current track advances.
     useEffect(() => {
-        if (currentSong && currentSong.id) {
-            // RELATED should reshuffle whenever the current song changes
-            // so the related suggestions are different after each track ends.
+        if (isUsingUpNext && Array.isArray(upNextQueue) && upNextQueue.length > 0) {
+            setModalQueueCache(upNextQueue);
+            if (currentSong && currentSong.id) {
+                const rawRelated = getSongsByMood(currentSong, songs, true);
+                setModalRelatedCache(ensureListLength(rawRelated, 30, songs, currentSong.id));
+            } else {
+                setModalRelatedCache([]);
+            }
+        } else if (currentSong && currentSong.id) {
             const rawRelated = getSongsByMood(currentSong, songs, true);
-            // UP NEXT should be a randomly picked list played sequentially.
-            // Generate a shuffled list here so the modal reflects the random UP NEXT.
             const rawQueue = getSongsByMood(currentSong, songs, true);
-            // include current song at front so modal's UP NEXT matches moodQueue structure
             const queueTail = ensureListLength(rawQueue, 29, songs, currentSong.id);
             const modalQueue = [currentSong, ...queueTail];
             setModalRelatedCache(ensureListLength(rawRelated, 30, songs, currentSong.id));
@@ -468,7 +576,7 @@ function App() {
             setModalRelatedCache([]);
             setModalQueueCache([]);
         }
-    }, [currentSong && currentSong.id]);
+    }, [currentSong && currentSong.id, isUsingUpNext, upNextQueue, songs]);
 
     // programmatic navigation helper for gesture handling
     const navigate = useNavigate();
@@ -546,6 +654,114 @@ function App() {
 
     // Effects
     useEffect(() => { const u = localStorage.getItem('user'); if (u) { try { setUser(JSON.parse(u)); } catch (e) { localStorage.removeItem('user'); } } setIsInitializing(false); }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        try {
+            const raw = localStorage.getItem(PLAYBACK_STATE_STORAGE_KEY);
+            if (raw) {
+                const saved = JSON.parse(raw);
+                if (saved && typeof saved === 'object') {
+                    playbackRestoreRef.current = saved;
+                }
+            }
+        } catch (e) {
+            console.warn('Unable to restore playback state from storage', e);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isPlaybackStateRestored || !Array.isArray(songs) || songs.length === 0 || !playbackRestoreRef.current) return;
+
+        const saved = playbackRestoreRef.current;
+        const resolveQueue = (ids) => {
+            if (!Array.isArray(ids)) return [];
+            return ids
+                .map(id => songs.find(s => String(s.id) === String(id)))
+                .filter(Boolean);
+        };
+
+        try {
+            if (saved.currentSongId) {
+                const idx = songs.findIndex(s => String(s.id) === String(saved.currentSongId));
+                if (idx !== -1) {
+                    setCurrentSongIndex(idx);
+                }
+            }
+            if (typeof saved.isPlaying === 'boolean') setIsPlaying(saved.isPlaying);
+            if (typeof saved.isShuffle === 'boolean') setIsShuffle(saved.isShuffle);
+            if (typeof saved.isRepeat === 'boolean') setIsRepeat(saved.isRepeat);
+
+            const mode = saved.mode || 'global';
+            if (mode === 'upnext') {
+                const queue = resolveQueue(saved.upNextQueueIds);
+                if (queue.length > 0) {
+                    setUpNextQueue(queue);
+                    setIsUsingUpNext(true);
+                    setUpNextIndex(typeof saved.upNextIndex === 'number' ? saved.upNextIndex : 0);
+                    setQueue(queue);
+                    try {
+                        queueService.clearQueue();
+                        queueService.addToQueue(queue, 'end');
+                        queueService.currentIndex = typeof saved.upNextIndex === 'number' ? saved.upNextIndex : 0;
+                    } catch (e) {}
+                }
+            } else if (mode === 'playlist') {
+                const queue = resolveQueue(saved.playlistQueueIds);
+                if (queue.length > 0) {
+                    setPlaylistQueue(queue);
+                    setIsUsingPlaylistQueue(true);
+                    setPlaylistQueueIndex(typeof saved.playlistQueueIndex === 'number' ? saved.playlistQueueIndex : 0);
+                    setQueue(queue);
+                }
+            } else if (mode === 'artist') {
+                const queue = resolveQueue(saved.artistQueueIds);
+                if (queue.length > 0) {
+                    setArtistQueue(queue);
+                    setIsUsingArtistQueue(true);
+                    setArtistQueueIndex(typeof saved.artistQueueIndex === 'number' ? saved.artistQueueIndex : 0);
+                    setQueue(queue);
+                }
+            } else if (mode === 'mood') {
+                const queue = resolveQueue(saved.moodQueueIds);
+                if (queue.length > 0) {
+                    setMoodQueue(queue);
+                    setIsUsingMoodQueue(true);
+                    setMoodQueueIndex(typeof saved.moodQueueIndex === 'number' ? saved.moodQueueIndex : 0);
+                    setQueue(queue);
+                }
+            }
+        } catch (e) {
+            console.warn('Playback state restore failed', e);
+        }
+
+        playbackRestoreRef.current = null;
+        setIsPlaybackStateRestored(true);
+    }, [songs, isPlaybackStateRestored]);
+
+    useEffect(() => {
+        if (!currentSong) return;
+        try {
+            const state = {
+                currentSongId: currentSong.id || null,
+                isPlaying,
+                isShuffle,
+                isRepeat,
+                mode: isUsingUpNext ? 'upnext' : isUsingPlaylistQueue ? 'playlist' : isUsingArtistQueue ? 'artist' : isUsingMoodQueue ? 'mood' : 'global',
+                upNextQueueIds: Array.isArray(upNextQueue) ? upNextQueue.map(s => s && s.id) : [],
+                upNextIndex,
+                playlistQueueIds: Array.isArray(playlistQueue) ? playlistQueue.map(s => s && s.id) : [],
+                playlistQueueIndex,
+                artistQueueIds: Array.isArray(artistQueue) ? artistQueue.map(s => s && s.id) : [],
+                artistQueueIndex,
+                moodQueueIds: Array.isArray(moodQueue) ? moodQueue.map(s => s && s.id) : [],
+                moodQueueIndex
+            };
+            localStorage.setItem(PLAYBACK_STATE_STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+            console.warn('Unable to persist playback state', e);
+        }
+    }, [currentSong, isPlaying, isShuffle, isRepeat, isUsingUpNext, upNextQueue, upNextIndex, isUsingPlaylistQueue, playlistQueue, playlistQueueIndex, isUsingArtistQueue, artistQueue, artistQueueIndex, isUsingMoodQueue, moodQueue, moodQueueIndex]);
 
     // Quick API health check (attempt configured host, localhost:5000, then relative)
     useEffect(() => {
@@ -649,16 +865,170 @@ function App() {
     useEffect(() => { 
         if (user) { 
             setIsLoadingSongs(true); 
+            const normalizeId = (value) => {
+                if (value === undefined || value === null || value === '') return '';
+                if (typeof value === 'string') return value;
+                if (typeof value === 'number') return String(value);
+                if (value && typeof value === 'object' && value.$oid) return String(value.$oid);
+                if (value && typeof value === 'object' && typeof value.toString === 'function') {
+                    const str = String(value);
+                    return str === '[object Object]' ? '' : str;
+                }
+                return String(value);
+            };
+            const parseDurationToSeconds = (dur) => {
+                if (dur === undefined || dur === null || dur === '') return 0;
+                if (typeof dur === 'string') {
+                    const normalized = dur.trim();
+                    if (normalized.includes(':')) {
+                        const parts = normalized.split(':').map(p => Number(p));
+                        if (parts.length === 3 && parts.every(Number.isFinite)) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                        if (parts.length === 2 && parts.every(Number.isFinite)) return parts[0] * 60 + parts[1];
+                        return Number(parts[0]) || 0;
+                    }
+                    const numeric = Number(normalized);
+                    if (Number.isFinite(numeric)) {
+                        return numeric > 10000 ? Math.round(numeric / 1000) : numeric;
+                    }
+                    return 0;
+                }
+                if (typeof dur === 'number' && Number.isFinite(dur)) {
+                    return dur > 10000 ? Math.round(dur / 1000) : dur;
+                }
+                return 0;
+            };
+            const resolveDuration = (song) => {
+                if (!song) return 0;
+                const candidates = [
+                    song.duration,
+                    song.durationSeconds,
+                    song.duration_seconds,
+                    song.durationMs,
+                    song.duration_ms,
+                    song.durationMillis,
+                    song.duration_millis,
+                    song.length,
+                    song.audioDuration,
+                    song.metadata?.duration,
+                    song.metadata?.durationSeconds,
+                    song.metadata?.duration_seconds,
+                    song.metadata?.durationMs,
+                    song.metadata?.duration_ms
+                ];
+                for (const value of candidates) {
+                    const parsed = parseDurationToSeconds(value);
+                    if (parsed > 0) return parsed;
+                }
+                return 0;
+            };
+            const resolveSongUrl = (song) => {
+                if (!song || typeof song !== 'object') return '';
+                return song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || song.file?.url || song.audio?.url || song.asset?.url || '';
+            };
+            const reconcileQueueItems = (queueItems, normalizedSongs) => {
+                if (!Array.isArray(queueItems) || !Array.isArray(normalizedSongs)) return queueItems;
+                const songMap = new Map();
+                for (const s of normalizedSongs) {
+                    try {
+                        const sid = s && (s.id || s._id);
+                        if (sid) songMap.set(String(sid), s);
+                        if (s && s.songId) songMap.set(String(s.songId), s);
+                    } catch (e) {}
+                }
+                return queueItems.map((item) => {
+                    if (!item) return item;
+                    const candidates = [item.id, item.songId, item._id];
+                    for (const k of candidates) {
+                        if (k && songMap.has(String(k))) return songMap.get(String(k));
+                    }
+                    // fallback: try to match by numeric/string equality against normalizedSongs
+                    const found = normalizedSongs.find(s => s && (String(s.id) === String(item.id) || String(s.id) === String(item.songId) || String(s.id) === String(item._id)));
+                    return found || item;
+                });
+            };
+            const updateQueueServiceWithSongs = (normalizedSongs) => {
+                try {
+                    queueService.queue = reconcileQueueItems(queueService.queue, normalizedSongs);
+                    queueService.originalQueue = reconcileQueueItems(queueService.originalQueue || [], normalizedSongs);
+                } catch (e) {
+                    console.warn('Failed to update queueService with normalized songs', e);
+                }
+            };
+            const getSongUrl = (song) => {
+                if (!song || typeof song !== 'object') return '';
+                return song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || '';
+            };
+            const loadAudioDuration = (song) => new Promise((resolve) => {
+                const songUrl = getSongUrl(song);
+                if (!song || !songUrl) return resolve(0);
+                const audio = new Audio();
+                audio.crossOrigin = 'anonymous';
+                let finished = false;
+                const cleanup = () => {
+                    audio.removeEventListener('loadedmetadata', onLoaded);
+                    audio.removeEventListener('error', onError);
+                };
+                const done = (value) => {
+                    if (finished) return;
+                    finished = true;
+                    cleanup();
+                    resolve(Number.isFinite(value) && value > 0 ? Math.round(value) : 0);
+                };
+                const onLoaded = () => done(audio.duration);
+                const onError = () => done(0);
+                audio.addEventListener('loadedmetadata', onLoaded);
+                audio.addEventListener('error', onError);
+                audio.preload = 'metadata';
+                audio.src = songUrl;
+                audio.load();
+                setTimeout(() => done(0), 10000);
+            });
+            const hydrateMissingDurations = async (songList) => {
+                if (!Array.isArray(songList)) return;
+                const missing = songList.filter(s => s && (!s.duration || s.duration === 0) && getSongUrl(s)).slice(0, 10);
+                for (const song of missing) {
+                    const loaded = await loadAudioDuration(song);
+                    if (loaded > 0) {
+                        const updateId = String(song.id);
+                        setSongs(prev => prev.map(s => s && String(s.id) === updateId ? { ...s, duration: loaded } : s));
+                        const updateList = (arr) => Array.isArray(arr) ? arr.map(s => s && String(s.id) === updateId ? { ...s, duration: loaded } : s) : arr;
+                        setUpNextQueue(prev => updateList(prev));
+                        setArtistQueue(prev => updateList(prev));
+                        setMoodQueue(prev => updateList(prev));
+                        setPlaylistQueue(prev => updateList(prev));
+                        setQueue(prev => updateList(prev));
+                        setModalQueueCache(prev => updateList(prev));
+                        setModalRelatedCache(prev => updateList(prev));
+                        try {
+                            queueService.queue = updateList(queueService.queue);
+                            queueService.originalQueue = updateList(queueService.originalQueue || []);
+                        } catch (e) {
+                            console.warn('Failed to update queueService with hydrated duration', e);
+                        }
+                    }
+                }
+            };
             getSongs(user.token)
                 .then((data) => {
-                    // normalize song objects: ensure `id` and fallback `coverUrl`
+                    // normalize song objects: ensure `id`, `coverUrl`, and parsed duration seconds
                     const normalized = Array.isArray(data) ? data.map(s => ({
                         ...s,
-                        id: s.id || s._id || (s._id && s._id.$oid) || String(s.id || s._id || (s._id && s._id.$oid)),
-                        coverUrl: s.coverUrl || s.cover_url || 'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'
+                        id: normalizeId(s.id || s._id || (s._id && s._id.$oid)) || String(s.id || s._id || (s._id && s._id.$oid) || ''),
+                        coverUrl: s.coverUrl || s.cover_url || 'https://placehold.co/200x200/1F2937/FFFFFF?text=Music',
+                        songUrl: resolveSongUrl(s),
+                        duration: resolveDuration(s)
                     })) : [];
                     
                     setSongs(normalized);
+                    setQueue(prev => reconcileQueueItems(prev, normalized));
+                    setUpNextQueue(prev => reconcileQueueItems(prev, normalized));
+                    setArtistQueue(prev => reconcileQueueItems(prev, normalized));
+                    setMoodQueue(prev => reconcileQueueItems(prev, normalized));
+                    setPlaylistQueue(prev => reconcileQueueItems(prev, normalized));
+                    setModalQueueCache(prev => reconcileQueueItems(prev, normalized));
+                    setModalRelatedCache(prev => reconcileQueueItems(prev, normalized));
+                    updateQueueServiceWithSongs(normalized);
+                    hydrateMissingDurations(normalized).catch(() => {});
                 })
                 .catch(err => {
                     if (String(err.message || '').toLowerCase().includes('token expired')) {
@@ -677,33 +1047,12 @@ function App() {
                 .finally(() => setIsLoadingSongs(false)); 
         } 
     }, [user]);
-    // Mobile-only auto-refresh every 10 minutes
-    useEffect(() => {
-        if (!user) return;
-        const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-        if (!isMobile) return;
-        const intervalId = setInterval(() => {
-            getSongs(user.token)
-                .then(setSongs)
-                .catch(err => {
-                    if (String(err.message || '').toLowerCase().includes('token expired')) {
-                        try { localStorage.removeItem('user'); } catch {}
-                        setIsPlaying(false);
-                        if (audioRef.current) audioRef.current.src = "";
-                        setUser(null);
-                        setSongs([]);
-                        setCurrentSongIndex(0);
-                        setError(null);
-                    } else {
-                        setError(err.message);
-                    }
-                });
-        }, 10 * 60 * 1000);
-        return () => clearInterval(intervalId);
-    }, [user]);
+    // Removed mobile-only automatic song refresh due to app background / restore issues.
+    // Playback state is now persisted separately to survive reloads and app restarts.
     useEffect(() => {
         const a = audioRef.current;
-        if (!a || !currentSong || !currentSong.songUrl) return;
+        const currentSongUrl = getSongUrl(currentSong);
+        if (!a || !currentSong || !currentSongUrl) return;
 
         try {
             AudioEngine.init(a);
@@ -712,10 +1061,17 @@ function App() {
         }
 
         try {
-            if (a.src !== currentSong.songUrl) {
-                a.src = currentSong.songUrl;
+            if (a.src !== currentSongUrl) {
+                a.src = currentSongUrl;
                 a.load();
-                console.debug('Loading song:', currentSong.title);
+                console.debug('Loading song:', currentSong.title, currentSongUrl);
+            }
+
+            if (isPlaying) {
+                a.play().catch(err => {
+                    if (err && err.name === 'AbortError') return;
+                    console.error('Audio play error after song load:', err);
+                });
             }
 
             // Start native media service
@@ -728,7 +1084,7 @@ function App() {
         } catch (e) {
             console.error('Error loading song:', e);
         }
-    }, [currentSong]);
+    }, [currentSong, isPlaying]);
     useEffect(() => { 
         const a = audioRef.current; 
         if (a) { 
@@ -794,6 +1150,9 @@ function App() {
     const handlePlayPause = useCallback(() => { if (!currentSong) return; setIsPlaying(p => !p); setIsPlayerInitialized(true); }, [currentSong]);
     const handleTogglePlayerExpand = useCallback(() => setIsPlayerExpanded(p => !p), []);
     const handleExpandPlayer = useCallback(() => setIsPlayerExpanded(true), []);
+    const toggleBottomPlayerClicked = useCallback(() => {
+        setIsBottomPlayerClicked(v => !v);
+    }, []);
 
     // manage enter animation state for expanded player
     useEffect(() => {
@@ -1466,6 +1825,29 @@ function App() {
             setDuration(dur);
             setCurrentTime(pos);
             setProgress((dur > 0) ? (pos / dur) * 100 : 0);
+            
+            // If audio just loaded (dur > 0 and we didn't have it before), update backend with duration
+            if (dur > 0 && currentSongIndex >= 0 && songs[currentSongIndex]) {
+                const currentSong = songs[currentSongIndex];
+                const currentSongDuration = getSongDuration(currentSong);
+                if (!currentSongDuration || currentSongDuration === 0) {
+                    const roundedDuration = Math.round(dur);
+                    updateDurationForSong(currentSong.id || currentSong._id, roundedDuration);
+                    // Send duration to backend in the background (non-blocking)
+                    fetch(`${typeof window !== 'undefined' && window.__API_URL ? window.__API_URL : 'https://mellow-backend-main.onrender.com'}/api/songs/update-duration`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${user?.token || ''}`
+                        },
+                        body: JSON.stringify({
+                            songId: currentSong.id || currentSong._id,
+                            duration: roundedDuration
+                        })
+                    }).catch(() => {}); // Silent fail - don't interrupt playback
+                }
+            }
+            
             // Update native media service (Android) with position in ms
             try {
                 const posMs = Math.floor(pos * 1000);
@@ -1480,106 +1862,29 @@ function App() {
         }
     };
     const handleSongEnd = useCallback(() => {
-            try {
-                try {
-                    // eslint-disable-next-line no-console
-                    console.debug('handleSongEnd: state', {
-                        isRepeat,
-                        isUsingUpNext,
-                        isUsingMoodQueue,
-                        isUsingPlaylistQueue,
-                        isUsingArtistQueue,
-                        isMoodShuffleMode,
-                        isShuffle,
-                        moodQueueLength: Array.isArray(moodQueue) ? moodQueue.length : 0,
-                        moodQueueIndex,
-                        currentSongIndex,
-                        currentSongId: currentSong && currentSong.id ? currentSong.id : null,
-                        upNextIndex,
-                        upNextQueueIds: Array.isArray(upNextQueue) ? upNextQueue.map(s => s && s.id) : [],
-                        queueServiceIds: queueService.getQueue().map(s => s && s.id)
-                    });
-                } catch (e) { console.log(e) }
-
-                if (isRepeat) {
-                    if (audioRef.current) {
-                        try {
-                            audioRef.current.currentTime = 0;
-                            // Don't play immediately - let the state update trigger playback
-                            setIsPlaying(true);
-                        } catch (err) {
-                            console.error('Repeat playback error:', err);
-                        }
-                    }
-                    return;
-                }
-
-                // Prioritize deterministic UP NEXT first
-                if (isUsingUpNext && Array.isArray(upNextQueue) && upNextQueue.length > 0) {
-                    try { console.debug('handleSongEnd: advancing directly from UP NEXT'); } catch (e) { console.log(e) }
+        try {
+            if (isRepeat) {
+                if (audioRef.current) {
                     try {
-                        const currentId = currentSong && currentSong.id ? String(currentSong.id) : null;
-                        let currentIdx = -1;
-                        if (currentId) currentIdx = upNextQueue.findIndex(s => String(s.id) === String(currentId));
-                        if (currentIdx < 0) currentIdx = (typeof upNextIndex === 'number') ? upNextIndex : 0;
-                        
-                        const nextIdx = (currentIdx + 1) < upNextQueue.length ? (currentIdx + 1) : 0;
-                        const nextSong = upNextQueue[nextIdx];
-                        
-                        if (nextSong) {
-                            const globalIndex = songs.findIndex(s => String(s.id) === String(nextSong.id));
-                            if (globalIndex !== -1) {
-                                setCurrentSongIndex(globalIndex);
-                            } else {
-                                setSongs(prev => {
-                                    if (prev.find(s => String(s.id) === String(nextSong.id))) return prev;
-                                    const insertIndex = prev.length;
-                                    const newArr = [...prev, nextSong];
-                                    setTimeout(() => { setCurrentSongIndex(insertIndex); setIsPlaying(true); }, 0);
-                                    return newArr;
-                                });
-                            }
-                            setUpNextIndex(nextIdx);
-                            setIsPlaying(true);
-                            return;
-                        }
-                    } catch (e) {
-                        console.warn('handleSongEnd: UP NEXT direct advance failed', e);
+                        audioRef.current.currentTime = 0;
+                        setIsPlaying(true);
+                    } catch (err) {
+                        console.error('Repeat playback error:', err);
                     }
                 }
-
-                // Then playlist queue
-                if (isUsingPlaylistQueue && Array.isArray(playlistQueue) && playlistQueue.length > 0) {
-                    handleNext();
-                    return;
-                }
-
-                // Then check artist queue
-                if (isUsingArtistQueue && Array.isArray(artistQueue) && artistQueue.length > 0) {
-                    handleNext();
-                    return;
-                }
-
-                // Then check mood queue
-                if (isUsingMoodQueue && Array.isArray(moodQueue) && moodQueue.length > 0) {
-                    handleNext();
-                    return;
-                }
-
-                // Finally check global queue
-                const q = queueService.getQueue();
-                if (q.length > 0) {
-                    handleNext();
-                    return;
-                }
-
-                handleNext();
-            } catch (err) {
-                console.error('handleSongEnd error:', err);
-                // Fallback: just advance to next song
-                try { handleNext(); } catch (e) { console.error('handleSongEnd fallback error:', e); }
+                return;
             }
-    }, [isRepeat, isUsingPlaylistQueue, playlistQueue, isUsingArtistQueue, artistQueue, isUsingMoodQueue, moodQueue, isUsingUpNext, upNextQueue, handleNext]);
+
+            handleNext();
+        } catch (err) {
+            console.error('handleSongEnd error:', err);
+            try {
+                handleNext();
+            } catch (e) {
+                console.error('handleSongEnd fallback error:', e);
+            }
+        }
+    }, [isRepeat, handleNext]);
 
     // Handle audio errors (missing/deleted songs from Cloudinary)
     const handleAudioError = useCallback(() => {
@@ -1964,13 +2269,22 @@ function App() {
         setShowSearchResults(true);
     }, []);
 
-    // Close search overlay when route changes so it doesn't persist
+    // Listen for a global event so other components (e.g., SongLibrary) can open the overlay
     useEffect(() => {
-        // whenever the location changes, ensure the overlay is closed
+        function onOpenSearch() {
+            const input = document.getElementById('global-search-input');
+            if (input) input.focus();
+            setShowSearchResults(true);
+        }
+        window.addEventListener('openSearchOverlay', onOpenSearch);
+        return () => window.removeEventListener('openSearchOverlay', onOpenSearch);
+    }, []);
+
+    // Handle location change to close overlays and prevent infinite refetch
+    useEffect(() => {
         setShowSearchResults(false);
-        // keep the search term in sync and avoid stale UI
         setSearchTerm('');
-    }, [location && location.pathname]);
+    }, [location?.pathname]);
 
     // Handle browser/mobile gesture back navigation
     useEffect(() => {
@@ -2107,111 +2421,86 @@ function App() {
                         <Route path="*" element={<div className="flex items-center justify-center h-full"><AuthForm onLoginSuccess={handleLogin} /></div>} />
                     ) : (
                         <Route path="/" element={
-                            <MainLayout 
-                                navigate={navigate}
-                            onNavigateToProfile={handleNavigateToProfile}
-                            onNavigateToUpdates={handleNavigateToUpdates}
-                            onNavigateToEqualizer={handleNavigateToEqualizer}
-                            onCloseLogoutMenu={handleCloseLogoutMenu}
-                            onNavigateToAbout={handleNavigateToAbout}
-                            user={user}
-                            toggleLogoutVisible={toggleLogoutVisible}
-                            onLogoutClick={toggleLogoutVisible}
-                            isLogoutVisible={isLogoutVisible} 
-                            onLogout={handleLogout}
-                            currentSong={currentSong} 
-                            isPlaying={isPlaying} 
-                            onPlayPause={handlePlayPause} 
-                            onNext={handleNext} 
-                            onPrev={handlePrev} 
-                            progress={progress} 
-                            onProgressChange={handleProgressChange} 
-                            duration={duration} 
-                            currentTime={currentTime} 
-                            volume={volume} 
-                            onVolumeChange={handleVolumeChange} 
-                            isShuffle={isShuffle} 
-                            onShuffleToggle={handleShuffleToggle}
-                            isRepeat={isRepeat} 
-                            onRepeatToggle={handleRepeatToggle}
-                            allSongs={songs}
-                            filteredSongs={filteredSongs}
-                            onSelectSong={handleSelectSong}
-                            currentSongId={currentSong?.id}
-                            isLoadingSongs={isLoadingSongs}
-                            error={error}
-                            searchTerm={searchTerm}
-                            onSearchChange={handleSearchChange}
-                            onClearSearch={handleClearSearch}
-                            onSearchBarClick={handleSearchBarClick}
-                            isPlayerInitialized={isPlayerInitialized}
-                            onAdminClick={() => setIsAdminPanelOpen(true)}
-                            onAddToQueue={handleAddToQueue}
-                            onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
-                            setIsUsingPlaylistQueue={setIsUsingPlaylistQueue}
-                            setPlaylistQueue={setPlaylistQueue}
-                            setPlaylistQueueIndex={setPlaylistQueueIndex}
-                            setIsUsingArtistQueue={setIsUsingArtistQueue}
-                            setArtistQueue={setArtistQueue}
-                            setArtistQueueIndex={setArtistQueueIndex}
-                            onUsePlaylistQueue={handleUsePlaylistQueue}
-                            isArtistShuffleMode={isArtistShuffleMode}
-                            setIsArtistShuffleMode={setIsArtistShuffleMode}
-                            setIsUsingMoodQueue={setIsUsingMoodQueue}
-                            setMoodQueue={setMoodQueue}
-                            setMoodQueueIndex={setMoodQueueIndex}
-                            isMoodShuffleMode={isMoodShuffleMode}
-                            setIsMoodShuffleMode={setIsMoodShuffleMode}
-                            isPlaylistShuffleMode={isPlaylistShuffleMode}
-                            setIsPlaylistShuffleMode={setIsPlaylistShuffleMode}
-                            onShowArtist={(artistName) => {
-                                // Navigate to artist page
-                                // Using window.location to avoid importing navigate here
-                                window.location.href = `/artist/${encodeURIComponent(artistName)}`;
-                            }}
-                            onReportSong={(songId) => {
-                                const reason = prompt('Report song reason (optional):');
-                                if (reason !== null) {
-                                    console.log('Reported song', songId, 'reason:', reason);
-                                    alert('Thank you. The song has been reported.');
-                                }
-                            }}
-                            onTogglePlayerExpand={handleTogglePlayerExpand}
-                            onOpenUpNext={handleOpenUpNext}
-                            onOpenRelated={() => { setUpNextRelatedModalMode('related'); setIsUpNextRelatedModalOpen(true); }}
-                        />
-                    }>
+                                <MainLayout 
+                                    navigate={navigate}
+                                    isPlayerExpanded={isPlayerExpanded}
+                                    onNavigateToProfile={handleNavigateToProfile}
+                                    onNavigateToUpdates={handleNavigateToUpdates}
+                                    onNavigateToEqualizer={handleNavigateToEqualizer}
+                                    onCloseLogoutMenu={handleCloseLogoutMenu}
+                                    onNavigateToAbout={handleNavigateToAbout}
+                                    user={user}
+                                    toggleLogoutVisible={toggleLogoutVisible}
+                                    onLogoutClick={toggleLogoutVisible}
+                                    isLogoutVisible={isLogoutVisible} 
+                                    onLogout={handleLogout}
+                                    currentSong={currentSong} 
+                                    isPlaying={isPlaying} 
+                                    onPlayPause={handlePlayPause} 
+                                    onNext={handleNext} 
+                                    onPrev={handlePrev} 
+                                    progress={progress} 
+                                    onProgressChange={handleProgressChange} 
+                                    duration={duration} 
+                                    currentTime={currentTime} 
+                                volume={volume} 
+                                onVolumeChange={handleVolumeChange} 
+                                isShuffle={isShuffle} 
+                                onShuffleToggle={handleShuffleToggle}
+                                isRepeat={isRepeat} 
+                                onRepeatToggle={handleRepeatToggle}
+                                allSongs={songs}
+                                filteredSongs={filteredSongs}
+                                onSelectSong={handleSelectSong}
+                                currentSongId={currentSong?.id}
+                                isLoadingSongs={isLoadingSongs}
+                                error={error}
+                                searchTerm={searchTerm}
+                                onSearchChange={handleSearchChange}
+                                onClearSearch={handleClearSearch}
+                                onSearchBarClick={handleSearchBarClick}
+                                isPlayerInitialized={isPlayerInitialized}
+                                onAdminClick={() => setIsAdminPanelOpen(true)}
+                                onAddToQueue={handleAddToQueue}
+                                onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
+                                setIsUsingPlaylistQueue={setIsUsingPlaylistQueue}
+                                setPlaylistQueue={setPlaylistQueue}
+                                setPlaylistQueueIndex={setPlaylistQueueIndex}
+                                setIsUsingArtistQueue={setIsUsingArtistQueue}
+                                setArtistQueue={setArtistQueue}
+                                setArtistQueueIndex={setArtistQueueIndex}
+                                onUsePlaylistQueue={handleUsePlaylistQueue}
+                                isArtistShuffleMode={isArtistShuffleMode}
+                                setIsArtistShuffleMode={setIsArtistShuffleMode}
+                                setIsUsingMoodQueue={setIsUsingMoodQueue}
+                                setMoodQueue={setMoodQueue}
+                                setMoodQueueIndex={setMoodQueueIndex}
+                                isMoodShuffleMode={isMoodShuffleMode}
+                                setIsMoodShuffleMode={setIsMoodShuffleMode}
+                                isPlaylistShuffleMode={isPlaylistShuffleMode}
+                                setIsPlaylistShuffleMode={setIsPlaylistShuffleMode}
+                                onShowArtist={(artistName) => {
+                                    // Navigate to artist page
+                                    // Using window.location to avoid importing navigate here
+                                    window.location.href = `/artist/${encodeURIComponent(artistName)}`;
+                                }}
+                                onReportSong={(songId) => {
+                                    const reason = prompt('Report song reason (optional):');
+                                    if (reason !== null) {
+                                        console.log('Reported song', songId, 'reason:', reason);
+                                        alert('Thank you. The song has been reported.');
+                                    }
+                                }}
+                                onTogglePlayerExpand={handleTogglePlayerExpand}
+                                isBottomPlayerClicked={isBottomPlayerClicked}
+                                toggleBottomPlayerClicked={toggleBottomPlayerClicked}
+                                onOpenUpNext={handleOpenUpNext}
+                                onOpenRelated={() => { setUpNextRelatedModalMode('related'); setIsUpNextRelatedModalOpen(true); }}
+                                modalRelatedCache={modalRelatedCache}
+                                modalQueueCache={modalQueueCache}
+                            />
+                        }>
                         <Route index element={<LibraryPage />} />
-                        <Route path="search" element={<SearchResults 
-                            songs={filteredSongs}
-                            onSelectSong={handleSelectSong}
-                            currentSongId={currentSong?.id}
-                            isPlaying={isPlaying}
-                            onAddToQueue={handleAddToQueue}
-                            onAddToPlaylist={handleOpenAddToPlaylist}
-                            onPlayPause={handlePlayPause}
-                            onNext={handleNext}
-                            onPrev={handlePrev}
-                            onClose={() => { setSearchTerm(''); navigate('/'); }}
-                            initialSearchTerm={searchTerm}
-                            onNavigateHome={() => { setSearchTerm(''); navigate('/'); }}
-                            allSongs={songs}
-                            isPlayerInitialized={isPlayerInitialized}
-                            isShuffle={isShuffle}
-                            onShuffleToggle={handleShuffleToggle}
-                            onTogglePlayerExpand={handleTogglePlayerExpand}
-                            currentSong={currentSong}
-                            progress={progress}
-                            onProgressChange={handleProgressChange}
-                            duration={duration}
-                            currentTime={currentTime}
-                            volume={volume}
-                            onVolumeChange={handleVolumeChange}
-                            isRepeat={isRepeat}
-                            onRepeatToggle={handleRepeatToggle}
-                            onOpenUpNext={handleOpenUpNext}
-                            onOpenRelated={() => { setUpNextRelatedModalMode('related'); setIsUpNextRelatedModalOpen(true); }}
-                        />} />
                         <Route path="profile" element={<ProfilePage />} />
                         <Route path="artist/:artistName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><ArtistPage /></Suspense>} />
                         <Route path="mood/:moodName" element={<Suspense fallback={<div className="flex items-center justify-center h-full"><Loader /></div>}><MoodPage /></Suspense>} />
@@ -2227,6 +2516,29 @@ function App() {
                     </Route>
                 )}
             </Routes>
+            <DesktopPlayerBar
+                currentSong={currentSong}
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                onNext={handleNext}
+                onPrev={handlePrev}
+                progress={progress}
+                onProgressChange={handleProgressChange}
+                duration={duration}
+                currentTime={currentTime}
+                volume={volume}
+                onVolumeChange={handleVolumeChange}
+                isShuffle={isShuffle}
+                onShuffleToggle={handleShuffleToggle}
+                isRepeat={isRepeat}
+                onRepeatToggle={handleRepeatToggle}
+                onAddToQueue={handleAddToQueue}
+                onAddToPlaylist={(songId) => handleOpenAddToPlaylist(songId)}
+                onShowArtist={(artistName) => { window.location.href = `/artist/${encodeURIComponent(artistName)}`; }}
+                onReportSong={(songId) => { const reason = prompt('Report song reason (optional):'); if (reason !== null) { console.log('Reported song', songId, 'reason:', reason); alert('Thank you. The song has been reported.'); } }}
+                onTogglePlayerExpand={toggleBottomPlayerClicked}
+                isPlayerInitialized={isPlayerInitialized}
+            />
             </FavoritesProvider>
             {isAdminPanelOpen && ( <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"><AdminPanel onClose={() => setIsAdminPanelOpen(false)} onSongUploaded={handleSongUploaded} /> </div> )}
             {isPlayerExpanded && (
@@ -2266,6 +2578,7 @@ function App() {
                                 onOpenUpNext={handleOpenUpNext}
                                 onOpenRelated={() => { setUpNextRelatedModalMode('related'); setIsUpNextRelatedModalOpen(true); }}
                                 onTogglePlayerExpand={handleTogglePlayerExpand}
+                                variant="mobile"
                             />
                         </div>
                     </div>
@@ -2288,7 +2601,7 @@ function App() {
                 <PlaylistModal token={(user && user.token) ? user.token : null} onClose={() => setIsPlaylistOpen(false)} songId={playlistSongId} onPlaylistUpdated={handlePlaylistUpdated} allSongs={songs} />
             )}
             {showSearchResults && (
-                <div className="fixed inset-0 z-50 md:hidden">
+                <div className="fixed inset-0 z-50">
                     <SearchResults 
                         songs={filteredSongs}
                         onSelectSong={handleSelectSong}
@@ -2368,6 +2681,173 @@ function App() {
         </div>
     );
 }
+
+const parseDurationToSeconds = (dur) => {
+    if (dur === undefined || dur === null || dur === '') return 0;
+    if (typeof dur === 'string') {
+        const trimmed = dur.trim();
+        if (trimmed.includes(':')) {
+            const parts = trimmed.split(':').map((part) => Number(part));
+            if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+                return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+                return parts[0] * 60 + parts[1];
+            }
+        }
+        const numeric = Number(trimmed);
+        return Number.isFinite(numeric) ? numeric : 0;
+    }
+    return Number.isFinite(dur) ? dur : 0;
+};
+
+const getSongDuration = (song) => {
+    if (!song) return 0;
+    const candidates = [song.duration, song.durationSeconds, song.duration_seconds, song.metadata?.duration];
+    for (const dur of candidates) {
+        const parsed = parseDurationToSeconds(dur);
+        if (parsed > 0) return parsed;
+    }
+    return 0;
+};
+
+const formatTime = (time) => {
+    if (time === null || time === undefined || time === '') return '0:00';
+    if (typeof time === 'string') {
+        const trimmed = time.trim();
+        const parts = trimmed.split(':').map((part) => Number(part));
+        if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+            return `${Math.floor(parts[0])}:${String(Math.floor(parts[1])).padStart(2, '0')}`;
+        }
+        if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+            const totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            return `${minutes}:${String(seconds).padStart(2, '0')}`;
+        }
+        const numeric = Number(trimmed);
+        if (Number.isFinite(numeric)) time = numeric;
+    }
+    if (!isFinite(time) || time < 0) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev, progress, onProgressChange, duration = 0, currentTime = 0, volume, onVolumeChange, isShuffle, onShuffleToggle, isRepeat, onRepeatToggle, onAddToQueue, onAddToPlaylist, onShowArtist, onReportSong, onOpenUpNext, onTogglePlayerExpand = () => {} }) => {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [menuSticky, setMenuSticky] = useState(false);
+    const menuRef = useRef(null);
+    const menuContainerRef = useRef(null);
+    const [dropdownStyle, setDropdownStyle] = useState(null);
+    const menuStickyRef = useRef(menuSticky);
+
+    useEffect(() => {
+        if (!menuOpen || !menuRef.current) {
+            setDropdownStyle(null);
+            return;
+        }
+        const rect = menuRef.current.getBoundingClientRect();
+        const menuWidth = 176;
+        const dropdownHeight = 156;
+        let left = rect.right - menuWidth;
+        if (left < 8) left = 8;
+        if (left + menuWidth > window.innerWidth - 8) left = window.innerWidth - menuWidth - 8;
+        let top = rect.top + rect.height / 2 - dropdownHeight / 2;
+        if (top < 8) top = rect.bottom + 6;
+        if (top + dropdownHeight > window.innerHeight - 8) {
+            top = Math.max(8, window.innerHeight - dropdownHeight - 8);
+        }
+        setDropdownStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, zIndex: 9999 });
+    }, [menuOpen]);
+
+    useEffect(() => { menuStickyRef.current = menuSticky; }, [menuSticky]);
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (menuContainerRef.current && !menuContainerRef.current.contains(event.target)) {
+                // Only close when menu is not explicitly made sticky by the user
+                if (!menuStickyRef.current) setMenuOpen(false);
+            }
+        }
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    if (!currentSong) return null;
+
+    return (
+        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#0f1720]/95 border-t border-gray-800 shadow-2xl backdrop-blur-sm">
+            <div className="w-full h-0.5 bg-gray-700">
+                <div className="h-full bg-blue-400 transition-all duration-100 ease-linear" style={{ width: isFinite(duration) && duration > 0 ? `${Math.min((currentTime / duration) * 100, 100)}%` : '0%' }} />
+            </div>
+            <div className="flex items-center justify-between gap-4 px-4 py-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Previous Song">
+                            <SkipBack className="w-5 h-6 sm:w-7 sm:h-7" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="bg-blue-600 text-white rounded-full p-2 sm:p-3 hover:bg-blue-500 transition-all shadow-lg flex items-center justify-center" aria-label={isPlaying ? 'Pause' : 'Play'}>
+                            {isPlaying ? <PauseIcon className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5" /> : <PlayIcon className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5" />}
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Next Song">
+                            <SkipForward className="w-5 h-6 sm:w-7 sm:h-7" />
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-1 ml-5 w-full max-w-2xl">
+                        <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>|
+                        <span className="text-xs text-gray-400">{formatTime(duration)}</span>
+                    </div>
+                  </div>
+
+                    <div className="flex items-center gap-3 ml-10 min-w-0 cursor-pointer" role="button" onClick={(e) => { e.stopPropagation(); try { onTogglePlayerExpand(); } catch (err) {} }}>
+                        <img src={currentSong.coverUrl} alt={currentSong.title} className="w-10 h-10 object-cover flex-shrink-0" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/200x200/1F2937/FFFFFF?text=Music'; }} />
+                        <div className="min-w-0 overflow-hidden">
+                            <p className="text-sm font-semibold text-white truncate">{currentSong.title}</p>
+                            <p className="text-xs text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => onVolumeChange(volume > 0 ? 0 : 0.5)} className="text-gray-400 hover:text-white">
+            {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </button>
+        <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+            style={{ background: `linear-gradient(to right, #ffffff ${volume * 100}%, #4B5563 ${volume * 100}%)` }}
+            className="w-full h-1 rounded-full appearance-none cursor-pointer range-sm [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+        />
+                    <button onClick={onShuffleToggle} className={`p-2 rounded-full transition-colors ${isShuffle ? 'text-blue-400 bg-white/5' : 'text-gray-400 hover:bg-gray-800'}`} aria-label="Shuffle">
+                        <Shuffle className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+                    <button onClick={onRepeatToggle} className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${isRepeat ? 'text-blue-400' : 'text-gray-400'}`} aria-label="Repeat">
+                        <Repeat className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+                    <div ref={menuContainerRef} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                        <button ref={menuRef} onClick={(e) => { e.stopPropagation(); setMenuOpen((open) => { const next = !open; setMenuSticky(next); return next; }); }} className="p-2 rounded-full hover:bg-gray-800 text-gray-300" aria-label="More options" aria-haspopup="menu" aria-expanded={menuOpen}>
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {menuOpen && (
+                            <div role="menu" style={dropdownStyle} className="w-44 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1">
+                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
+                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
+                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onReportSong && onReportSong(currentSong.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Mobile mini player bar component ---
 const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand, isShuffle, onShuffleToggle, isPlayerInitialized, currentTime = 0, duration = 0 }) => {
     // Hide player bar until a song has been played, then keep it visible

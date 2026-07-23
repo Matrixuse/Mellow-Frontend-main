@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 import { Capacitor } from '@capacitor/core';
 import { Controls, ProgressBar, VolumeControl } from './OtherComponents';
-import { Music, MoreVertical } from 'lucide-react';
+import { ChevronDown, Music, MoreVertical } from 'lucide-react';
 import nativeMediaService from '../services/nativeMediaService';
 import ImageWithFallback from './ImageWithFallback';
 import { useDrag } from '@use-gesture/react';
@@ -15,11 +15,15 @@ const PlayerUI = ({
     volume, onVolumeChange,
     isShuffle, onShuffleToggle, isRepeat, onRepeatToggle,
     onAddToQueue = () => {}, onAddToPlaylist = () => {}, onShowArtist = () => {}, onReportSong = () => {},
-    onOpenUpNext = () => {}, onOpenRelated = () => {}, onTogglePlayerExpand
+    onOpenUpNext = () => {}, onOpenRelated = () => {}, onTogglePlayerExpand,
+    variant = 'desktop'
 }) => {
+    const isMobileVariant = variant === 'mobile';
     const [menuOpen, setMenuOpen] = useState(false);
+    const [menuSticky, setMenuSticky] = useState(false);
     const menuRef = useRef(null);
     const [dropdownStyle, setDropdownStyle] = useState(null);
+    const menuStickyRef = useRef(menuSticky);
     const containerRef = useRef(null);
     const currentFav = useContext(FavoritesContext);
 
@@ -56,10 +60,11 @@ const PlayerUI = ({
         } catch (err) { console.debug('PlayerUI drag error', err); }
     }, { target: containerRef, axis: 'y', filterTaps: true, pointer: { touch: true }, eventOptions: { passive: false } });
 
+    useEffect(() => { menuStickyRef.current = menuSticky; }, [menuSticky]);
     useEffect(() => {
         function handleClickOutside(e) {
             if (menuRef.current && !menuRef.current.contains(e.target)) {
-                setMenuOpen(false);
+                if (!menuStickyRef.current) setMenuOpen(false);
             }
         }
         document.addEventListener('click', handleClickOutside);
@@ -286,6 +291,108 @@ const PlayerUI = ({
             setDropdownStyle(null);
         }
     }, [menuOpen]);
+
+    const artistName = Array.isArray(currentSong?.artist) ? currentSong.artist.join(', ') : (currentSong?.artist || '');
+
+    if (isMobileVariant) {
+        return (
+            <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="h-full w-full text-white">
+                <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-[#08111f] shadow-2xl">
+                    <div
+                        className="absolute inset-0"
+                        style={currentSong ? {
+                            backgroundImage: `linear-gradient(180deg, rgba(6, 12, 24, 0.35) 0%, rgba(6, 12, 24, 0.88) 55%, rgba(6, 12, 24, 1) 100%), url('${currentSong.coverUrl}')`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                        } : {
+                            background: 'radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 40%), linear-gradient(180deg, #101a2f 0%, #08111f 100%)'
+                        }}
+                    />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_36%),radial-gradient(circle_at_bottom,rgba(168,85,247,0.14),transparent_30%)]" />
+                    <div className="relative z-10 flex h-full min-h-0 flex-col px-4 pt-4 pb-5">
+                        <div className="flex items-center justify-between gap-3 w-full">
+                            <div></div>
+                            {/* Menu Dropdown Container moved to the right */}
+                            <div ref={menuRef} className="relative z-50">
+                                <button aria-label="Open menu" onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v); }} className="rounded-full p-2 bg-transparent text-white/90 hover:bg-white/10 transition-colors">
+                                    <MoreVertical size={18} />
+                                </button>
+                                {menuOpen && (
+                                <div style={dropdownStyle} className="absolute right-0 mt-2 w-44 rounded-md border border-[#2A3942] bg-[#15202B] py-1 text-left shadow-lg">
+                                    <button onClick={() => { setMenuOpen(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">Add to Queue</button>
+                                    <button onClick={() => { setMenuOpen(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">Add to Playlist</button>
+                                    <button onClick={() => { setMenuOpen(false); const { toggleSongFavorite } = currentFav; toggleSongFavorite(currentSong.id).catch(() => {}); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">{currentFav && currentFav.isSongFavorite(currentSong.id) ? 'Remove Favourite' : 'Add Favourite'}</button>
+                                    <button onClick={() => { setMenuOpen(false); onShowArtist && onShowArtist(artistName); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">Artist</button>
+                                    <button onClick={() => { setMenuOpen(false); onReportSong && onReportSong(currentSong.id); }} className="w-full px-3 py-2 text-left text-rose-400 hover:bg-[#121a20]">Report</button>
+                                </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+                            <div className="flex min-h-full flex-col items-center justify-start">
+                                {currentSong ? (
+                                    <>
+                                        <div className="relative w-[70%] max-w-[260px]">
+                                            <div className="absolute -inset-3 rounded-lg bg-blue-500/20 blur-2xl" />
+                                            <ImageWithFallback
+                                                src={currentSong.coverUrl}
+                                                alt="Album Cover"
+                                                className="relative aspect-square w-full rounded-lg object-cover shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+                                                fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                                            />
+                                        </div>
+
+                                        <div className="w-full text-center mt-2">
+                                            <h2 className={`mobile-player-title text-lg font-bold text-white ${currentSong.title && currentSong.title.length > 30 ? 'is-long' : ''}`} style={{ overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{currentSong.title}</h2>
+                                            <p className="text-xs text-gray-300" style={{ maxWidth: '100%', display: 'block' }}>{artistName}</p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-1 flex-col items-center justify-center text-center">
+                                        <Music size={45} className="text-gray-500" />
+                                        <h2 className="text-lg font-bold text-white">Song</h2>
+                                        <p className="text-xs text-gray-400">Select a song to start playing.</p>
+                                    </div>
+                                )}
+
+                                <div className="w-full max-w-md px-1">
+                                    <ProgressBar
+                                        progress={progress}
+                                        onProgressChange={onProgressChange}
+                                        duration={duration}
+                                        currentTime={currentTime}
+                                    />
+                                </div>
+
+                                <div className="w-full max-w-md">
+                                    <Controls
+                                        isPlaying={isPlaying}
+                                        onPlayPause={onPlayPause}
+                                        onNext={onNext}
+                                        onPrev={onPrev}
+                                        isShuffle={isShuffle}
+                                        onShuffleToggle={onShuffleToggle}
+                                        isRepeat={isRepeat}
+                                        onRepeatToggle={onRepeatToggle}
+                                    />
+                                </div>
+
+                                <div className="w-full max-w-md px-1">
+                                    <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
+                                </div>
+
+                                <div className="mt-2 flex w-full max-w-md items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-1 backdrop-blur-sm">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: UP NEXT clicked'); try { onOpenUpNext && onOpenUpNext(); } catch (err) {} }} className="text-xs uppercase tracking-[0.18em] ml-6 text-gray-200 hover:text-white active:text-white">UP NEXT</button>
+                                    <div className="h-6 w-px bg-white/10" />
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); console.debug('PlayerUI: RELATED clicked'); try { onOpenRelated && onOpenRelated(); } catch (err) {} }} className="text-xs uppercase tracking-[0.18em] mr-6 text-gray-200 hover:text-white active:text-white">RELATED</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
     
     return (
         <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="p-4 flex flex-col h-full">
