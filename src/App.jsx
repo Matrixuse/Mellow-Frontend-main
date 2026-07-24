@@ -5,12 +5,6 @@ import { FavoritesProvider } from './contexts/FavoritesContext';
 import apiClient from './api/apiClient';
 import AuthForm from './components/AuthForm';
 
-// ⚡ LAZY LOAD SERVICES - Initialize only when needed
-const lazyLoadService = async (servicePath) => {
-  const module = await import(servicePath);
-  return module.default;
-};
-
 // Only load critical services synchronously
 import queueService from './services/queueService';
 import AudioEngine from './services/audioEngine';
@@ -2627,7 +2621,7 @@ function App() {
                                 duration={duration}
                                 currentTime={currentTime}
                                 volume={volume}
-                                onVolumeChange={onVolumeChange}
+                                onVolumeChange={handleVolumeChange}
                                 isShuffle={isShuffle}
                                 onShuffleToggle={() => setIsShuffle(!isShuffle)}
                                 isRepeat={isRepeat}
