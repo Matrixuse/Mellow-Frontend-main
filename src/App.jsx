@@ -168,7 +168,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                 )}
             </div>
             )}
-            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onSearchBarClick: props.onSearchBarClick, onSearchChange: props.onSearchChange, onClearSearch: props.onClearSearch, filteredSongs: props.filteredSongs, allSongs: props.allSongs, isPlayerExpanded: props.isPlayerExpanded, isBottomPlayerClicked: props.isBottomPlayerClicked }} /> 
+            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onPlayPause: props.onPlayPause, onSearchBarClick: props.onSearchBarClick, onSearchChange: props.onSearchChange, onClearSearch: props.onClearSearch, filteredSongs: props.filteredSongs, allSongs: props.allSongs, isPlayerExpanded: props.isPlayerExpanded, isBottomPlayerClicked: props.isBottomPlayerClicked }} />  
             {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
             <div className="md:hidden">
                 <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} onTogglePlayerExpand={props.onTogglePlayerExpand} isPlayerInitialized={props.isPlayerInitialized} />
@@ -205,6 +205,7 @@ const LibraryPage = React.memo(() => {
         onNavigateToAbout,
         onNavigateToEqualizer,
         onCloseLogoutMenu,
+        onPlayPause,
         isBottomPlayerClicked,
         modalRelatedCache,
         modalQueueCache,
@@ -278,7 +279,27 @@ const LibraryPage = React.memo(() => {
                     <div className="flex flex-col lg:flex-row gap-8 mt-2">
                         {/* LEFT : Album Cover */}
                         <div className="lg:w-[55%] flex justify-center">
-                            <img src={currentSong?.coverUrl || "https://placehold.co/400x400/1F2937/FFFFFF?text=Music"} alt={currentSong?.title} className="w-[380px] h-[380px] rounded-xl object-cover mt-6 shadow-2xl"/>
+                            <button
+                                type="button"
+                                onClick={() => onPlayPause && onPlayPause()}
+                                className="relative w-[380px] h-[380px] rounded-xl overflow-hidden mt-6 shadow-2xl focus:outline-none"
+                                aria-label={isPlaying ? 'Pause current song' : 'Play current song'}
+                            >
+                                <img
+                                    src={currentSong?.coverUrl || "https://placehold.co/400x400/1F2937/FFFFFF?text=Music"}
+                                    alt={currentSong?.title}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-200">
+                                    <div className="rounded-full p-3 text-white">
+                                        {isPlaying ? (
+                                            <PauseIcon className="w-6 h-6" />
+                                        ) : (
+                                            <PlayIcon className="w-6 h-6" />
+                                        )}
+                                    </div>
+                                </div>
+                            </button>
                         </div>
                         {/* RIGHT : Up Next / Related */}
                         <div className="lg:w-[40%] bg-gray-950 rounded overflow-hidden border border-gray-800">
