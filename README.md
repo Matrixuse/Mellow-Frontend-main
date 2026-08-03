@@ -1,12 +1,8 @@
-# 🎵 Mellow – Play & Relax (Frontend)
+# 🎵 Mellow – Play & Relax
 
 <div align="center">
 
-![React](https://img.shields.io/badge/React-19-blue?logo=react)
-![Vite](https://img.shields.io/badge/Vite-Latest-purple?logo=vite)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow?logo=javascript)
-![Responsive](https://img.shields.io/badge/Responsive-Mobile%20%26%20Desktop-success)
-![License](https://img.shields.io/badge/License-MIT-green)
+
 
 ### A Modern Full-Featured Music Streaming Application
 
@@ -15,6 +11,21 @@
 </div>
 
 ---
+
+# 🚀 Try it Now
+
+Experience **Mellow – Play & Relax** live in your browser.
+
+### 🌐 Live Application
+
+👉 **Website:** https://mellow-playandrelax.onrender.com/
+
+> **Note**
+>
+> The application is hosted on Render's free tier. If the server has been inactive, it may take **30–60 seconds** to wake up on the first visit.
+
+---
+
 
 # 📖 Overview
 
@@ -132,9 +143,7 @@ The frontend communicates with the backend through REST APIs and provides a seam
 - Vite
 - JavaScript (ES6)
 - React Router
-- Axios
-- CSS3
-- HTML5
+- Tailwind
 
 ---
 
@@ -162,13 +171,13 @@ src/
 Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/Mellow-Frontend.git
+git clone https://github.com/Matrixuse/Mellow-Frontend-main.git
 ```
 
 Navigate to project
 
 ```bash
-cd Mellow-Frontend
+cd Mellow-Frontend-main
 ```
 
 Install dependencies
@@ -190,29 +199,8 @@ npm run dev
 Create a `.env` file.
 
 ```
-VITE_API_BASE_URL=your_backend_url
+VITE_API_BASE_URL="get the backend render URL in readme of backend repository"
 ```
-
----
-
-# 📸 Screenshots
-
-Add screenshots here.
-
-```
-Home Page
-
-Music Player
-
-Playlist
-
-Profile
-
-Search
-
-Albums
-```
-
 ---
 
 # 🔮 Future Improvements
@@ -222,7 +210,6 @@ Albums
 - Podcasts
 - AI Music Recommendation
 - Voice Search
-- Equalizer
 - Sleep Timer
 - Cross Device Sync
 
@@ -233,12 +220,6 @@ Albums
 Contributions are welcome.
 
 Fork the repository and create a pull request.
-
----
-
-# 📄 License
-
-MIT License
 
 ---
 
