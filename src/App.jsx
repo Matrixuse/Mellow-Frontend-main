@@ -445,9 +445,30 @@ function App() {
     const currentSong = songs[currentSongIndex];
 
     // Component-scoped helper to safely resolve an audio URL from a song object.
+    const isLegacyCloudinaryUrl = (value) => {
+        return typeof value === 'string' && /cloudinary\.com/i.test(value);
+    };
+   
     const getSongUrl = (song) => {
         if (!song || typeof song !== 'object') return '';
-        return song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || song.file?.url || song.audio?.url || song.asset?.url || '';
+        const candidates = [
+            song.songUrl,
+            song.url,
+            song.song_url,
+            song.audioUrl,
+            song.audio_url,
+            song.fileUrl,
+            song.file_url,
+            song.file?.url,
+            song.audio?.url,
+            song.asset?.url,
+        ];
+        for (const item of candidates) {
+            if (item && typeof item === 'string' && !isLegacyCloudinaryUrl(item)) {
+                return item;
+            }
+        }
+        return '';
     };
 
     // Update duration across app state and queueService for a single song
