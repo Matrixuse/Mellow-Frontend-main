@@ -17,13 +17,14 @@ const ImageWithFallback = ({ src, alt = '', className = '', fallback = DEFAULT_P
     useEffect(() => {
         let cancelled = false;
         const list = Array.isArray(src) ? src.filter(Boolean) : (src ? [src] : []);
-        if (list.length === 0) {
+        const filteredList = list.filter((url) => typeof url === 'string' && !/cloudinary\.com/i.test(url));
+        if (filteredList.length === 0) {
             setDisplaySrc(fallback);
             return () => { cancelled = true; };
         }
 
-        // Start optimistic: show first candidate immediately, then verify it.
-        setDisplaySrc(list[0]);
+        // Start optimistic: show first non-Cloudinary candidate immediately, then verify it.
+        setDisplaySrc(filteredList[0]);
 
         let idx = 0;
         const verifyNext = (url) => {
