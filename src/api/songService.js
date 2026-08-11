@@ -96,9 +96,29 @@ export const getSongs = async (token) => {
             }
             return 0;
         };
+        const isLegacyCloudinaryUrl = (value) => {
+            return typeof value === 'string' && /cloudinary\.com/i.test(value);
+        };
         const resolveSongUrl = (song) => {
             if (!song || typeof song !== 'object') return '';
-            return song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || song.file?.url || song.audio?.url || song.asset?.url || '';
+            const candidates = [
+                song.songUrl,
+                song.url,
+                song.song_url,
+                song.audioUrl,
+                song.audio_url,
+                song.fileUrl,
+                song.file_url,
+                song.file?.url,
+                song.audio?.url,
+                song.asset?.url,
+            ];
+            for (const item of candidates) {
+                if (item && typeof item === 'string' && !isLegacyCloudinaryUrl(item)) {
+                    return item;
+                }
+            }
+            return '';
         };
         return data.map(s => ({
             ...s,
