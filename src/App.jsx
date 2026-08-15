@@ -169,7 +169,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                 )}
             </div>
             )}
-            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onPlayPause: props.onPlayPause, onSearchBarClick: props.onSearchBarClick, onSearchChange: props.onSearchChange, onClearSearch: props.onClearSearch, filteredSongs: props.filteredSongs, allSongs: props.allSongs, isPlayerExpanded: props.isPlayerExpanded, isBottomPlayerClicked: props.isBottomPlayerClicked }} />  
+            <Outlet context={{ ...props, token: user?.token, onNavigateToProfile, onNavigateToUpdates, onNavigateToAbout, onNavigateToEqualizer, onCloseLogoutMenu, onLogout, toggleLogoutVisible, isLogoutVisible, isArtistShuffleMode, setIsArtistShuffleMode, isMoodShuffleMode, setIsMoodShuffleMode, isPlaylistShuffleMode, setIsPlaylistShuffleMode, onPlayPause: props.onPlayPause, onSearchBarClick: props.onSearchBarClick, onSearchChange: props.onSearchChange, onClearSearch: props.onClearSearch, filteredSongs: props.filteredSongs, allSongs: props.allSongs, isPlayerExpanded: props.isPlayerExpanded, isBottomPlayerClicked: props.isBottomPlayerClicked, isLoadingSongs: props.isLoadingSongs }} />  
             {/* Mobile mini player bar bottom pe fixed, leave space for BottomNav */}
             <div className="md:hidden">
                 <MobilePlayerBar {...props} isShuffle={props.isShuffle} onShuffleToggle={props.onShuffleToggle} onTogglePlayerExpand={props.onTogglePlayerExpand} isPlayerInitialized={props.isPlayerInitialized} />
@@ -376,8 +376,28 @@ LibraryPage.displayName = 'LibraryPage';
 
 // --- Main App Component (Master Controller) ---
 function App() {
-    const [user, setUser] = useState(null);
-    const [isInitializing, setIsInitializing] = useState(true);
+    const readStoredUser = useCallback(() => {
+        try {
+            const raw = localStorage.getItem('user');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') return null;
+
+            const normalizedUser = {
+                ...(parsed.user || parsed),
+                token: parsed.token || (parsed.user && parsed.user.token) || null,
+            };
+
+            if (!normalizedUser.token) return null;
+            return normalizedUser;
+        } catch (error) {
+            try { localStorage.removeItem('user'); } catch (cleanupError) {}
+            return null;
+        }
+    }, []);
+
+    const [user, setUser] = useState(() => readStoredUser());
+    const [isInitializing, setIsInitializing] = useState(() => !readStoredUser());
     const [songs, setSongs] = useState([]);
     const [currentSongIndex, setCurrentSongIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -452,6 +472,24 @@ function App() {
    
     const getSongUrl = (song) => {
         if (!song || typeof song !== 'object') return '';
+        const preferredBase = (() => {
+            const fromEnv = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
+                ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '')
+                : '';
+            const fromRuntime = (typeof window !== 'undefined' && window.__API_URL)
+                ? String(window.__API_URL).replace(/\/$/, '')
+                : '';
+            return fromEnv || fromRuntime || 'https://mellow-backend-main.onrender.com';
+        })();
+        const normalizeStreamUrl = (value) => {
+            if (!value || typeof value !== 'string') return '';
+            const streamMatch = value.match(/\/api\/songs\/stream\/([^/?#]+)/i);
+            if (!streamMatch) return value;
+            if (/https?:\/\/(localhost|127\.0\.0\.1):(5000|5001)\//i.test(value)) {
+                return `${preferredBase}/api/songs/stream/${streamMatch[1]}`;
+            }
+            return value;
+        };
         const candidates = [
             song.songUrl,
             song.url,
@@ -466,10 +504,68 @@ function App() {
         ];
         for (const item of candidates) {
             if (item && typeof item === 'string' && !isLegacyCloudinaryUrl(item)) {
-                return item;
+                return normalizeStreamUrl(item);
             }
         }
         return '';
+    };
+
+    const streamRetryRef = useRef(new Set());
+
+    const getStreamFallbackUrls = (song, failedUrl) => {
+        const originalUrl = getSongUrl(song);
+        const failed = String(failedUrl || originalUrl || '');
+        const directCandidates = [originalUrl].filter(Boolean);
+        const streamMatch = failed.match(/\/api\/songs\/stream\/([^/?#]+)/i) || String(song?.id || '').match(/(.+)/);
+        const songId = streamMatch && streamMatch[1] ? streamMatch[1] : (song && song.id ? String(song.id) : '');
+
+        if (!songId) return directCandidates;
+
+        const configured = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
+            ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '')
+            : '';
+        const runtimeBase = (typeof window !== 'undefined' && window.__API_URL)
+            ? String(window.__API_URL).replace(/\/$/, '')
+            : '';
+
+        const hostCandidates = [
+            configured,
+            runtimeBase,
+            'https://mellow-backend-main.onrender.com',
+            'http://localhost:5000',
+            'http://localhost:5001'
+        ].filter(Boolean);
+
+        const streamCandidates = hostCandidates.map(base => `${base}/api/songs/stream/${encodeURIComponent(songId)}`);
+        const normalizedFailed = failed.trim();
+        return [...new Set([...directCandidates, ...streamCandidates].filter(Boolean))]
+            .filter(url => url !== normalizedFailed);
+    };
+
+    const isLocalStreamUrl = (value) => {
+        if (!value || typeof value !== 'string') return false;
+        return /https?:\/\/(localhost|127\.0\.0\.1):(5000|5001)\/api\/songs\/stream\//i.test(value);
+    };
+
+    const updateSongUrlEverywhere = (songId, nextUrl) => {
+        if (!songId || !nextUrl) return;
+        const targetId = String(songId);
+        const updateList = (arr) => Array.isArray(arr)
+            ? arr.map(s => (s && String(s.id) === targetId ? { ...s, songUrl: nextUrl, url: nextUrl } : s))
+            : arr;
+
+        setSongs(prev => updateList(prev));
+        setQueue(prev => updateList(prev));
+        setUpNextQueue(prev => updateList(prev));
+        setArtistQueue(prev => updateList(prev));
+        setMoodQueue(prev => updateList(prev));
+        setPlaylistQueue(prev => updateList(prev));
+        setModalQueueCache(prev => updateList(prev));
+        setModalRelatedCache(prev => updateList(prev));
+        try {
+            queueService.queue = updateList(queueService.queue);
+            queueService.originalQueue = updateList(queueService.originalQueue || []);
+        } catch (e) {}
     };
 
     // Update duration across app state and queueService for a single song
@@ -706,37 +802,19 @@ function App() {
     // New state for fuzzy search
     const [fuzzy, setFuzzy] = useState(null);
 
-    // Debug effect for queue state
-    useEffect(() => {
-        // eslint-disable-next-line no-console
-        console.log('🎵 SHUFFLE & QUEUE DEBUG:', {
-            playlistMode: {
-                isUsingPlaylistQueue,
-                isPlaylistShuffleMode,
-                playlistQueueLength: Array.isArray(playlistQueue) ? playlistQueue.length : 0,
-                playlistQueueIndex
-            },
-            moodMode: {
-                isUsingMoodQueue,
-                isMoodShuffleMode,
-                moodQueueLength: Array.isArray(moodQueue) ? moodQueue.length : 0,
-                moodQueueIndex
-            },
-            artistMode: {
-                isUsingArtistQueue,
-                isArtistShuffleMode,
-                artistQueueLength: Array.isArray(artistQueue) ? artistQueue.length : 0,
-                artistQueueIndex
-            },
-            currentSong: {
-                index: currentSongIndex,
-                title: songs[currentSongIndex]?.title || 'N/A'
-            }
-        });
-    }, [isPlaylistShuffleMode, isUsingPlaylistQueue, (playlistQueue || []).length, playlistQueueIndex, isMoodShuffleMode, isUsingMoodQueue, (moodQueue || []).length, moodQueueIndex, isArtistShuffleMode, isUsingArtistQueue, (artistQueue || []).length, artistQueueIndex, currentSongIndex]);
-
     // Effects
-    useEffect(() => { const u = localStorage.getItem('user'); if (u) { try { setUser(JSON.parse(u)); } catch (e) { localStorage.removeItem('user'); } } setIsInitializing(false); }, []);
+    useEffect(() => {
+        const storedUser = readStoredUser();
+        if (storedUser) {
+            setUser(prev => {
+                if (prev && prev.token === storedUser.token && prev.id === storedUser.id) return prev;
+                return storedUser;
+            });
+        } else {
+            setUser(null);
+        }
+        setIsInitializing(false);
+    }, [readStoredUser]);
 
     useEffect(() => {
         if (typeof window === 'undefined' || !window.localStorage) return;
@@ -1006,7 +1084,26 @@ function App() {
             };
             const resolveSongUrl = (song) => {
                 if (!song || typeof song !== 'object') return '';
-                return song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || song.file?.url || song.audio?.url || song.asset?.url || '';
+                const preferredBase = (() => {
+                    const fromEnv = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
+                        ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '')
+                        : '';
+                    const fromRuntime = (typeof window !== 'undefined' && window.__API_URL)
+                        ? String(window.__API_URL).replace(/\/$/, '')
+                        : '';
+                    return fromEnv || fromRuntime || 'https://mellow-backend-main.onrender.com';
+                })();
+                const normalizeStreamUrl = (value) => {
+                    if (!value || typeof value !== 'string') return '';
+                    const streamMatch = value.match(/\/api\/songs\/stream\/([^/?#]+)/i);
+                    if (!streamMatch) return value;
+                    if (/https?:\/\/(localhost|127\.0\.0\.1):(5000|5001)\//i.test(value)) {
+                        return `${preferredBase}/api/songs/stream/${streamMatch[1]}`;
+                    }
+                    return value;
+                };
+                const raw = song.songUrl || song.url || song.song_url || song.audioUrl || song.audio_url || song.fileUrl || song.file_url || song.file?.url || song.audio?.url || song.asset?.url || '';
+                return normalizeStreamUrl(raw);
             };
             const reconcileQueueItems = (queueItems, normalizedSongs) => {
                 if (!Array.isArray(queueItems) || !Array.isArray(normalizedSongs)) return queueItems;
@@ -1091,7 +1188,14 @@ function App() {
                     }
                 }
             };
-            getSongs(user.token)
+            const activeToken = (user && user.token) ? user.token : readStoredUser()?.token;
+            if (!activeToken) {
+                setSongs([]);
+                setIsLoadingSongs(false);
+                return;
+            }
+
+            getSongs(activeToken)
                 .then((data) => {
                     // normalize song objects: ensure `id`, `coverUrl`, and parsed duration seconds
                     const normalized = Array.isArray(data) ? data.map(s => ({
@@ -1129,7 +1233,7 @@ function App() {
                 })
                 .finally(() => setIsLoadingSongs(false)); 
         } 
-    }, [user]);
+    }, [user, readStoredUser]);
     // Removed mobile-only automatic song refresh due to app background / restore issues.
     // Playback state is now persisted separately to survive reloads and app restarts.
     useEffect(() => {
@@ -1153,6 +1257,10 @@ function App() {
             if (isPlaying) {
                 a.play().catch(err => {
                     if (err && err.name === 'AbortError') return;
+                    if (err && err.name === 'NotAllowedError') {
+                        setIsPlaying(false);
+                        return;
+                    }
                     console.error('Audio play error after song load:', err);
                 });
             }
@@ -1174,6 +1282,10 @@ function App() {
             if (isPlaying) { 
                 a.play().catch(err => { 
                     if (err && err.name === 'AbortError') return; 
+                    if (err && err.name === 'NotAllowedError') {
+                        setIsPlaying(false);
+                        return;
+                    }
                     console.error(err); 
                 }); 
             } else { 
@@ -1986,10 +2098,37 @@ function App() {
     const handleAudioError = useCallback(() => {
         console.error('Audio element error detected');
 
+        const failedSong = songs[currentSongIndex];
+        const failedSrc = audioRef.current ? (audioRef.current.currentSrc || audioRef.current.src || '') : '';
+
+        if (failedSong) {
+            const retryKey = `${String(failedSong.id || '')}::${failedSrc}`;
+            const alreadyRetried = streamRetryRef.current.has(retryKey);
+            if (!alreadyRetried) {
+                streamRetryRef.current.add(retryKey);
+                const fallbackUrls = getStreamFallbackUrls(failedSong, failedSrc);
+                if (fallbackUrls.length > 0) {
+                    const nextUrl = fallbackUrls[0];
+                    updateSongUrlEverywhere(failedSong.id, nextUrl);
+                    try {
+                        if (audioRef.current) {
+                            audioRef.current.src = nextUrl;
+                            audioRef.current.load();
+                            audioRef.current.play().catch(() => {
+                                setIsPlaying(false);
+                            });
+                        }
+                        return;
+                    } catch (retryErr) {
+                        console.warn('Retrying playback with fallback URL failed:', retryErr);
+                    }
+                }
+            }
+        }
+
         // Remove the broken song if it exists in the current position
         if (currentSongIndex >= 0 && songs[currentSongIndex]) {
             try {
-                const failedSong = songs[currentSongIndex];
                 console.warn(`Removing broken song: ${failedSong.title}`);
                 
                 setSongs(prevSongs => {
@@ -2038,6 +2177,16 @@ function App() {
         
         // Track for Quick Picks recommendations
         const selectedSong = songs.find(s => String(s.id) === String(id));
+        if (selectedSong) {
+            const currentUrl = getSongUrl(selectedSong);
+            if (isLocalStreamUrl(currentUrl)) {
+                const fallbackUrls = getStreamFallbackUrls(selectedSong, currentUrl);
+                const nextUrl = fallbackUrls.find(url => !isLocalStreamUrl(url));
+                if (nextUrl && nextUrl !== currentUrl) {
+                    updateSongUrlEverywhere(selectedSong.id, nextUrl);
+                }
+            }
+        }
         if (selectedSong) {
             try { addToListeningHistory(selectedSong); } catch (e) {}
             

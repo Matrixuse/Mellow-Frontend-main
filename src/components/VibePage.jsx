@@ -11,8 +11,9 @@ const MAX_VIBE_SONGS = 40;
 const VibePage = () => {
   const navigate = useNavigate();
   const outlet = useOutletContext() || {};
+  
   const {
-    allSongs,
+    allSongs = [],
     onSelectSong,
     currentSongId,
     isPlaying,
@@ -21,9 +22,18 @@ const VibePage = () => {
     setMoodQueueIndex,
     onAddToQueue,
     onAddToPlaylist,
+    isLoadingSongs,
   } = outlet;
+  
   const { vibeName: encodedVibeName } = useParams();
-  const vibeName = decodeURIComponent(encodedVibeName || '');
+  const vibeName = React.useMemo(() => {
+    const rawValue = encodedVibeName || '';
+    try {
+      return decodeURIComponent(rawValue).trim();
+    } catch (error) {
+      return String(rawValue || '').trim();
+    }
+  }, [encodedVibeName]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef(null);
@@ -35,19 +45,25 @@ const VibePage = () => {
   const [isSaved, setIsSaved] = useState(false);
 
   const dailySongs = useMemo(() => {
-    if (!Array.isArray(allSongs)) return [];
+    if (!Array.isArray(allSongs)) {
+      return [];
+    }
     const normalizedDate = new Date().toISOString().slice(0, 10);
-    return getDailyVibePlaylist(allSongs, vibeName, normalizedDate, MAX_VIBE_SONGS);
+    const result = getDailyVibePlaylist(allSongs, vibeName, normalizedDate, MAX_VIBE_SONGS);
+    return result;
   }, [allSongs, vibeName]);
 
   const filteredSongs = useMemo(() => {
-    if (!searchTerm.trim()) return dailySongs;
+    if (!searchTerm.trim()) {
+      return dailySongs;
+    }
     const q = searchTerm.toLowerCase();
-    return dailySongs.filter((song) => {
+    const result = dailySongs.filter((song) => {
       const title = (song.title || '').toLowerCase();
       const artist = Array.isArray(song.artist) ? song.artist.join(' ').toLowerCase() : (song.artist || '').toLowerCase();
       return title.includes(q) || artist.includes(q);
     });
+    return result;
   }, [dailySongs, searchTerm]);
 
   const handleToggleShuffle = useCallback(() => {
@@ -223,8 +239,32 @@ const VibePage = () => {
     return imageMap[name] || '/vibes/relaxing.jpg';
   };
 
+  const hasSongData = Array.isArray(allSongs) && allSongs.length > 0;
+
   if (!vibeName) {
     return <div className="p-8 text-center text-white">Vibe not found.</div>;
+  }
+
+  if (isLoadingSongs && !hasSongData) {
+    return (
+      <div className="flex h-full min-h-[50vh] items-center justify-center p-8 text-center text-white">
+        <div className="max-w-md rounded-2xl border border-gray-700 bg-gray-900/80 p-8 shadow-xl">
+          <p className="text-lg font-semibold">Loading your music library...</p>
+          <p className="mt-2 text-sm text-gray-400">Please wait while we fetch your songs.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasSongData) {
+    return (
+      <div className="flex h-full min-h-[50vh] items-center justify-center p-8 text-center text-white">
+        <div className="max-w-md rounded-2xl border border-gray-700 bg-gray-900/80 p-8 shadow-xl">
+          <p className="text-lg font-semibold">No songs available for this vibe yet.</p>
+          <p className="mt-2 text-sm text-gray-400">Your music library is still loading or the vibe has no matching tracks.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -410,6 +450,7 @@ const VibePage = () => {
           )}
         </div>
       </div>
+      </div>
 
       <div className="hidden md:flex md:flex-grow md:min-h-0 md:min-w-0 md:overflow-hidden md:flex-row">
         <div className="flex-shrink-0 transition-all duration-300 bg-gray-900/80 p-6 md:w-[430px] md:min-w-[430px] md:sticky md:top-0 md:h-full md:border-r md:border-gray-800 md:p-5">
@@ -522,7 +563,7 @@ const VibePage = () => {
             </div>
           </div>
 
-          <div ref={desktopScrollContainerRef} className="flex-grow mt-2 overflow-y-auto custom-scrollbar p-4 md:p-4">
+          <div ref={desktopScrollContainerRef} className="flex-1 min-h-0 mt-2 overflow-y-auto overscroll-contain custom-scrollbar p-4 pb-28 md:p-4 md:pb-28">
             {filteredSongs.length > 0 ? (
               <div className="space-y-1 md:space-y-1 mr-8">
                 {filteredSongs.map((song) => {
@@ -581,7 +622,6 @@ const VibePage = () => {
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

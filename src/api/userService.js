@@ -1,11 +1,6 @@
 // API helpers for user-related endpoints: history, recommendations, follows, feed, profiles
 import apiClient from './apiClient';
 
-const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
-  ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-  : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-backend-main.onrender.com';
-const API_URL = `${BASE_URL}/api`;
-
 async function parseJsonSafe(response) {
   const text = await response.text();
   try {
@@ -25,93 +20,37 @@ function requireToken(token) {
 
 export const addListenHistory = async (songId, token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/history`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ songId })
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to add history');
-  }
-  return res.json();
+  return apiClient.fetchWithFallback('POST', '/users/history', { body: { songId }, token });
 };
 
 export const followUser = async (userId, token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/${userId}/follow`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to follow user');
-  }
-  return res.json();
+  return apiClient.fetchWithFallback('POST', `/users/${userId}/follow`, { token });
 };
 
 export const unfollowUser = async (userId, token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/${userId}/unfollow`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to unfollow user');
-  }
-  return res.json();
+  return apiClient.fetchWithFallback('POST', `/users/${userId}/unfollow`, { token });
 };
 
 export const getFollowing = async (token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/following`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to fetch following list');
-  }
-  return res.json();
+  return apiClient.fetchWithFallback('GET', '/users/following', { token });
 };
 
 export const getFeed = async (token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/feed`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to fetch feed');
-  }
-  return res.json();
+  return apiClient.fetchWithFallback('GET', '/users/feed', { token });
 };
 
 export const getUserProfile = async (userId, token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/${userId}/profile`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to fetch user profile');
-  }
-  return res.json();
+  return apiClient.fetchWithFallback('GET', `/users/${userId}/profile`, { token });
 };
 
 export const getPlaylistRecommendations = async (token) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/recommendations/playlists`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to fetch recommendations');
-  }
-  const data = await res.json();
+  const data = await apiClient.fetchWithFallback('GET', '/recommendations/playlists', { token });
   // normalize shape similar to playlistService
   return Array.isArray(data) ? data.map(pl => ({
     ...pl,
@@ -123,18 +62,12 @@ export const getPlaylistRecommendations = async (token) => {
 
 export const getListenHistory = async (token, limit = 50) => {
   requireToken(token);
-  const res = await fetch(`${API_URL}/users/history?limit=${encodeURIComponent(limit)}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  // If server doesn't support GET history (404), return unsupported marker
-  if (res.status === 404) {
-    return { unsupported: true };
+  try {
+    return await apiClient.fetchWithFallback('GET', `/users/history?limit=${encodeURIComponent(limit)}`, { token });
+  } catch (err) {
+    if (err?.message && /404|not found/i.test(err.message)) return { unsupported: true };
+    throw err;
   }
-  if (!res.ok) {
-    const err = await parseJsonSafe(res);
-    throw new Error(err.message || 'Failed to fetch listen history');
-  }
-  return res.json();
 };
 
 export const togglePinPlaylist = async (playlistId, token) => {

@@ -24,12 +24,16 @@ class GestureService {
     setupEventListeners() {
         // Add touch event listeners to the document
         // touchstart/end can be passive; touchmove must be non-passive if we call preventDefault()
-        document.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
-        document.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-        document.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: true });
+        this.boundTouchStart = this.handleTouchStart.bind(this);
+        this.boundTouchMove = this.handleTouchMove.bind(this);
+        this.boundTouchEnd = this.handleTouchEnd.bind(this);
+        document.addEventListener('touchstart', this.boundTouchStart, { passive: true });
+        document.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+        document.addEventListener('touchend', this.boundTouchEnd, { passive: true });
     }
 
     handleTouchStart(e) {
+        if (!this) return;
         if (!this.isListening) return;
 
         const touch = e.touches[0];
@@ -39,6 +43,7 @@ class GestureService {
     }
 
     handleTouchMove(e) {
+        if (!this) return;
         // Prevent default scrolling during gesture detection
         if (this.isListening && e.touches && e.touches.length === 1 && this.preventDefaultOnMove) {
             try {
@@ -56,6 +61,7 @@ class GestureService {
     }
 
     handleTouchEnd(e) {
+        if (!this) return;
         if (!this.isListening) return;
 
         const touch = e.changedTouches[0];

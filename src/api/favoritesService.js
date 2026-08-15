@@ -1,10 +1,5 @@
 import apiClient from './apiClient';
 
-const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
-    ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-    : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-backend-main.onrender.com';
-const API_URL = `${BASE_URL}/api/favorites`;
-
 // Toggle favorite song
 export const toggleFavoriteSong = async (songId, token) => {
     if (!token) {

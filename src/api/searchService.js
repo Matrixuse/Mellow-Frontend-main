@@ -1,11 +1,6 @@
 import apiClient from './apiClient';
 import * as playlistService from './playlistService';
 
-const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL)
-    ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-    : (typeof window !== 'undefined' && window.__API_URL) ? String(window.__API_URL).replace(/\/$/, '') : 'https://mellow-backend-main.onrender.com';
-const API_URL = `${BASE_URL}/api/search`;
-
 export const searchSongsArtistsPlaylists = async (query, type = 'all', limit = 20) => {
     if (!query || query.trim().length === 0) {
         return { songs: [], artists: [], playlists: [] };

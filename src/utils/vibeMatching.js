@@ -64,44 +64,59 @@ const normalizeVibeName = (value) => {
     .replace(/\b\w/g, ch => ch.toUpperCase());
 };
 
+const toStringList = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean).map(item => String(item).trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(/[,/|;&]+/)
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
 export const getVibeDefinitions = () => VIBE_DEFINITIONS.map(v => ({ ...v, key: normalizeVibeName(v.key) }));
 
 export const songMatchesVibe = (song, vibeName) => {
   if (!song || !vibeName) return false;
-  const target = normalizeVibeName(vibeName);
-  const songText = [
-    song.title,
-    Array.isArray(song.artist) ? song.artist.join(' ') : song.artist,
-    Array.isArray(song.moods) ? song.moods.join(' ') : song.moods,
-    Array.isArray(song.vibeTags) ? song.vibeTags.join(' ') : song.vibeTags,
-    Array.isArray(song.tags) ? song.tags.join(' ') : song.tags,
-    song.genre,
-    song.description
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
 
+  const target = normalizeVibeName(vibeName);
   const definition = VIBE_DEFINITIONS.find(v => normalizeVibeName(v.key) === target);
   if (!definition) return false;
 
-  const normalizedTarget = normalizeString(target);
-  const matchPattern = new RegExp(definition.matches.join('|').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-
-  const explicitMatch = [
+  const metadataValues = [
+    song.title,
+    song.artist,
+    song.moods,
+    song.vibeTags,
+    song.vibes,
+    song.tags,
+    song.genre,
+    song.description,
     song.vibe,
     song.vibeTag,
-    song.vibeTags,
-    song.moods,
-    song.tags,
-    song.genre
-  ]
-    .flatMap(value => Array.isArray(value) ? value : [value])
-    .filter(Boolean)
-    .some(item => normalizeVibeName(item) === target || normalizeString(item).includes(normalizedTarget));
+    song.mood
+  ];
+
+  const songText = metadataValues
+    .flatMap(value => toStringList(value))
+    .join(' ')
+    .toLowerCase();
+
+  const explicitValues = metadataValues.flatMap(value => toStringList(value));
+  const normalizedTarget = normalizeString(target);
+
+  const explicitMatch = explicitValues.some(item => {
+    const normalizedItem = normalizeString(item);
+    return normalizeVibeName(item) === target || normalizedItem.includes(normalizedTarget) || definition.labels.some(label => normalizeString(label) === normalizedItem || normalizedItem.includes(normalizeString(label)));
+  });
 
   if (explicitMatch) return true;
-  if (definition.matches.some(pattern => songText.includes(pattern))) return true;
+
+  const normalizedPatterns = definition.matches.map(pattern => normalizeString(pattern));
+  if (normalizedPatterns.some(pattern => songText.includes(pattern))) return true;
+
+  const matchPattern = new RegExp(definition.matches.map(pattern => pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
   return matchPattern.test(songText);
 };
 
@@ -114,9 +129,14 @@ export const getVibeSuggestions = (allSongs = [], vibeName, limit = 40) => {
 };
 
 export const getDailyVibePlaylist = (allSongs = [], vibeName, dateKey = new Date().toISOString().slice(0, 10), limit = MAX_VIBE_SONGS) => {
-  if (!Array.isArray(allSongs) || !vibeName) return [];
+  if (!Array.isArray(allSongs) || !vibeName) {
+    return [];
+  }
   const normalized = allSongs.filter(song => songMatchesVibe(song, vibeName));
-  if (!normalized.length) return [];
+
+  if (!normalized.length) {
+    return [];
+  }
 
   const seed = Array.from(String(dateKey || '')).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
   const seededSort = (a, b) => {
