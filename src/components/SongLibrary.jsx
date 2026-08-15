@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 import { getQuickPicks, getListeningHistory } from '../utils/quickPicksAlgorithm';
+import { getAllVibeCards, getVibeSuggestions } from '../utils/vibeMatching';
 
 const DEFAULT_ARTIST_IMAGE = '/artists/default.png';
 
@@ -49,7 +50,7 @@ const moodCategories = [
         name: 'Traditional', 
         imageUrl: '/moods/traditional.jpg', 
         color: 'bg-green-500', 
-        keywords: ['classical', 'traditional', 'lata', 'rafi', 'kishore', 'mukesh', 'bhajan', 'devotional', 'carnatic', 'hindustani']
+        keywords: ['classical', 'traditional', 'lata', 'rafi', 'kishore', 'mukesh', 'carnatic', 'hindustani']
     },
     { 
         name: 'Smooth', 
@@ -99,6 +100,12 @@ const moodCategories = [
         color: 'bg-red-600', 
         keywords: ['hollywood', 'english', 'western', 'pop', 'rock', 'foreign', 'international', 'bollywood english', 'bollywood mix']
     }
+    ,{ 
+        name: 'Spiritual / Bhakti',
+        imageUrl: '/moods/bhakti.jpg',
+        color: 'bg-emerald-500',
+        keywords: ['bhakti', 'bhajan', 'devotional', 'kirtan', 'spiritual', 'mantra']
+    }
 ];
 
 const TopArtists = () => (
@@ -135,7 +142,7 @@ const YourMood = () => {
                     <Link 
                         key={mood.name} 
                         to={`/mood/${encodeURIComponent(mood.name)}`}
-                        className="group relative rounded-lg cursor-pointer transition-all duration-300 flex flex-col p-3 bg-gray-800/50 hover:bg-gray-700/80"
+                        className="group relative cursor-pointer transition-all duration-300 flex flex-col p-3 bg-gray-800/50 hover:bg-gray-700/80"
                     >
                         <div className="relative mb-3">
                             <img 
@@ -155,6 +162,46 @@ const YourMood = () => {
                         </div>
                     </Link>
                 ))}
+            </div>
+        </div>
+    );
+};
+
+const MatchYourVibe = ({ songs = [] }) => {
+    const vibeCards = useMemo(() => getAllVibeCards(), []);
+
+    return (
+        <div className="mb-6">
+            <h3 className="text-2xl font-bold mb-3">Match your Vibe</h3>
+            <div className="grid grid-flow-col auto-cols-[9.25rem] sm:auto-cols-[10.25rem] gap-3 overflow-x-auto custom-scrollbar-h pb-4">
+                {vibeCards.map((vibe) => {
+                    const totalMatches = getVibeSuggestions(songs, vibe.name, 40).length;
+                    return (
+                        <Link
+                            key={vibe.id}
+                            to={`/vibe/${encodeURIComponent(vibe.name)}`}
+                            className="group relative cursor-pointer transition-all duration-300 flex flex-col p-3 bg-gray-800/50 hover:bg-gray-700/80"
+                        >
+                            <div className="relative mb-3">
+                                <img
+                                    src={vibe.imageUrl}
+                                    alt={vibe.name}
+                                    className="w-full h-auto aspect-square rounded-md object-cover"
+                                    onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/400x400/1F2937/FFFFFF?text=' + vibe.name.charAt(0); }}
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-md flex items-center justify-center transition-all duration-300">
+                                    <div className="w-12 h-12 bg-white/0 group-hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300">
+                                        <Play size={24} className="text-white fill-current opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col justify-start flex-grow">
+                                <h4 className="text-sm font-semibold text-white truncate">{vibe.name}</h4>
+                                <p className="text-[11px] text-gray-400">{totalMatches} matches</p>
+                            </div>
+                        </Link>
+                    );
+                })}
             </div>
         </div>
     );
@@ -330,6 +377,8 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
 
     const QuickPickMenu = ({ song }) => {
         const ref = useRef(null);
+        const buttonRef = useRef(null);
+        const [menuStyle, setMenuStyle] = useState({});
         const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
         useEffect(() => {
@@ -342,21 +391,62 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
             return () => document.removeEventListener('click', onDocClick);
         }, [song.id]);
 
+        useEffect(() => {
+            if (!openMenuId || openMenuId !== `quickpick-${song.id}` || !buttonRef.current) {
+                setMenuStyle({});
+                return;
+            }
+
+            const rect = buttonRef.current.getBoundingClientRect();
+            const menuWidth = 176;
+            const menuHeight = 220;
+            const margin = 12;
+
+            let left = rect.right - menuWidth;
+            let top = rect.bottom + 8;
+
+            if (left < margin) left = margin;
+            if (left + menuWidth > window.innerWidth - margin) left = window.innerWidth - menuWidth - margin;
+
+            if (window.innerHeight - rect.bottom < menuHeight + 24) {
+                top = rect.top - menuHeight - 8;
+            }
+
+            if (top < margin) top = margin;
+            if (top + menuHeight > window.innerHeight - margin) top = window.innerHeight - menuHeight - margin;
+
+            setMenuStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, width: '11rem', zIndex: 2000, opacity: 1, backgroundColor: 'rgb(17, 24, 39)', boxShadow: '0 18px 48px rgba(0,0,0,0.75)', border: '1px solid rgba(148,163,184,0.2)' });
+        }, [openMenuId, song.id]);
+
         const isOpen = openMenuId === `quickpick-${song.id}`;
         const fav = isSongFavorite(song.id);
 
         return (
-            <div ref={ref} className="relative inline-block">
-                <button aria-label="Open song menu" onClick={(e) => { e.stopPropagation(); setOpenMenuId(prev => prev === `quickpick-${song.id}` ? null : `quickpick-${song.id}`); }} className="p-1 rounded-full bg-transparent hover:bg-transparent focus:outline-none focus:ring-0 active:bg-transparent text-white">
+            <div ref={ref} className="relative inline-block z-[60]">
+                <button
+                    ref={buttonRef}
+                    type="button"
+                    aria-label="Open song menu"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(prev => prev === `quickpick-${song.id}` ? null : `quickpick-${song.id}`); }}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    className="p-1 rounded-full bg-transparent hover:bg-transparent focus:outline-none focus:ring-0 active:bg-transparent text-white"
+                >
                     <MoreVertical size={14} />
                 </button>
                 {isOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-40 max-w-xs bg-gray-800 border border-gray-700 rounded-md shadow-lg text-left py-0.5 z-50">
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100 text-xs">Add to Queue</button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100 text-xs">Add to Playlist</button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); toggleSongFavorite(song.id).catch(() => {}); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100 text-xs">{fav ? 'Remove Favourite' : 'Add Favourite'}</button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100 text-xs">Artist</button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20] text-xs">Report</button>
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        style={menuStyle}
+                        className="overflow-hidden rounded-md text-left py-0.5 z-[2000]"
+                    >
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>Add to Queue</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>Add to Playlist</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); toggleSongFavorite(song.id).catch(() => {}); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>{fav ? 'Remove Favourite' : 'Add Favourite'}</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>Artist</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-gray-700 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fca5a5', opacity: 1 }}>Report</button>
                     </div>
                 )}
             </div>
@@ -449,6 +539,8 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
 
     const SongMenu = ({ song, className }) => {
         const ref = useRef(null);
+        const buttonRef = useRef(null);
+        const [menuStyle, setMenuStyle] = useState({});
         const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
         useEffect(() => {
@@ -462,17 +554,42 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
             return () => document.removeEventListener('click', onDocClick);
         }, [song.id]);
 
+        useEffect(() => {
+            if (!openMenuId || openMenuId !== song.id || !buttonRef.current) {
+                setMenuStyle({});
+                return;
+            }
+
+            const rect = buttonRef.current.getBoundingClientRect();
+            const menuWidth = 160;
+            const menuHeight = 210;
+            let left = rect.right - menuWidth;
+            let top = rect.bottom + 8;
+
+            if (left < 8) left = 8;
+            if (left + menuWidth > window.innerWidth - 8) left = window.innerWidth - menuWidth - 8;
+
+            if (window.innerHeight - rect.bottom < menuHeight + 20) {
+                top = rect.top - menuHeight - 8;
+            }
+
+            if (top < 8) top = 8;
+            if (top + menuHeight > window.innerHeight - 8) top = window.innerHeight - menuHeight - 8;
+
+            setMenuStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, width: '10rem', zIndex: 1000 });
+        }, [openMenuId, song.id]);
+
         const isOpen = openMenuId === song.id;
         const fav = isSongFavorite(song.id);
 
         return (
             <div ref={ref} className={`relative inline-block ${className || ''}`}>
-                <button aria-label="Open song menu" onClick={(e) => { e.stopPropagation(); setOpenMenuId(prev => prev === song.id ? null : song.id); }} className="p-2 rounded-full bg-transparent hover:bg-transparent focus:outline-none focus:ring-0 active:bg-transparent text-white">
+                <button ref={buttonRef} aria-label="Open song menu" onClick={(e) => { e.stopPropagation(); setOpenMenuId(prev => prev === song.id ? null : song.id); }} className="p-2 rounded-full bg-transparent hover:bg-transparent focus:outline-none focus:ring-0 active:bg-transparent text-white">
                     <MoreVertical size={16} />
                 </button>
                 {isOpen && (
                     // narrower dropdown and tighter padding
-                    <div className="absolute right-0 top-full mt-2 w-40 max-w-xs bg-gray-800 border border-gray-700 rounded-md shadow-lg text-left py-0.5 z-50">
+                    <div style={menuStyle} className="bg-gray-800 border border-gray-700 rounded-md shadow-lg text-left py-0.5 z-50">
                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
                         <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
                         <button
@@ -542,6 +659,10 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                 </div>
 
                     <div className="mt-4">
+                        <MatchYourVibe songs={songs} />
+                    </div>
+
+                    <div className="mt-4">
                         <YourMood />
                     </div>
 
@@ -603,6 +724,9 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                     )}
                 </div>
 
+                <div className="mt-6">
+                    <MatchYourVibe songs={songs} />
+                </div>
                 <div className="mt-6">
                     <YourMood />
                 </div>

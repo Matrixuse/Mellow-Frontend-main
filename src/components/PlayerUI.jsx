@@ -84,6 +84,34 @@ const PlayerUI = ({
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        let active = true;
+
+        async function loadPlaylists() {
+            if (!token) {
+                setPlaylists([]);
+                return;
+            }
+
+            setLoadingPlaylists(true);
+            try {
+                const data = await getPlaylists(token);
+                if (!active) return;
+                setPlaylists(Array.isArray(data) ? data : []);
+            } catch (error) {
+                if (!active) return;
+                setPlaylists([]);
+            } finally {
+                if (active) setLoadingPlaylists(false);
+            }
+        }
+
+        loadPlaylists();
+        return () => {
+            active = false;
+        };
+    }, [token]);
+
     // MusicControls integration (cordova-plugin-music-controls2)
     useEffect(() => {
         // only run on native platforms where the plugin exists
@@ -454,11 +482,14 @@ const PlayerUI = ({
                 {loadingPlaylists ? (
                     <p className="text-xs text-gray-400">Loading...</p>
                 ) : playlists && playlists.length > 0 ? (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
                         {playlists.map(pl => (
                             <div key={pl.id} onClick={() => { try { navigate(`/playlists/${pl.id}`); } catch (e) { window.location.href = `/playlists/${pl.id}`; } }} className="flex items-center gap-3 bg-gray-800 rounded-md p-1 cursor-pointer hover:bg-gray-700">
                                 <ImageWithFallback src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-10 h-10 object-cover rounded-md" fallback={'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} />
-                                <div className="text-sm font-medium text-white truncate">{pl.name}</div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-white truncate">{pl.name}</div>
+                                    <div className="text-[10px] text-gray-400">{pl.songCount ?? pl.songs?.length ?? 0} songs</div>
+                                </div>
                             </div>
                         ))}
                     </div>

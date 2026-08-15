@@ -58,6 +58,16 @@ export const detectSongMood = (song) => {
     if (matchesHollywood) {
         detectedMoods.push('Hollywood Mix');
     }
+
+    // Check for Spiritual / Bhakti (devotional) mood
+    const BHAKTI_KEYWORDS = ['bhajan', 'bhakti', 'devotional', 'kirtan', 'mantra', 'satsang'];
+    const matchesBhakti = 
+        BHAKTI_KEYWORDS.some(k => title.includes(k) || artist.includes(k)) ||
+        moods.includes('bhakti') || moods.includes('bhajan') || moods.includes('devotional');
+
+    if (matchesBhakti) {
+        detectedMoods.push('Spiritual / Bhakti');
+    }
     
     return detectedMoods;
 };

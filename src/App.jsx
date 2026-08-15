@@ -77,6 +77,7 @@ const PLAYBACK_STATE_STORAGE_KEY = 'mellow_playback_state';
 // ⚡ LAZY LOAD HEAVY PAGE COMPONENTS
 const ArtistPage = lazy(() => import('./components/ArtistPage'));
 const MoodPage = lazy(() => import('./components/MoodPage'));
+const VibePage = lazy(() => import('./components/VibePage'));
 const PlaylistPage = lazy(() => import('./components/PlaylistPage'));
 const PlaylistsPage = lazy(() => import('./components/PlaylistsPage'));
 const FeedbackPage = lazy(() => import('./components/FeedbackPage'));
@@ -103,7 +104,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
     const location = useLocation();
     const isFavoritesPage = location.pathname.includes('/favorites');
     const isArtistPage = location.pathname.startsWith('/artist') || location.pathname.includes('/artist/');
-    const isMoodPage = location.pathname.startsWith('/mood') || location.pathname.includes('/mood/');
+    const isMoodPage = location.pathname.startsWith('/mood') || location.pathname.includes('/mood/') || location.pathname.startsWith('/vibe') || location.pathname.includes('/vibe/');
     const isProfilePage = location.pathname.startsWith('/profile') || location.pathname.includes('/profile/');
     const isPlaylistsPage = location.pathname.startsWith('/playlists') || location.pathname.includes('/playlists/');
     return (
@@ -2016,6 +2017,24 @@ function App() {
         // Initialize player when song is selected
         setIsPlayerInitialized(true);
         try { AudioEngine.resumeContextIfNeeded && AudioEngine.resumeContextIfNeeded(); } catch (e) {}
+
+        const explicitQueue = Array.isArray(options.queue) ? options.queue : null;
+        if (explicitQueue && explicitQueue.length > 0) {
+            const explicitIndex = explicitQueue.findIndex(s => String(s.id) === String(id));
+            setIsUsingUpNext(true);
+            setUpNextQueue(explicitQueue);
+            setUpNextIndex(explicitIndex >= 0 ? explicitIndex : 0);
+            setUpNextSourceId(options.sourceId || options.source || null);
+            setIsUsingMoodQueue(true);
+            setMoodQueue(explicitQueue);
+            setMoodQueueIndex(explicitIndex >= 0 ? explicitIndex : 0);
+            setQueue(explicitQueue);
+            try {
+                queueService.clearQueue();
+                queueService.addToQueue(explicitQueue, 'end');
+                queueService.currentIndex = explicitIndex >= 0 ? explicitIndex : 0;
+            } catch (e) {}
+        }
         
         // Track for Quick Picks recommendations
         const selectedSong = songs.find(s => String(s.id) === String(id));
@@ -2599,6 +2618,7 @@ function App() {
                         <Route path="profile" element={<Suspense fallback={<LazyLoadingFallback />}><ProfilePage /></Suspense>} />
                         <Route path="artist/:artistName" element={<Suspense fallback={<LazyLoadingFallback />}><ArtistPage /></Suspense>} />
                         <Route path="mood/:moodName" element={<Suspense fallback={<LazyLoadingFallback />}><MoodPage /></Suspense>} />
+                        <Route path="vibe/:vibeName" element={<Suspense fallback={<LazyLoadingFallback />}><VibePage /></Suspense>} />
                         <Route path="equalizer" element={<Suspense fallback={<LazyLoadingFallback />}><EqualizerPage /></Suspense>} />
                         <Route path="playlists" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistsPage /></Suspense>} />
                         <Route path="playlists/:id" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistPage /></Suspense>} />
@@ -2834,11 +2854,26 @@ const formatTime = (time) => {
 
 const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev, progress, onProgressChange, duration = 0, currentTime = 0, volume, onVolumeChange, isShuffle, onShuffleToggle, isRepeat, onRepeatToggle, onAddToQueue, onAddToPlaylist, onShowArtist, onReportSong, onOpenUpNext, onTogglePlayerExpand = () => {} }) => {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [menuSticky, setMenuSticky] = useState(false);
     const menuRef = useRef(null);
     const menuContainerRef = useRef(null);
     const [dropdownStyle, setDropdownStyle] = useState(null);
-    const menuStickyRef = useRef(menuSticky);
+
+    const closeMenu = useCallback(() => setMenuOpen(false), []);
+    const handleMenuToggle = useCallback((event) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        setMenuOpen((open) => !open);
+    }, []);
+    const handleMenuAction = useCallback((action) => (event) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        closeMenu();
+        if (action) action();
+    }, [closeMenu]);
 
     useEffect(() => {
         if (!menuOpen || !menuRef.current) {
@@ -2859,16 +2894,14 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
         setDropdownStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, zIndex: 9999 });
     }, [menuOpen]);
 
-    useEffect(() => { menuStickyRef.current = menuSticky; }, [menuSticky]);
     useEffect(() => {
         function handleClickOutside(event) {
             if (menuContainerRef.current && !menuContainerRef.current.contains(event.target)) {
-                // Only close when menu is not explicitly made sticky by the user
-                if (!menuStickyRef.current) setMenuOpen(false);
+                setMenuOpen(false);
             }
         }
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     if (!currentSong) return null;
@@ -2934,15 +2967,24 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
                         <Repeat className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                     <div ref={menuContainerRef} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                        <button ref={menuRef} onClick={(e) => { e.stopPropagation(); setMenuOpen((open) => { const next = !open; setMenuSticky(next); return next; }); }} className="p-2 rounded-full hover:bg-gray-800 text-gray-300" aria-label="More options" aria-haspopup="menu" aria-expanded={menuOpen}>
+                        <button
+                            ref={menuRef}
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            onClick={handleMenuToggle}
+                            className="p-2 rounded-full hover:bg-gray-800 text-gray-300"
+                            aria-label="More options"
+                            aria-haspopup="menu"
+                            aria-expanded={menuOpen}
+                        >
                             <MoreVertical className="w-5 h-5" />
                         </button>
                         {menuOpen && (
                             <div role="menu" style={dropdownStyle} className="w-44 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1">
-                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
-                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
-                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
-                                <button role="menuitem" onClick={() => { setMenuOpen(false); setMenuSticky(false); onReportSong && onReportSong(currentSong.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onAddToQueue && onAddToQueue(currentSong, 'end'))} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onAddToPlaylist && onAddToPlaylist(currentSong.id))} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')))} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onReportSong && onReportSong(currentSong.id))} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
                             </div>
                         )}
                     </div>

@@ -125,6 +125,8 @@ export const getSongs = async (token) => {
             id: normalizeId(s.id || s._id || (s._id && s._id.$oid)) || String(s.id || s._id || (s._id && s._id.$oid) || ''),
             coverUrl: s.coverUrl || s.cover_url || s.cover || '',
             songUrl: resolveSongUrl(s),
+            vibeTags: Array.isArray(s.vibeTags) ? s.vibeTags : (Array.isArray(s.vibes) ? s.vibes : []),
+            moods: Array.isArray(s.moods) ? s.moods : [],
             duration: resolveDuration(s)
         }));
     }

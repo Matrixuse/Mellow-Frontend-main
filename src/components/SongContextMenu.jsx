@@ -4,7 +4,10 @@ import { FavoritesContext } from '../contexts/FavoritesContext';
 
 export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, onNavigateToArtist, onReport }) {
   const [open, setOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState({ top: 0, left: 0 });
+  const [menuAbove, setMenuAbove] = useState(false);
   const ref = useRef(null);
+  const buttonRef = useRef(null);
 
   useEffect(() => {
     function handleClick(e) {
@@ -14,25 +17,119 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+
+    const updateMenuPosition = () => {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const menuWidth = 176;
+      const menuHeight = 220;
+      const margin = 12;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const shouldOpenAbove = spaceBelow < menuHeight + 24;
+
+      setMenuAbove(shouldOpenAbove);
+
+      const left = Math.min(
+        Math.max(rect.right - menuWidth, margin),
+        window.innerWidth - menuWidth - margin
+      );
+
+      const top = shouldOpenAbove ? rect.top - menuHeight - 8 : rect.bottom + 8;
+      setMenuStyle({ top, left });
+    };
+
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [open]);
+
   const { isSongFavorite, toggleSongFavorite } = useContext(FavoritesContext);
 
   const handleToggle = (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    setOpen(o => !o);
+    setOpen((prev) => !prev);
   };
 
   return (
-    <div ref={ref} className="relative inline-block">
-      <button onClick={handleToggle} onMouseDown={(e) => e.stopPropagation()} aria-label="More" className="p-1 rounded-full hover:bg-gray-700">
+    <div ref={ref} className="relative inline-block overflow-visible z-[60]">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggle}
+        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        aria-label="More"
+        className="p-1 rounded-full hover:bg-gray-700"
+      >
         <MoreVertical size={16} className="text-gray-200" />
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-44 bg-gray-900 text-white rounded-md shadow-lg z-50 overflow-hidden">
-          <button onClick={(e) => { e.stopPropagation(); setOpen(false); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to Queue</button>
-          <button onClick={(e) => { e.stopPropagation(); setOpen(false); toggleSongFavorite && toggleSongFavorite(song.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">{isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}</button>
-          <button onClick={(e) => { e.stopPropagation(); setOpen(false); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to Playlist</button>
-          <button onClick={(e) => { e.stopPropagation(); setOpen(false); onNavigateToArtist && onNavigateToArtist(Array.isArray(song.artist) ? song.artist[0] : song.artist); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Artist</button>
-          <button onClick={(e) => { e.stopPropagation(); setOpen(false); onReport && onReport(song); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Report</button>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={`fixed z-[200] w-44 overflow-hidden rounded-md text-white shadow-2xl ring-1 ring-white/10 ${menuAbove ? 'shadow-lg' : ''}`}
+          style={{
+            top: `${menuStyle.top}px`,
+            left: `${menuStyle.left}px`,
+            opacity: 1,
+            background: 'rgb(17, 24, 39)',
+            backgroundColor: 'rgb(17, 24, 39)',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+            filter: 'none',
+            boxShadow: '0 18px 48px rgba(0,0,0,0.75)',
+            border: '1px solid rgba(148, 163, 184, 0.2)',
+            mixBlendMode: 'normal',
+            pointerEvents: 'auto',
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onAddToQueue && onAddToQueue(song, 'end'); }}
+            className="w-full text-left px-3 py-2 hover:bg-gray-700"
+            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+          >
+            Add to Queue
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); toggleSongFavorite && toggleSongFavorite(song.id); }}
+            className="w-full text-left px-3 py-2 hover:bg-gray-700"
+            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+          >
+            {isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onAddToPlaylist && onAddToPlaylist(song.id); }}
+            className="w-full text-left px-3 py-2 hover:bg-gray-700"
+            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+          >
+            Add to Playlist
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onNavigateToArtist && onNavigateToArtist(Array.isArray(song.artist) ? song.artist[0] : song.artist); }}
+            className="w-full text-left px-3 py-2 hover:bg-gray-700"
+            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+          >
+            Artist
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onReport && onReport(song); }}
+            className="w-full text-left px-3 py-2 hover:bg-gray-700"
+            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+          >
+            Report
+          </button>
         </div>
       )}
     </div>

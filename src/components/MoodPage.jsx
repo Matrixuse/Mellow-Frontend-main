@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Shuffle, Search, X, MoreVertical, Bookmark, Plus } fro
 import ImageWithFallback from './ImageWithFallback';
 import SongContextMenu from './SongContextMenu';
 import { Footer } from './OtherComponents';
+import { getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist } from '../api/playlistService';
 import { detectSongMood } from '../utils/moodDetection';
 
 const MoodPage = () => {
@@ -30,6 +31,7 @@ const MoodPage = () => {
     const scrollContainerRef = useRef(null);
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
     const [moodMenuOpen, setMoodMenuOpen] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     
     if (!allSongs) {
         return <div className="text-center p-10">Loading mood songs...</div>;
@@ -59,7 +61,7 @@ const MoodPage = () => {
             
             const moodKeywords = {
                 'Punjabi': ['punjabi', 'bhangra', 'gurdas', 'diljit', 'ammy', 'sidhu', 'shubh', 'guru', 'baadshah', 'honey singh'],
-                'Traditional': ['classical', 'traditional', 'lata', 'rafi', 'kishore', 'mukesh', 'bhajan', 'devotional', 'carnatic', 'hindustani'],
+                'Traditional': ['classical', 'traditional', 'lata', 'rafi', 'kishore', 'mukesh', 'carnatic', 'hindustani'],
                 'Smooth': ['romantic', 'smooth', 'soft', 'melodious', 'arijit', 'atif', 'mohit', 'sonu', 'udit', 'love'],
                 'Party': ['party', 'dance', 'energetic', 'upbeat', 'club', 'remix', 'electronic', 'bollywood', 'item', 'peppy'],
                 'Chill': ['chill', 'relaxing', 'ambient', 'indie', 'acoustic', 'folk', 'peaceful', 'calm', 'mellow', 'soft'],
@@ -67,7 +69,8 @@ const MoodPage = () => {
                 'Romantic': ['romantic', 'love', 'couple', 'valentine', 'wedding', 'proposal', 'intimate', 'passionate', 'sweet', 'tender'],
                 'Soft & HeartBreak': ['sad', 'emotional', 'melancholy', 'heartbreak', 'depressing', 'tearful', 'gloomy', 'sorrowful', 'soft', 'gentle'],
                 'Old is Gold': ['old', 'classic', 'vintage', 'golden', 'evergreen', 'retro', 'timeless', 'nostalgia', 'rafi', 'kishore', 'lata', 'mukesh', 'md', 'raj', 'anand', 'kalyanji'],
-                'Hollywood Mix': ['hollywood', 'english', 'western', 'pop', 'rock', 'foreign', 'international', 'bollywood english', 'bollywood mix']
+                'Hollywood Mix': ['hollywood', 'english', 'western', 'pop', 'rock', 'foreign', 'international', 'bollywood english', 'bollywood mix'], 
+                'Spiritual / Bhakti': ['bhakti', 'bhajan', 'devotional', 'kirtan', 'spiritual', 'mantra']
             };
             
             const keywords = moodKeywords[mood] || moodKeywords[Object.keys(moodKeywords).find(k => k.toLowerCase() === normalizedMood)] || [];
@@ -129,7 +132,7 @@ const MoodPage = () => {
         
         if (typeof onSelectSong === 'function') {
             // Play the song - App.jsx will handle finding it in global songs
-            onSelectSong(songId);
+            onSelectSong(songId, { queue: moodSongs, source: 'mood' });
         }
     }, [moodSongs, moodName, onSelectSong, setIsUsingMoodQueue, setMoodQueue, setMoodQueueIndex]);
 
@@ -144,6 +147,84 @@ const MoodPage = () => {
     const handleToggleShuffle = useCallback(() => {
         setIsMoodShuffleMode(prev => !prev);
     }, [setIsMoodShuffleMode]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const checkSaved = async () => {
+            const token = outlet?.user?.token || (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null')?.token : null);
+            if (!token) {
+                setIsSaved(false);
+                return;
+            }
+
+            try {
+                const existing = await getPlaylists(token);
+                if (cancelled) return;
+                const normalizedName = `${moodName} Mood Mix`.trim().toLowerCase();
+                setIsSaved((existing || []).some((playlist) => String(playlist?.name || '').trim().toLowerCase() === normalizedName));
+            } catch (error) {
+                if (!cancelled) setIsSaved(false);
+            }
+        };
+
+        checkSaved();
+        return () => {
+            cancelled = true;
+        };
+    }, [moodName, outlet]);
+
+    const handleSaveMoodAsPlaylist = useCallback(async () => {
+        const token = outlet?.user?.token || (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null')?.token : null);
+
+        if (!token) {
+            alert('Please login to save playlists.');
+            return;
+        }
+
+        if (!moodSongs.length) {
+            alert('No songs available to save for this mood yet.');
+            return;
+        }
+
+        try {
+            const existing = await getPlaylists(token);
+            const normalizedName = `${moodName} Mood Mix`.trim().toLowerCase();
+            const existingPlaylist = (existing || []).find((playlist) => String(playlist?.name || '').trim().toLowerCase() === normalizedName);
+
+            if (existingPlaylist) {
+                const playlistId = existingPlaylist.id || existingPlaylist._id;
+                if (playlistId) {
+                    await deletePlaylist(playlistId, token);
+                }
+                setIsSaved(false);
+                setMoodMenuOpen(false);
+                return;
+            }
+
+            const created = await createPlaylist({
+                name: `${moodName} Mood Mix`,
+                description: `Auto-generated playlist for ${moodName}`,
+                isPublic: false
+            }, token);
+
+            const playlistId = created?.id || created?._id;
+            if (!playlistId) {
+                throw new Error('Playlist was created but no ID was returned.');
+            }
+
+            for (const song of moodSongs) {
+                if (!song?.id) continue;
+                await addSongToPlaylist(playlistId, song.id, token);
+            }
+
+            setIsSaved(true);
+            setMoodMenuOpen(false);
+            navigate('/playlists');
+        } catch (error) {
+            console.error('Failed to save mood as playlist:', error);
+            alert('Could not save this mood as a playlist. Please try again.');
+        }
+    }, [moodSongs, moodName, navigate, outlet]);
 
     useEffect(() => {
         if (searchOpen && searchInputRef.current) {
@@ -185,7 +266,8 @@ const MoodPage = () => {
             'Romantic': '/moods/romantic.jpg',
             'Soft & HeartBreak': '/moods/softheartbreak.jpg',
             'Old is Gold': '/moods/oldgold.jpg',
-            'Hollywood Mix': '/moods/hollywood.jpg'
+            'Hollywood Mix': '/moods/hollywood.jpg',
+            'Spiritual / Bhakti': '/moods/bhakti.jpg'
         };
         return moodImageMap[mood] || '/moods/default.jpg';
     };
@@ -260,7 +342,7 @@ const MoodPage = () => {
                                         <MoreVertical size={20} className="text-white" />
                                     </button>
                                     {moodMenuOpen && (
-                                        <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-lg shadow-lg z-20">
+                                        <div className="absolute right-0 bottom-full mb-2 w-40 bg-gray-800 rounded-lg shadow-lg z-20">
                                             <button
                                                 onClick={() => {
                                                     handleToggleShuffle();
@@ -272,13 +354,13 @@ const MoodPage = () => {
                                                 <span>Shuffle</span>
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    setMoodMenuOpen(false);
+                                                onClick={async () => {
+                                                    await handleSaveMoodAsPlaylist();
                                                 }}
                                                 className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2 text-white transition-colors"
                                             >
-                                                <Bookmark size={16} />
-                                                <span>Save</span>
+                                                <Bookmark size={16} className={isSaved ? 'fill-current text-blue-400' : ''} />
+                                                <span>{isSaved ? 'Already Saved' : 'Save'}</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -349,7 +431,7 @@ const MoodPage = () => {
                                                     <Play size={16} className="text-white fill-current" />
                                                 </div> */}
                                             </div>
-                                            <div className="flex-grow min-w-0 md:flex-grow-0">
+                                            <div className="flex-grow min-w-0 overflow-hidden md:flex-grow-0">
                                                 <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
                                                 <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                                             </div>

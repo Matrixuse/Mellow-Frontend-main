@@ -21,32 +21,29 @@ function getConfiguredBase() {
 }
 
 function joinUrl(base, path) {
-  if (!base) return path;
-  return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (!base) return normalizedPath;
+  return `${base.replace(/\/$/, '')}${normalizedPath}`;
+}
+
+function getCandidateBases() {
+  const configured = getConfiguredBase();
+  const isLocalHost = (typeof window !== 'undefined') && (['localhost', '127.0.0.1', '::1'].includes(window.location.hostname));
+
+  const candidates = isLocalHost
+    ? ['http://localhost:5000', 'http://localhost:5001', configured]
+    : [configured, 'http://localhost:5000', 'http://localhost:5001'];
+
+  return [...new Set(candidates.filter(Boolean))];
 }
 
 export async function fetchWithFallback(method, apiPath, { body = null, token = null, headers = {} } = {}) {
-  const candidates = [];
-  const configured = getConfiguredBase();
-
-  // If we're running the frontend on a local host, prefer localhost backend first.
-  const isLocalHost = (typeof window !== 'undefined') && (['localhost', '127.0.0.1', '::1'].includes(window.location.hostname));
-  if (isLocalHost) {
-    candidates.push('http://localhost:5000');
-    candidates.push('http://localhost:5001'); // Fallback if 5000 is in use
-    if (configured) candidates.push(configured);
-    candidates.push('');
-  } else {
-    // default: try configured host (prod or env override), then localhost, then relative
-    candidates.push(configured);
-    candidates.push('http://localhost:5000');
-    candidates.push('http://localhost:5001'); // Fallback if 5000 is in use
-    candidates.push('');
-  }
+  const candidates = getCandidateBases();
+  const requestPath = `api${apiPath.startsWith('/') ? apiPath : `/${apiPath}`}`;
 
   let lastErr = null;
   for (const base of candidates) {
-    const url = base ? joinUrl(base, `api${apiPath.startsWith('/') ? apiPath : `/${apiPath}`}`) : joinUrl('', `api${apiPath.startsWith('/') ? apiPath : `/${apiPath}`}`);
+    const url = joinUrl(base, requestPath);
     try {
       const opts = { method, headers: { ...(headers || {}) } };
       if (body) {
@@ -56,25 +53,23 @@ export async function fetchWithFallback(method, apiPath, { body = null, token = 
       if (token) opts.headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetch(url, opts);
-      // parse body once for all branches
       const parsed = await parseResponseOnce(res);
-      if (res.ok) {
-        return parsed;
-      }
-      // if 404 try next candidate, otherwise surface parsed error
+
+      if (res.ok) return parsed;
+
       if (res.status === 404) {
         lastErr = parsed;
         continue;
       }
-      throw new Error(parsed && parsed.message ? parsed.message : `Request failed: ${res.status}`);
+
+      lastErr = new Error(parsed && parsed.message ? parsed.message : `Request failed: ${res.status}`);
+      continue;
     } catch (err) {
-      // network error or parse error — remember and continue to next candidate
       lastErr = err;
       continue;
     }
   }
 
-  // all candidates exhausted
   throw new Error(lastErr && lastErr.message ? lastErr.message : 'All API hosts failed');
 }
 

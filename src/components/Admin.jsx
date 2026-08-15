@@ -47,13 +47,16 @@ const UploadSongForm = ({ onSongUploaded }) => {
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
     const [selectedMoods, setSelectedMoods] = useState([]);
+    const [selectedVibes, setSelectedVibes] = useState([]);
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     // Available mood options
     const moodOptions = [
-        'Punjabi', 'Traditional', 'Chill', 'Hip Hop Mix', 
-        'Soft & HeartBreak', 'Smooth', 'Party', 'Romantic', "Old is Gold", "Hollywood Mix"
+        'Punjabi', 'Traditional', 'Chill', 'Hip Hop Mix', 'Soft & HeartBreak', 'Smooth', 'Party', 'Romantic', "Old is Gold", "Hollywood Mix", 'Spiritual / Bhakti'
+    ];
+    const vibeOptions = [
+        'Relaxing', 'Driving', 'Focus & Work', 'Cooking / Dining', 'Deep Sleep', 'Workout & Gym', 'Romance or Date Night'
     ];
 
     const handleMoodToggle = (mood) => {
@@ -61,6 +64,14 @@ const UploadSongForm = ({ onSongUploaded }) => {
             prev.includes(mood) 
                 ? prev.filter(m => m !== mood)
                 : [...prev, mood]
+        );
+    };
+
+    const handleVibeToggle = (vibe) => {
+        setSelectedVibes(prev =>
+            prev.includes(vibe)
+                ? prev.filter(item => item !== vibe)
+                : [...prev, vibe]
         );
     };
 
@@ -79,6 +90,7 @@ const UploadSongForm = ({ onSongUploaded }) => {
         formData.append('title', title);
         formData.append('artist', artist);
         formData.append('moods', JSON.stringify(selectedMoods));
+        formData.append('vibeTags', JSON.stringify(selectedVibes));
 
         try {
             const user = JSON.parse(localStorage.getItem('user'));
@@ -103,6 +115,7 @@ const UploadSongForm = ({ onSongUploaded }) => {
             setTitle('');
             setArtist('');
             setSelectedMoods([]);
+            setSelectedVibes([]);
             
             if (onSongUploaded) {
                 onSongUploaded(data);
@@ -147,7 +160,32 @@ const UploadSongForm = ({ onSongUploaded }) => {
                 </div>
                 {selectedMoods.length > 0 && (
                     <p className="text-xs text-gray-400 mt-2">
-                        Selected: {selectedMoods.join(', ')}
+                        Selected moods: {selectedMoods.join(', ')}
+                    </p>
+                )}
+            </div>
+
+            <div>
+                <label className="text-sm font-medium text-gray-300">Vibe Matching Tags</label>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                    {vibeOptions.map((vibe) => (
+                        <button
+                            key={vibe}
+                            type="button"
+                            onClick={() => handleVibeToggle(vibe)}
+                            className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                                selectedVibes.includes(vibe)
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                        >
+                            {vibe}
+                        </button>
+                    ))}
+                </div>
+                {selectedVibes.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-2">
+                        Selected vibes: {selectedVibes.join(', ')}
                     </p>
                 )}
             </div>
