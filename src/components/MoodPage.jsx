@@ -408,7 +408,7 @@ const MoodPage = () => {
 
             {/* Songs Grid/List */}
             <hr className='h-px bg-gray-500'/>
-            <div ref={scrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4">
+            <div ref={scrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4 pb-24 md:pb-28">
                 {filteredSongs.length > 0 ? (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
@@ -417,9 +417,18 @@ const MoodPage = () => {
                                 return (
                                     <div 
                                         key={song.id} 
-                                        className={`group relative p-1 cursor-pointer md:p-2 transition-colors ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/50 hover:bg-gray-700/80'}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => handleSelectSong(song.id)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleSelectSong(song.id);
+                                            }
+                                        }}
+                                        className={`group relative p-1 md:p-2 transition-colors cursor-pointer ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/50 hover:bg-gray-700/80'}`}
                                     >
-                                        <div className="relative md:mb-2 flex gap-3 md:flex-col md:gap-0 items-start">
+                                        <div className="relative md:mb-1 flex gap-3 md:flex-col md:gap-0 items-start min-w-0 w-full">
                                             <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer flex-shrink-0 md:w-full">
                                                 <ImageWithFallback
                                                     src={song.coverUrl}
@@ -427,16 +436,16 @@ const MoodPage = () => {
                                                     className="w-10 h-10 md:w-full md:h-auto md:aspect-square rounded-md object-cover"
                                                     fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
                                                 />
-                                                {/* <div className={`absolute bottom-1 right-1 md:bottom-2 md:right-2 w-8 h-8 md:w-9 md:h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                    <Play size={16} className="text-white fill-current" />
-                                                </div> */}
                                             </div>
-                                            <div className="flex-grow min-w-0 overflow-hidden md:flex-grow-0">
-                                                <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
-                                                <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
+                                            <div className="flex-1 min-w-0 mt-1 overflow-hidden md:flex-grow-0 md:w-full md:pr-5">
+                                                <h4 className={`text-sm font-semibold truncate overflow-hidden whitespace-nowrap text-ellipsis ${isActive ? 'text-blue-300' : 'text-white'}`}>
+                                                    {song.title}
+                                                </h4>
+                                                <p className="text-xs text-gray-400 truncate overflow-hidden whitespace-nowrap text-ellipsis">
+                                                    {Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}
+                                                </p>
                                             </div>
-                                            {/* Three-dot menu positioned at right */}
-                                            <div className="flex-shrink-0 ml-auto md:absolute md:bottom-0 md:right-0 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity md:z-10">
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 md:absolute md:right-2 md:bottom-2 md:top-auto md:translate-y-0 md:opacity-100 md:group-hover:opacity-100 md:transition-opacity md:z-10">
                                                 <SongContextMenu
                                                     song={song}
                                                     onAddToQueue={onAddToQueue}

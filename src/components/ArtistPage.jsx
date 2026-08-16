@@ -28,6 +28,8 @@ const ArtistPage = () => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const searchInputRef = useRef(null);
+    const scrollContainerRef = useRef(null);
+    const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
     const [following, setFollowing] = useState(false);
 
     const { artistName: encodedArtistName } = useParams();
@@ -140,6 +142,21 @@ const ArtistPage = () => {
         }
     }, [searchOpen]);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            if (scrollContainerRef.current) {
+                const scrollTop = scrollContainerRef.current.scrollTop;
+                setIsHeaderExpanded(scrollTop < 50);
+            }
+        };
+
+        const container = scrollContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', handleScroll);
+            return () => container.removeEventListener('scroll', handleScroll);
+        }
+    }, []);
+
     const toggleSearch = () => {
 
         setSearchOpen(prev => {
@@ -156,107 +173,95 @@ const ArtistPage = () => {
 
     return (
 
-        <div className="flex-grow flex flex-col min-h-0">
-
-            {/* HERO HEADER */}
-
-            <div className="relative w-full h-[130rem] md:h-[340px] overflow-hidden">
-
-                <ImageWithFallback
-                    src={artistCandidates}
-                    alt={artistName}
-                    className="absolute inset-0 w-full h-full object-cover"
-                />
-
-                {/* TOP BUTTONS */}
-
-                <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
-
-                    <Link
-                        to="/"
-                        className="p-2 rounded-full bg-black/0 backdrop-blur hover:bg-black/0"
-                    >
-                        <ArrowLeft size={20} className="text-white"/>
+        <div className="flex-grow flex flex-col min-h-0 min-w-0">
+            <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-gray-900/80 p-6' : 'bg-gray-900/80 p-3'}`}>
+                <div className="flex items-center gap-3 mb-0">
+                    <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                        <ArrowLeft size={20} />
                     </Link>
-
-                    {/* Right side: either icons or expanded search input */}
-                    {searchOpen ? (
-                        <div className="flex items-center gap-3 w-full ml-4">
-                            <div className="flex-1">
-                                <div className="relative">
-                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
-                                    <input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        placeholder={`Search ${artistName}`}
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        className="w-full bg-black/80 text-white rounded-full py-1 pl-8 pr-10 focus:outline-none"
-                                    />
-                                    {searchTerm && (
-                                        <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white"><X size={14} /></button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <button onClick={toggleSearch} className="p-2 rounded-full bg-black/40 hover:bg-black/60">
-                                <X size={18} />
-                            </button>
-
-                            <button
-                                onClick={handleToggleShuffle}
-                                className={`p-2 rounded-full ${
-                                    isArtistShuffleMode ? 'bg-blue-600' : 'bg-black/40 hover:bg-black/60'
-                                }`}
-                            >
-                                <Shuffle size={20} />
-                            </button>
-                            <button onClick={toggleFollow} className={`ml-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${following ? 'bg-white text-black' : 'bg-blue-600 text-white'}`}>
-                                {following ? 'Following' : 'Follow'}
-                            </button>
-                        </div>
+                    {isHeaderExpanded ? (
+                        <h1 className="flex-1"></h1>
                     ) : (
-                        <div className="flex gap-3">
-                            <button
-                                onClick={toggleSearch}
-                                className="p-2 rounded-full bg-black/40 backdrop-blur hover:bg-black/60"
-                            >
-                                <Search size={20} />
+                        <h1 className="text-xl font-bold flex-1">{artistName}</h1>
+                    )}
+                    <div className="flex items-center gap-2">
+                        {artistSongs.length > 0 && (
+                            <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                                {searchOpen ? <X size={18} /> : <Search size={18} />}
                             </button>
-
+                        )}
+                        {artistSongs.length > 0 && (
                             <button
                                 onClick={handleToggleShuffle}
-                                className={`p-2 rounded-full ${
-                                    isArtistShuffleMode ? 'bg-blue-600' : 'bg-black/40 hover:bg-black/60'
+                                className={`p-2 rounded-full transition-all flex-shrink-0 ${
+                                    isArtistShuffleMode ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' : 'bg-gray-900 hover:bg-gray-500'
                                 }`}
+                                title={isArtistShuffleMode ? 'Shuffle is on - songs will play randomly' : 'Shuffle is off - click to turn on'}
                             >
-                                <Shuffle size={20} />
+                                <Shuffle size={20} className="text-white" />
                             </button>
-                        </div>
-                    )}
-
-                </div>
-
-                {/* ARTIST NAME + FOLLOW BUTTON */}
-
-                <div className="absolute bottom-6 left-6 z-10">
-                    <div className="flex items-center gap-4">
-                            <h1 className={`text-3xl md:text-3xl lg:text-6xl font-extrabold text-white drop-shadow-lg truncate`}>{artistName}</h1>
-                            <div className="ml-4">
-                                <button onClick={toggleFollow} className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${following ? 'bg-black text-white' : 'bg-blue-600 text-white'}`}>
-                                    {following ? 'Following' : 'Follow'}
-                                </button>
-                            </div>
+                        )}
                     </div>
                 </div>
 
+                {isHeaderExpanded && artistSongs.length > 0 && (
+                    <div className="mt-4 flex gap-4 items-end">
+                        <ImageWithFallback
+                            src={artistCandidates}
+                            alt={artistName}
+                            className="w-24 h-24 rounded-lg object-cover shadow-lg"
+                            fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Artist'}
+                        />
+                        <div className="flex-1">
+                            <h2 className="text-xl font-bold mb-3">{artistName}</h2>
+                            <div className="flex items-center gap-5">
+                                <button
+                                    onClick={() => {
+                                        if (artistSongs.length > 0) {
+                                            handleSelectSong(artistSongs[0].id);
+                                        }
+                                    }}
+                                    className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center shadow-lg transition-colors"
+                                >
+                                    <Play size={24} className="text-white fill-current" />
+                                </button>
+                                <button
+                                    onClick={toggleFollow}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${following ? 'bg-white text-black' : 'bg-blue-600 text-white'}`}
+                                >
+                                    {following ? 'Following' : 'Follow'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* search input is now rendered inline in the hero top area when opened */}
+            {searchOpen && (
+                <div className="flex-shrink-0 bg-gray-900/80 px-4 pb-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder={`Search ${artistName} songs...`}
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                            autoComplete="off"
+                        />
+                        {searchTerm && (
+                            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
-            {/* SONG GRID */}
+            <hr className='h-px bg-gray-500'/>
 
-            <div className="flex-grow overflow-y-auto p-4">
+            <div ref={scrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4 pb-24 md:pb-28">
 
                 {filteredSongs.length > 0 ? (
 

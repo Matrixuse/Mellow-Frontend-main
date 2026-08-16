@@ -197,33 +197,26 @@ const VibePage = () => {
   }, [searchOpen]);
 
   useEffect(() => {
-    const handleMobileScroll = () => {
-      if (mobileScrollContainerRef.current) {
-        const scrollTop = mobileScrollContainerRef.current.scrollTop;
-        setIsHeaderExpanded(scrollTop < 50);
-      }
+    const updateHeaderState = () => {
+      const containers = [mobileScrollContainerRef.current, desktopScrollContainerRef.current].filter(Boolean);
+      if (containers.length === 0) return;
+
+      const maxScrollTop = containers.reduce((max, container) => Math.max(max, container.scrollTop || 0), 0);
+      setIsHeaderExpanded(maxScrollTop < 50);
     };
 
-    const mobileContainer = mobileScrollContainerRef.current;
-    if (mobileContainer) {
-      mobileContainer.addEventListener('scroll', handleMobileScroll);
-      return () => mobileContainer.removeEventListener('scroll', handleMobileScroll);
-    }
-  }, []);
+    const containers = [mobileScrollContainerRef.current, desktopScrollContainerRef.current].filter(Boolean);
+    containers.forEach((container) => {
+      container.addEventListener('scroll', updateHeaderState);
+    });
 
-  useEffect(() => {
-    const handleDesktopScroll = () => {
-      if (desktopScrollContainerRef.current) {
-        const scrollTop = desktopScrollContainerRef.current.scrollTop;
-        setIsHeaderExpanded(scrollTop < 50);
-      }
+    updateHeaderState();
+
+    return () => {
+      containers.forEach((container) => {
+        container.removeEventListener('scroll', updateHeaderState);
+      });
     };
-
-    const desktopContainer = desktopScrollContainerRef.current;
-    if (desktopContainer) {
-      desktopContainer.addEventListener('scroll', handleDesktopScroll);
-      return () => desktopContainer.removeEventListener('scroll', handleDesktopScroll);
-    }
   }, []);
 
   const getVibeImageUrl = (name) => {
@@ -396,7 +389,7 @@ const VibePage = () => {
           )}
 
           <hr className="h-px bg-gray-500" />
-          <div ref={mobileScrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4">
+          <div ref={mobileScrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4 pb-24">
           {filteredSongs.length > 0 ? (
             <div className="grid grid-cols-1 gap-2">
               {filteredSongs.map((song) => {
@@ -415,7 +408,7 @@ const VibePage = () => {
                     }}
                     className={`group relative p-1 cursor-pointer transition-colors ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/50 hover:bg-gray-700/80'}`}
                   >
-                    <div className="relative flex gap-3 items-start">
+                    <div className="relative flex gap-3 items-start min-w-0 w-full">
                       <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer flex-shrink-0">
                         <ImageWithFallback
                           src={song.coverUrl || song.cover}
@@ -424,11 +417,11 @@ const VibePage = () => {
                           fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
                         />
                       </div>
-                      <div className="flex-grow min-w-0 overflow-hidden">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
                         <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                       </div>
-                      <div className="flex-shrink-0 ml-auto">
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex-shrink-0">
                         <SongContextMenu
                           song={song}
                           onAddToQueue={onAddToQueue}
@@ -580,7 +573,7 @@ const VibePage = () => {
                           handleSelectSong(song.id);
                         }
                       }}
-                      className={`group relative flex cursor-pointer items-center border-b gap-1 rounded border-gray-800 bg-gray-900/50 px-1 py-1 transition-colors hover:bg-gray-700/80 md:gap-4 md:px-1 md:py-1 overflow-visible z-0 ${isActive ? 'border-blue-500 bg-blue-900/20' : ''}`}
+                      className={`group relative flex cursor-pointer items-center border-b gap-1 rounded border-gray-800 bg-gray-900/50 px-1 py-1 pr-12 transition-colors hover:bg-gray-700/80 md:gap-4 md:px-1 md:py-1 md:pr-14 overflow-visible z-0 ${isActive ? 'border-blue-500 bg-blue-900/20' : ''}`}
                     >
                       <div className="flex-shrink-0">
                         <ImageWithFallback
@@ -591,14 +584,14 @@ const VibePage = () => {
                         />
                       </div>
 
-                      <div className="flex flex-1 items-center justify-between gap-3 overflow-visible">
-                        <div className="min-w-0 flex-1">
+                      <div className="flex flex-1 items-center justify-between gap-3 overflow-hidden min-w-0">
+                        <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="truncate text-sm font-semibold text-white md:text-base">{song.title}</div>
                           <div className="truncate text-xs text-gray-400 md:text-sm">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
-                          <span className="text-xs text-gray-300 md:text-sm mr-4">{formatDuration(song)}</span>
-                          <div className="relative z-50 md:opacity-1 md:group-hover:opacity-100 md:transition-opacity mr-5">
+                          <span className="text-xs text-gray-300 md:text-sm mr-1">{formatDuration(song)}</span>
+                          <div className="relative z-50 md:opacity-100 md:group-hover:opacity-100 md:transition-opacity">
                             <SongContextMenu
                               song={song}
                               onAddToQueue={onAddToQueue}

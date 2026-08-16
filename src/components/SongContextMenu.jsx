@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 
@@ -24,18 +25,27 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
       const rect = buttonRef.current.getBoundingClientRect();
       const menuWidth = 176;
       const menuHeight = 220;
+      const gap = 8;
       const margin = 12;
+
+      let left = rect.right - menuWidth;
+      if (left < margin) left = margin;
+      if (left + menuWidth > window.innerWidth - margin) {
+        left = window.innerWidth - menuWidth - margin;
+      }
+
       const spaceBelow = window.innerHeight - rect.bottom;
-      const shouldOpenAbove = spaceBelow < menuHeight + 24;
+      const shouldOpenAbove = spaceBelow < menuHeight + gap;
+      let top = rect.bottom + gap;
+      if (shouldOpenAbove) {
+        top = rect.top - menuHeight - gap;
+      }
+      if (top < margin) top = margin;
+      if (top + menuHeight > window.innerHeight - margin) {
+        top = window.innerHeight - menuHeight - margin;
+      }
 
       setMenuAbove(shouldOpenAbove);
-
-      const left = Math.min(
-        Math.max(rect.right - menuWidth, margin),
-        window.innerWidth - menuWidth - margin
-      );
-
-      const top = shouldOpenAbove ? rect.top - menuHeight - 8 : rect.bottom + 8;
       setMenuStyle({ top, left });
     };
 
@@ -57,7 +67,7 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
   };
 
   return (
-    <div ref={ref} className="relative inline-block overflow-visible z-[60]">
+    <div ref={ref} className="relative inline-flex items-center justify-center overflow-visible z-[200]">
       <button
         ref={buttonRef}
         type="button"
@@ -69,12 +79,12 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
       >
         <MoreVertical size={16} className="text-gray-200" />
       </button>
-      {open && (
+      {open && createPortal(
         <div
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          className={`fixed z-[200] w-44 overflow-hidden rounded-md text-white shadow-2xl ring-1 ring-white/10 ${menuAbove ? 'shadow-lg' : ''}`}
+          className={`fixed z-[9999] w-44 overflow-hidden rounded-md text-white shadow-2xl ring-1 ring-white/10 ${menuAbove ? 'shadow-lg' : ''}`}
           style={{
             top: `${menuStyle.top}px`,
             left: `${menuStyle.left}px`,
@@ -130,7 +140,8 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
           >
             Report
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
