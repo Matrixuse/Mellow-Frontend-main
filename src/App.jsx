@@ -333,7 +333,7 @@ const LibraryPage = React.memo(() => {
                                             <h3 className="truncate text-white text-sm font-medium">{s?.title || s?.name}</h3>
                                             <p className="truncate text-xs text-gray-400">{Array.isArray(s?.artist) ? s.artist.join(", ") : s?.artist}</p>
                                         </div>
-                                        {/* <span className="text-xs text-gray-400 mr-2">{formatTime(songDuration)}</span> */}
+                                        <span className="text-xs text-gray-400 mr-2">{formatTime(songDuration)}</span>
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                             <SongContextMenu
                                                 song={s}

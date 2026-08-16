@@ -6,6 +6,75 @@ const RelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, on
 
     const songs = Array.isArray(relatedSongs) ? relatedSongs : [];
 
+    const parseDurationToSeconds = (dur) => {
+        if (dur === undefined || dur === null || dur === '') return 0;
+        if (typeof dur === 'string') {
+            const trimmed = dur.trim();
+            if (trimmed.includes(':')) {
+                const parts = trimmed.split(':').map((part) => Number(part));
+                if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                }
+                if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+                    return parts[0] * 60 + parts[1];
+                }
+            }
+            const numeric = Number(trimmed);
+            if (Number.isFinite(numeric)) {
+                return numeric > 10000 ? Math.round(numeric / 1000) : numeric;
+            }
+            return 0;
+        }
+        if (typeof dur === 'number' && Number.isFinite(dur)) {
+            return dur > 10000 ? Math.round(dur / 1000) : dur;
+        }
+        return 0;
+    };
+
+    const getSongDuration = (song) => {
+        if (!song) return 0;
+        const candidates = [
+            song.duration,
+            song.durationSeconds,
+            song.duration_seconds,
+            song.durationMs,
+            song.duration_ms,
+            song.length,
+            song.audioDuration,
+            song.metadata?.duration,
+            song.metadata?.durationSeconds,
+            song.metadata?.duration_seconds
+        ];
+        for (const dur of candidates) {
+            const parsed = parseDurationToSeconds(dur);
+            if (parsed > 0) return parsed;
+        }
+        return 0;
+    };
+
+    const formatTime = (time) => {
+        if (time === null || time === undefined || time === '') return '0:00';
+        if (typeof time === 'string') {
+            const trimmed = time.trim();
+            const parts = trimmed.split(':').map((part) => Number(part));
+            if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+                return `${Math.floor(parts[0])}:${String(Math.floor(parts[1])).padStart(2, '0')}`;
+            }
+            if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+                const totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = Math.floor(totalSeconds % 60);
+                return `${minutes}:${String(seconds).padStart(2, '0')}`;
+            }
+            const numeric = Number(trimmed);
+            if (Number.isFinite(numeric)) time = numeric;
+        }
+        if (!isFinite(time) || time < 0) return '0:00';
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
     return (
         <div className="fixed inset-0 bg-black/40 md:hidden z-50 animate-in fade-in duration-300">
             <div className="fixed inset-0 top-0 bg-gradient-to-b from-gray-900 to-gray-950 z-50 flex flex-col slide-in-from-bottom duration-300 rounded-t-3xl max-h-screen">
@@ -64,6 +133,7 @@ const RelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, on
                                         <div className="text-sm font-medium text-white truncate">{song.title}</div>
                                         <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
                                     </div>
+                                    <span className="text-xs text-gray-400 mr-1">{formatTime(getSongDuration(song))}</span>
                                 </div>
                             ))}
                         </div>
