@@ -9,6 +9,10 @@ import AuthForm from './components/AuthForm';
 import queueService from './services/queueService';
 import AudioEngine from './services/audioEngine';
 
+import { useDrag } from '@use-gesture/react';
+import { animated } from '@react-spring/web';
+import useScopedPullToRefresh from './hooks/useScopedPullToRefresh';
+
 // Lazy load non-critical services
 let nativeMediaService = null;
 let musicControlsService = null;
@@ -216,6 +220,19 @@ const LibraryPage = React.memo(() => {
 
     const [activeTab, setActiveTab] = useState("upnext");
     const [showQueuePanel, setShowQueuePanel] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const handleRefresh = useCallback(async () => {
+        // Apna refresh logic — e.g. dobara getSongs() call karo
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                setRefreshKey(prev => prev + 1);
+                resolve();
+            }, 1000);
+        });
+    }, []);
+
+    const { scrollRef, bindPull, pull, refreshing } = useScopedPullToRefresh(handleRefresh);
 
     const safeAddToQueue = (song, position = 'end') => {
         if (context && typeof context.onAddToQueue === 'function') return context.onAddToQueue(song, position);
@@ -357,8 +374,25 @@ const LibraryPage = React.memo(() => {
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 p-2 overflow-auto">
+                <animated.div 
+                    ref={scrollRef} 
+                    {...bindPull()} 
+                    style={{ 
+                        overflowY: 'auto', 
+                        touchAction: 'pan-y',
+                        position: 'relative'
+                    }} 
+                    className="flex-1 p-2 overflow-auto"
+                >
+                    {/* Pull-to-refresh indicator */}
+                    {refreshing && (
+                        <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-gray-900/50 z-50">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500">Refreshing...</div>
+                        </div>
+                    )}
+
                     <SongLibrary
+                        key={refreshKey}
                         songs={filteredSongs}
                         onSelectSong={onSelectSong}
                         currentSongId={currentSongId}
@@ -366,7 +400,7 @@ const LibraryPage = React.memo(() => {
                         onAddToQueue={(context && typeof context.onAddToQueue === 'function') ? context.onAddToQueue : safeAddToQueue}
                     />
                     <Footer onDeveloperClick={onAdminClick} />
-                </div>
+                </animated.div>
             )}
         </div>
     );
@@ -530,10 +564,7 @@ function App() {
 
         const hostCandidates = [
             configured,
-            runtimeBase,
-            'https://mellow-backend-main.onrender.com',
-            'http://localhost:5000',
-            'http://localhost:5001'
+            runtimeBase || 'https://mellow-backend-main.onrender.com'
         ].filter(Boolean);
 
         const streamCandidates = hostCandidates.map(base => `${base}/api/songs/stream/${encodeURIComponent(songId)}`);
@@ -762,43 +793,6 @@ function App() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Global mobile swipe-down behavior:
-    //  - If player is not expanded: swipe-down should expand the player UI
-    //  - If player is expanded: swipe-down should collapse player and navigate home
-    useEffect(() => {
-        (async () => {
-            try {
-                const gs = await loadGestureService();
-                if (!gs || !gs.isAvailable()) return;
-                gs.setEventHandlers({
-                    onSwipeDown: () => {
-                        // If Up Next / Related modal is open, expand the player and close the modal
-                        if (isUpNextRelatedModalOpen) {
-                            try { setIsUpNextRelatedModalOpen(false); } catch (e) {}
-                            try { setIsPlayerExpanded(true); } catch (e) {}
-                            return;
-                        }
-                        // ignore if playlist modal is open
-                        if (isPlaylistOpen) return;
-                        if (!isPlayerExpanded) {
-                            setIsPlayerExpanded(true);
-                        } else {
-                            setIsPlayerExpanded(false);
-                            try { navigate('/'); } catch (e) {}
-                        }
-                    }
-                });
-                // Do not call preventDefault on touchmove by default so the app can
-                // use native scrolling on mobile devices. Only enable preventDefault
-                // for specific interactions that intentionally lock scrolling.
-                try { gs.setPreventDefaultOnMove(false); } catch (e) {}
-                gs.enable();
-            } catch (e) {
-                // ignore
-            }
-        })();
-    }, [isUpNextRelatedModalOpen, isPlaylistOpen, isPlayerExpanded, navigate]);
-
     // New state for fuzzy search
     const [fuzzy, setFuzzy] = useState(null);
 
@@ -924,7 +918,7 @@ function App() {
         }
     }, [currentSong, isPlaying, isShuffle, isRepeat, isUsingUpNext, upNextQueue, upNextIndex, isUsingPlaylistQueue, playlistQueue, playlistQueueIndex, isUsingArtistQueue, artistQueue, artistQueueIndex, isUsingMoodQueue, moodQueue, moodQueueIndex]);
 
-    // Quick API health check (attempt configured host, localhost:5000, then relative)
+    // Quick API health check through the centralized API client.
     useEffect(() => {
         let mounted = true;
         apiClient.fetchWithFallback('GET', '/health')
@@ -3145,6 +3139,19 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
 
 // --- Mobile mini player bar component ---
 const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerExpand, isShuffle, onShuffleToggle, isPlayerInitialized, currentTime = 0, duration = 0 }) => {
+    const barRef = useRef(null);
+
+    useDrag(({ last, movement: [, my], velocity: [, vy], direction: [, dy] }) => {
+        if (!last) return; // sirf release par decide karo
+        const swipedUp = my < -60 || (vy > 0.7 && dy < 0);
+        if (swipedUp) onTogglePlayerExpand();
+    }, {
+        target: barRef,
+        axis: 'y',
+        filterTaps: true,          // tap ko drag na maane
+        pointer: { touch: true },
+        eventOptions: { passive: false }
+    });
     // Hide player bar until a song has been played, then keep it visible
     if (!currentSong || !isPlayerInitialized) return null;
     return (

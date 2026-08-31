@@ -34,8 +34,16 @@ export default defineConfig({
   },
 
   server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+      protocol: 'ws'
+    },
     headers: {
-      "Cache-Control": "public, max-age=3600" // Enable caching for static assets
+      "Cache-Control": "no-store"
     }
   }
 })

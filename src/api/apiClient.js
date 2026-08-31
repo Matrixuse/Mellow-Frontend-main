@@ -1,4 +1,4 @@
-// Centralized API client with fallback strategy for dev/production
+// Centralized API client — always talks to the configured backend only
 // Read response body once and return either parsed JSON or a safe message object
 async function parseResponseOnce(response) {
   const text = await response.text();
@@ -26,15 +26,59 @@ function joinUrl(base, path) {
   return `${base.replace(/\/$/, '')}${normalizedPath}`;
 }
 
+// Only ever use the configured backend (VITE_API_URL). No localhost fallbacks.
 function getCandidateBases() {
   const configured = getConfiguredBase();
-  const isLocalHost = (typeof window !== 'undefined') && (['localhost', '127.0.0.1', '::1'].includes(window.location.hostname));
+  return [configured].filter(Boolean);
+}
 
-  const candidates = isLocalHost
-    ? ['http://localhost:5000', 'http://localhost:5001', configured]
-    : [configured, 'http://localhost:5000', 'http://localhost:5001'];
+// Token refresh state to prevent multiple simultaneous refresh attempts
+let refreshPromise = null;
 
-  return [...new Set(candidates.filter(Boolean))];
+async function attemptTokenRefresh() {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const candidates = getCandidateBases();
+      for (const base of candidates) {
+        try {
+          const url = joinUrl(base, 'api/auth/refresh');
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: user.refreshToken })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.token) {
+              // Update token in localStorage
+              user.token = data.token;
+              localStorage.setItem('user', JSON.stringify(user));
+              return data.token;
+            }
+          } else if (res.status === 401) {
+            // Refresh token expired, clear auth
+            localStorage.removeItem('user');
+            throw new Error('Refresh token expired');
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+      throw new Error('Token refresh failed on all hosts');
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 export async function fetchWithFallback(method, apiPath, { body = null, token = null, headers = {} } = {}) {
@@ -56,6 +100,28 @@ export async function fetchWithFallback(method, apiPath, { body = null, token = 
       const parsed = await parseResponseOnce(res);
 
       if (res.ok) return parsed;
+
+      // Handle 401 Unauthorized - attempt token refresh
+      if (res.status === 401 && token && !apiPath.includes('/auth/')) {
+        try {
+          const newToken = await attemptTokenRefresh();
+          if (newToken) {
+            // Retry request with new token
+            const retryOpts = { method, headers: { ...opts.headers } };
+            retryOpts.headers['Authorization'] = `Bearer ${newToken}`;
+            if (body) {
+              retryOpts.body = typeof body === 'string' ? body : JSON.stringify(body);
+              retryOpts.headers['Content-Type'] = retryOpts.headers['Content-Type'] || 'application/json';
+            }
+            const retryRes = await fetch(url, retryOpts);
+            if (retryRes.ok) {
+              return await parseResponseOnce(retryRes);
+            }
+          }
+        } catch (refreshErr) {
+          // Refresh failed, continue to throw original error
+        }
+      }
 
       if (res.status === 404) {
         lastErr = parsed;
