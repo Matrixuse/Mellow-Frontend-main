@@ -1,9 +1,15 @@
 import React, { useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { animated } from '@react-spring/web';
 import SongLibrary from '../components/SongLibrary';
+import LibraryOption from '../components/LibraryOption';
 import useScopedPullToRefresh from '../hooks/useScopedPullToRefresh';
 
 const LibraryPage = () => {
+    const location = useLocation();
+    const selectedMood = location.pathname.startsWith('/library/')
+        ? location.pathname.slice('/library/'.length)
+        : '';
     const [refreshKey, setRefreshKey] = useState(0);
 
     const handleRefresh = useCallback(async () => {
@@ -35,15 +41,20 @@ const LibraryPage = () => {
                 {/* Pull-to-refresh indicator */}
                 {refreshing && (
                     <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-gray-900/50 z-50">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500">Refreshing...</div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
                 )}
 
-                {/* SongLibrary content */}
-                <SongLibrary key={refreshKey} />
+                {selectedMood ? (
+                    <LibraryOption />
+                ) : (
+                    <HomeView refreshKey={refreshKey} />
+                )}
             </animated.div>
         </div>
     );
 };
+
+const HomeView = ({ refreshKey }) => <SongLibrary key={refreshKey} />;
 
 export default LibraryPage;

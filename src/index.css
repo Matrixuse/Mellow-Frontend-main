@@ -17,6 +17,17 @@ html {
   html { font-size: 19px; }
 }
 
+@layer utilities {
+  /* Hides scrollbar track but keeps scrolling active */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
 /* Vertical Scrollbar ke liye */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

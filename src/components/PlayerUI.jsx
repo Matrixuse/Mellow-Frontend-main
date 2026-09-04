@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getPlaylists } from '../api/playlistService';
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHouse, faListUl, faHourglassHalf, faLinesLeaning } from '@fortawesome/free-solid-svg-icons';
+import { faHouse, faListUl, faHourglassHalf, faLinesLeaning, faPlay, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Home } from 'lucide-react';
 import nativeMediaService from '../services/nativeMediaService';
 import ImageWithFallback from './ImageWithFallback';
@@ -456,27 +456,45 @@ const PlayerUI = ({
     return (
         <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="p-4 flex flex-col h-full">
             {/* Replace user profile area with Playlist button in the left column header (desktop) */}
-            <div className="relative flex flex-col items-center gap-1 mt-5 pr-3">
-                <div className="w-full flex gap-4 px-3 py-2 rounded-lg items-center justify-center bg-gray-700 text-white hover:bg-blue-500">
+            <div className="relative flex flex-col items-center gap-1">
+                <div className="w-full flex gap-4 px-3 py-2 rounded-lg items-center justify-center bg-transparent text-white hover:bg-blue-600">
                     <FontAwesomeIcon icon={faHouse} />
                     <Link to="/" className="w-full mt-1">Home</Link>
                 </div>
-                <div className="w-full flex gap-4 px-3 rounded-lg items-center justify-center py-2 bg-gray-700 text-white hover:bg-blue-500">
+                <div className="w-full flex gap-4 px-3 rounded-lg items-center justify-center py-2 bg-transparent text-white hover:bg-blue-600">
                     <FontAwesomeIcon icon={faListUl} />
                     <Link to="/recommendations" className="w-full">Recommendations</Link>
                 </div>
-                <div className="w-full flex gap-4 px-3 py-2 rounded-lg items-center justify-center bg-gray-700 text-white hover:bg-blue-500">
+                <div className="w-full flex gap-4 px-3 py-2 rounded-lg items-center justify-center bg-transparent text-white hover:bg-blue-600">
                     <FontAwesomeIcon icon={faHourglassHalf} />
                     <Link to="/feed" className="w-full">Recently Played</Link>
                 </div>
-                <div className="w-full flex gap-4 px-3 py-2 rounded-lg items-center justify-center bg-gray-700 text-white hover:bg-blue-500">
+                <div className="w-full flex gap-4 px-3 py-2 rounded-lg items-center justify-center bg-transparent text-white hover:bg-blue-600">
                     <FontAwesomeIcon icon={faLinesLeaning} />
                     <Link to="/playlists" className="w-full">Playlists</Link>
                 </div>
             </div>
             <br />
             <hr />
-            <button onClick={() => { try { navigate('/playlists?create=1'); } catch (e) { window.location.href = '/playlists?create=1'; } }} className='w-[210px] bg-blue-500 mt-5 rounded-full py-1 px-3'>+ New Playlist</button>
+            <br />
+
+            <div className="w-[210px] flex gap-2 px-3 py-1 rounded-full items-center justify-center bg-gray-700 text-white hover:bg-gray-600">
+                <FontAwesomeIcon icon={faPlay} className='ml-7' />
+                <Link to="/favorites" className="w-full">Liked music</Link>
+            </div>
+
+            <button 
+                onClick={() => { 
+                    try { 
+                        navigate('/playlists?create=1'); 
+                    } catch (e) { 
+                        window.location.href = '/playlists?create=1'; 
+                    } 
+                }} 
+                className='w-[210px] bg-blue-600 text-white hover:bg-blue-700 mt-2 rounded-full gap-3 py-1 px-3'>
+                    <FontAwesomeIcon icon={faPlus} />
+                    New Playlist
+            </button>
 
             <div className="w-full mt-3">
                 {loadingPlaylists ? (
@@ -488,7 +506,7 @@ const PlayerUI = ({
                                 <ImageWithFallback src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-10 h-10 object-cover rounded-md" fallback={'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} />
                                 <div className="flex-1 min-w-0">
                                     <div className="text-sm font-medium text-white truncate">{pl.name}</div>
-                                    <div className="text-[10px] text-gray-400">{pl.songCount ?? pl.songs?.length ?? 0} songs</div>
+                                    <div className="text-[10px] text-gray-400">{pl.songCount ?? pl.songs?.length ?? ''} songs</div>
                                 </div>
                             </div>
                         ))}

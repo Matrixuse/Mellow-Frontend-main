@@ -61,7 +61,9 @@ const SearchResults = ({
     };
     const openSearch = () => {
         // Just focus the search input, don't navigate
-        const el = searchInputRef.current || document.getElementById('global-search-input');
+        const el = searchInputRef.current
+            || document.getElementById('global-search-input-desktop')
+            || document.getElementById('global-search-input-mobile');
         if (el) {
             try { el.focus(); } catch {}
             try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
@@ -213,8 +215,8 @@ const SearchResults = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-900 z-50 md:static overflow-hidden flex flex-col">
-            <div className="h-full flex flex-col">
+        <div className="fixed inset-0 bg-gray-900 z-50 md:static md:h-auto md:max-h-[70vh] overflow-hidden flex flex-col">
+            <div className="h-full md:h-auto md:max-h-[70vh] flex flex-col">
                 {/* Search bar - mobile only */}
                 <div className="md:hidden p-4 bg-gray-900 border-b border-gray-700">
                     <div className="relative">
@@ -244,7 +246,7 @@ const SearchResults = ({
                 </div>
 
                 {/* Songs grid - 3 columns on mobile, 6 on desktop */}
-                <div className={`flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 ${currentSong && isPlaying ? 'pb-40 md:pb-20' : 'pb-24 md:pb-0'}`}>
+                <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 md:p-4 ${currentSong && isPlaying ? 'pb-40 md:pb-20' : 'pb-24 md:pb-4'}`}>
                     {isSearching && (
                         <div className="flex items-center justify-center h-full">
                             <p className="text-gray-400">Searching...</p>
@@ -255,7 +257,7 @@ const SearchResults = ({
                         <>
                             {/* Show a results header when we have a search term and at least one kind of result */}
                             {(searchTerm && (searchResults.songs.length > 0 || searchResults.artists.length > 0 || searchResults.playlists.length > 0)) && (
-                                <div className="mb-4">
+                                <div className="mb-2">
                                     <p className="text-sm text-gray-400">Results for "{searchTerm}"</p>
                                 </div>
                             )}
@@ -266,7 +268,7 @@ const SearchResults = ({
                                     {(searchResults.artists.length > 0 || searchResults.playlists.length > 0) && (
                                         <h2 className="text-sm font-bold text-white"></h2>
                                     )}
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="hidden md:block space-y-1">
                                     {searchResults.songs.map((song) => {
                                     const fav = isSongFavorite(song.id) || song.isFavorite;
                                     return (
@@ -275,23 +277,48 @@ const SearchResults = ({
                                             onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
                                             role="button"
                                             tabIndex={0}
-                                            className="group relative p-1 rounded-lg cursor-pointer bg-gray-800/50 hover:bg-gray-700/80 transition-colors"
+                                            className="group flex h-12 items-center gap-2 rounded-md px-1 py-1 cursor-pointer bg-gray-800/50 hover:bg-gray-700/80 transition-colors"
                                         >
-                                            <div className="relative mb-1">
+                                            <div className="relative h-10 w-10 flex-shrink-0">
                                                 <ImageWithFallback
                                                     src={song.coverUrl}
                                                     alt={song.title}
-                                                    className="w-full h-auto aspect-square rounded-md object-cover"
+                                                    className="h-full w-full rounded-md object-cover"
                                                     fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
                                                 />
-                                                <div className="absolute bottom-1 right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Play size={14} className="text-white fill-current" />
-                                                </div>
                                             </div>
-                                            <h4 className="text-xs font-semibold truncate text-white">{song.title}</h4>
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="truncate text-xs font-medium text-white">{song.title}</h4>
+                                                <p className="truncate text-xs text-gray-400">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
+                                            </div>
+                                            <Play size={16} className="flex-shrink-0 text-gray-400 opacity-0 group-hover:opacity-100" />
                                         </div>
                                     );
                                 })}
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 md:hidden">
+                                        {searchResults.songs.map((song) => (
+                                            <div
+                                                key={song.id}
+                                                onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
+                                                role="button"
+                                                tabIndex={0}
+                                                className="group relative rounded-lg cursor-pointer bg-gray-800/50 p-1 hover:bg-gray-700/80 transition-colors"
+                                            >
+                                                <div className="relative mb-1">
+                                                    <ImageWithFallback
+                                                        src={song.coverUrl}
+                                                        alt={song.title}
+                                                        className="w-full h-auto aspect-square rounded-md object-cover"
+                                                        fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'}
+                                                    />
+                                                    <div className="absolute bottom-1 right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Play size={14} className="text-white fill-current" />
+                                                    </div>
+                                                </div>
+                                                <h4 className="truncate text-xs font-semibold text-white">{song.title}</h4>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ) : (!isSearching && searchTerm && searchResults.songs.length === 0 && searchResults.artists.length === 0 && searchResults.playlists.length === 0) ? (
@@ -356,7 +383,7 @@ const SearchResults = ({
                             )}
 
                             {!searchTerm && !isSearching && (
-                                <div>
+                                <div className="md:hidden">
                                     <div className="grid grid-cols-3 gap-2">
                                         {randomSongs.map((song) => {
                                             const fav = isSongFavorite(song.id) || song.isFavorite;

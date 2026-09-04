@@ -8,7 +8,7 @@ import { getDailyVibePlaylist } from '../utils/vibeMatching';
 
 const MAX_VIBE_SONGS = 40;
 
-const VibePage = () => {
+const VibePage = ({ libraryOption = '' }) => {
   const navigate = useNavigate();
   const outlet = useOutletContext() || {};
   
@@ -27,13 +27,13 @@ const VibePage = () => {
   
   const { vibeName: encodedVibeName } = useParams();
   const vibeName = React.useMemo(() => {
-    const rawValue = encodedVibeName || '';
+    const rawValue = libraryOption || encodedVibeName || '';
     try {
       return decodeURIComponent(rawValue).trim();
     } catch (error) {
       return String(rawValue || '').trim();
     }
-  }, [encodedVibeName]);
+  }, [encodedVibeName, libraryOption]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef(null);

@@ -61,7 +61,8 @@ const loadGestureService = () => {
 
 // ⚡ LAZY LOAD COMPONENTS - Only load when route is accessed
 import PlayerUI from './components/PlayerUI';
-import SongLibrary from './components/SongLibrary';
+import SongLibrary, { LibraryOptions } from './components/SongLibrary';
+import LibraryOption from './components/LibraryOption';
 import AdminPanel from './components/Admin';
 import { Loader, Footer, Controls, ProgressBar, VolumeControl } from './components/OtherComponents';
 import { getSongs } from './api/songService';
@@ -136,18 +137,21 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
 
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
             {!isFavoritesPage && !isArtistPage && !isMoodPage && !isProfilePage && !isPlaylistsPage && (
-            <div className="md:hidden bg-gray-900 border-b border-gray-800 p-3 flex items-center gap-3 relative">
-                <div className="flex items-center">
-                    <div className="w-9 h-9 rounded-full bg-gray-700 overflow-hidden cursor-pointer" onClick={toggleLogoutVisible}>
+            <div className="md:hidden bg-gray-900 border-b border-gray-800 pt-3 pl-3 pr-3 pb-2 relative">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center">
+                      <div className="w-9 h-9 rounded-full bg-gray-700 overflow-hidden cursor-pointer" onClick={toggleLogoutVisible}>
                         <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                      </div>
                     </div>
-                </div>
-                <div className="flex-1">
+                  </div>
+                  <div className="flex-1">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
                             type="text"
-                            id="global-search-input"
+                            id="global-search-input-mobile"
                             placeholder="Search songs or artists"
                             value={(props && props.searchTerm) ? props.searchTerm : ''}
                             onChange={(e) => { try { props && props.onSearchChange && props.onSearchChange(e); } catch (err) {} }}
@@ -161,6 +165,10 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                             </button>
                         )}
                     </div>
+                  </div>
+                </div>
+                <div className="mt-2 overflow-x-auto no-scrollbar">
+                    <LibraryOptions />
                 </div>
                 {isLogoutVisible && (
                     <div className="absolute left-3 top-14 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden z-50">
@@ -189,6 +197,10 @@ MainLayout.displayName = 'MainLayout';
 // --- Library Page Component ---
 const LibraryPage = React.memo(() => {
     const context = useOutletContext() || {};
+    const location = useLocation();
+    const selectedMood = location.pathname.startsWith('/library/')
+        ? location.pathname.slice('/library/'.length)
+        : '';
     const {
         filteredSongs,
         onSelectSong,
@@ -242,20 +254,20 @@ const LibraryPage = React.memo(() => {
 
     return (
         <div className="flex-1 overflow-auto">
-            <div className="sticky top-0 z-40 bg-slate-900/95 border-b border-gray-800 backdrop-blur-md px-4 py-3 -mx-4">
+            <div className="sticky top-0 z-40 bg-slate-900/95 border-b border-gray-800 backdrop-blur-md px-4 -mx-4 lg:py-3">
                 <div className="hidden md:flex items-center ml-3 w-full justify-center">
                     {/* Left: Desktop search bar */}
                     <div className="flex items-center gap-2">
                         <div className="relative mr-6 w-80">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
-                                id="global-search-input"
+                                id="global-search-input-desktop"
                                 type="text"
                                 placeholder="Search songs or artists"
                                 value={searchTerm || ''}
                                 onChange={(e) => { try { onSearchChange && onSearchChange(e); } catch (err) {} }}
-                                onFocus={() => { try { onSearchBarClick && onSearchBarClick(); } catch (err) {} }}
-                                className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                                // onFocus={() => { try { onSearchBarClick && onSearchBarClick(); } catch (err) {} }}
+                                className="w-full bg-gray-800/40 text-white rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
                                 autoComplete="off"
                             />
                             {searchTerm && (
@@ -265,7 +277,6 @@ const LibraryPage = React.memo(() => {
                             )}
                         </div>
                     </div>
-
                     {/* Right: profile + action buttons (desktop) */}
                     <div className="flex items-center gap-3">
                         <span className="text-gray-300 font-medium">Hi,</span>
@@ -284,6 +295,9 @@ const LibraryPage = React.memo(() => {
                             )}
                         </div>
                     </div>
+                </div>
+                <div className="hidden md:block mt-2 w-full overflow-x-auto no-scrollbar justify-center place-items-center">
+                    <LibraryOptions />
                 </div>
             </div>
 
@@ -387,19 +401,31 @@ const LibraryPage = React.memo(() => {
                     {/* Pull-to-refresh indicator */}
                     {refreshing && (
                         <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-gray-900/50 z-50">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500">Refreshing...</div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                         </div>
                     )}
 
-                    <SongLibrary
-                        key={refreshKey}
-                        songs={filteredSongs}
-                        onSelectSong={onSelectSong}
-                        currentSongId={currentSongId}
-                        isPlaying={isPlaying}
-                        onAddToQueue={(context && typeof context.onAddToQueue === 'function') ? context.onAddToQueue : safeAddToQueue}
-                    />
-                    <Footer onDeveloperClick={onAdminClick} />
+                    {selectedMood ? (
+                        <LibraryOption
+                            songs={filteredSongs}
+                            onSelectSong={onSelectSong}
+                            currentSongId={currentSongId}
+                            isPlaying={isPlaying}
+                            onAddToQueue={(context && typeof context.onAddToQueue === 'function') ? context.onAddToQueue : safeAddToQueue}
+                        />
+                    ) : (
+                        <>
+                            <SongLibrary
+                                key={refreshKey}
+                                songs={filteredSongs}
+                                onSelectSong={onSelectSong}
+                                currentSongId={currentSongId}
+                                isPlaying={isPlaying}
+                                onAddToQueue={(context && typeof context.onAddToQueue === 'function') ? context.onAddToQueue : safeAddToQueue}
+                            />
+                            <Footer onDeveloperClick={onAdminClick} />
+                        </>
+                    )}
                 </animated.div>
             )}
         </div>
@@ -492,12 +518,27 @@ function App() {
     const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
     const [playlistSongId, setPlaylistSongId] = useState(null);
     const [showSearchResults, setShowSearchResults] = useState(false);
+    const searchResultsRef = useRef(null);
     const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
     const [isPlaybackStateRestored, setIsPlaybackStateRestored] = useState(false);
     const playbackRestoreRef = useRef(null);
 
     const audioRef = useRef(null);
     const currentSong = songs[currentSongIndex];
+
+    useEffect(() => {
+        if (!showSearchResults) return undefined;
+
+        const handleOutsideSearchClick = (event) => {
+            if (window.matchMedia('(min-width: 768px)').matches && searchResultsRef.current && !searchResultsRef.current.contains(event.target)) {
+                setShowSearchResults(false);
+                setSearchTerm('');
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideSearchClick);
+        return () => document.removeEventListener('mousedown', handleOutsideSearchClick);
+    }, [showSearchResults]);
 
     // Component-scoped helper to safely resolve an audio URL from a song object.
     const isLegacyCloudinaryUrl = (value) => {
@@ -1262,8 +1303,10 @@ function App() {
             // Start native media service
             (async () => {
                 try {
-                    await nativeMediaService.start(currentSong, isPlaying);
-                    try { lockScreenService.setMetadata(currentSong); } catch (e) { console.warn('lockScreenService.setMetadata error', e); }
+                    const nms = await loadNativeMediaService();
+                    if (nms) await nms.start(currentSong, isPlaying);
+                    const lss = await loadLockScreenService();
+                    if (lss) lss.setMetadata(currentSong);
                 } catch(e) { console.warn('nativeMediaService.start error', e); }
             })();
         } catch (e) {
@@ -2090,7 +2133,7 @@ function App() {
 
     // Handle audio errors (missing/deleted songs from Cloudinary)
     const handleAudioError = useCallback(() => {
-        console.error('Audio element error detected');
+        setIsPlaying(false);
 
         const failedSong = songs[currentSongIndex];
         const failedSrc = audioRef.current ? (audioRef.current.currentSrc || audioRef.current.src || '') : '';
@@ -2108,9 +2151,6 @@ function App() {
                         if (audioRef.current) {
                             audioRef.current.src = nextUrl;
                             audioRef.current.load();
-                            audioRef.current.play().catch(() => {
-                                setIsPlaying(false);
-                            });
                         }
                         return;
                     } catch (retryErr) {
@@ -2123,24 +2163,9 @@ function App() {
         // Remove the broken song if it exists in the current position
         if (currentSongIndex >= 0 && songs[currentSongIndex]) {
             try {
-                console.warn(`Removing broken song: ${failedSong.title}`);
-                
-                setSongs(prevSongs => {
-                    const filtered = prevSongs.filter((_, idx) => idx !== currentSongIndex);
-                    return filtered;
-                });
-
-                // Skip to next song after a short delay to allow state update
-                setTimeout(() => {
-                    try {
-                        handleNext();
-                    } catch (err) {
-                        console.error('Error advancing to next song:', err);
-                        setIsPlaying(false);
-                    }
-                }, 100);
+                // Keep the song in the library. A provider or network failure is temporary.
+                setIsPlaying(false);
             } catch (err) {
-                console.error('Error removing broken song:', err);
                 setIsPlaying(false);
             }
         }
@@ -2529,7 +2554,8 @@ function App() {
     // Listen for a global event so other components (e.g., SongLibrary) can open the overlay
     useEffect(() => {
         function onOpenSearch() {
-            const input = document.getElementById('global-search-input');
+            const input = document.getElementById('global-search-input-mobile')
+                || document.getElementById('global-search-input-desktop');
             if (input) input.focus();
             setShowSearchResults(true);
         }
@@ -2670,7 +2696,7 @@ function App() {
     return (
         <div className="h-screen bg-gray-900 text-white font-sans overflow-hidden">
             {!apiHealthy && (
-                <div className="w-full bg-rose-600 text-white text-center py-2 z-50">Server unreachable — start the server or set <span className="font-semibold">VITE_API_URL</span> to your API host.</div>
+                <div className="w-full bg-black text-white text-center py-2 z-50">Server unreachable — Restart the App</div>
             )}
             <FavoritesProvider token={user?.token}>
                 <Routes>
@@ -2762,6 +2788,7 @@ function App() {
                         <Route path="artist/:artistName" element={<Suspense fallback={<LazyLoadingFallback />}><ArtistPage /></Suspense>} />
                         <Route path="mood/:moodName" element={<Suspense fallback={<LazyLoadingFallback />}><MoodPage /></Suspense>} />
                         <Route path="vibe/:vibeName" element={<Suspense fallback={<LazyLoadingFallback />}><VibePage /></Suspense>} />
+                        <Route path="library/:optionName" element={<LibraryPage />} />
                         <Route path="equalizer" element={<Suspense fallback={<LazyLoadingFallback />}><EqualizerPage /></Suspense>} />
                         <Route path="playlists" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistsPage /></Suspense>} />
                         <Route path="playlists/:id" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistPage /></Suspense>} />
@@ -2862,10 +2889,14 @@ function App() {
                 <PlaylistModal token={(user && user.token) ? user.token : null} onClose={() => setIsPlaylistOpen(false)} songId={playlistSongId} onPlaylistUpdated={handlePlaylistUpdated} allSongs={songs} />
             )}
             {showSearchResults && (
-                <div className="fixed inset-0 z-50">
+                <div ref={searchResultsRef} className="fixed inset-0 z-40 md:inset-auto md:top-20 md:left-1/2 md:w-[min(25rem,calc(100vw-2rem))] md:-translate-x-1/2 md:max-h-[70vh] md:overflow-hidden md:rounded-lg md:border md:border-gray-700 md:bg-gray-900 md:shadow-xl">
                     <SearchResults 
                         songs={filteredSongs}
-                        onSelectSong={handleSelectSong}
+                        onSelectSong={(songId, options) => {
+                            handleSelectSong(songId, options);
+                            setShowSearchResults(false);
+                            setSearchTerm('');
+                        }}
                         currentSongId={currentSong?.id}
                         isPlaying={isPlaying}
                         onAddToQueue={handleAddToQueue}

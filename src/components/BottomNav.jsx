@@ -18,7 +18,9 @@ export default function BottomNav() {
 
   const openSearch = () => {
     // Focus the search bar without navigating or showing overlay
-    const el = document.getElementById('global-search-input') || document.querySelector('input[placeholder^="Search songs"]');
+    const el = document.getElementById('global-search-input-mobile')
+      || document.getElementById('global-search-input-desktop')
+      || document.querySelector('input[placeholder^="Search songs"]');
     if (el) {
       try { el.focus(); } catch (e) {}
       try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
