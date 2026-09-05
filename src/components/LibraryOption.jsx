@@ -4,8 +4,8 @@ import { useLocation, useNavigate, useOutletContext, useParams } from 'react-rou
 import { Link } from 'react-router-dom';
 import ImageWithFallback from './ImageWithFallback';
 import { FavoritesContext } from '../contexts/FavoritesContext';
-import { getQuickPicks, getListeningHistory } from '../utils/quickPicksAlgorithm';
-import { getAllVibeCards, getVibeSuggestions } from '../utils/vibeMatching';
+import { getListeningHistory } from '../utils/quickPicksAlgorithm';
+import { getAllVibeCards, getVibeSuggestions, songMatchesVibe } from '../utils/vibeMatching';
 
 const DEFAULT_ARTIST_IMAGE = '/artists/default.png';
 
@@ -39,7 +39,20 @@ const matchesHollywoodMix = (song) => {
     return matchesKeywords(song, hollywoodKeywords);
 };
 
-const shuffleSongs = (songList) => [...songList].sort(() => Math.random() - 0.5);
+const getLocalDateKey = () => {
+    const date = new Date();
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+};
+
+const getDailySongOrder = (songList, dateKey, optionLabel) => {
+    const seed = `${dateKey}:${optionLabel}`;
+    const hashSong = (song) => {
+        const value = `${seed}:${song.id || song.title || ''}`;
+        return value.split('').reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0, 7);
+    };
+
+    return [...songList].sort((first, second) => hashSong(first) - hashSong(second));
+};
 
 const hideScrollbarCSS = `
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -112,13 +125,7 @@ const formatSecondsToDuration = (sec) => {
 
 // Quick Picks Component - Smart recommendations based on listening history
 const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, openMenuId, setOpenMenuId, handlers }) => {
-    const quickPickSongs = useMemo(() => {
-        const picks = getQuickPicks(songs, 24);
-        if (Array.isArray(picks) && picks.length > 0) {
-            return picks;
-        }
-        return Array.isArray(songs) ? songs.slice(0, 24) : [];
-    }, [songs]);
+    const quickPickSongs = Array.isArray(songs) ? songs.slice(0, 24) : [];
 
     if (!Array.isArray(quickPickSongs) || quickPickSongs.length === 0) {
         return (
@@ -291,13 +298,15 @@ const LibraryOption = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQ
     const matchedSongs = useMemo(() => {
         const sourceSongs = Array.isArray(songs) ? songs : [];
         const targets = libraryVibeMap[optionLabel] || [];
+        const dateKey = getLocalDateKey();
 
         const matched = targets.flatMap(target => {
             if (target === 'Hollywood Mix') return sourceSongs.filter(matchesHollywoodMix);
             if (target === 'Party') return sourceSongs.filter(song => matchesKeywords(song, partyKeywords));
-            return getVibeSuggestions(sourceSongs, target, sourceSongs.length);
+            return sourceSongs.filter(song => songMatchesVibe(song, target));
         });
-        return shuffleSongs([...new Map(matched.map(song => [String(song.id), song])).values()]);
+        const uniqueSongs = [...new Map(matched.map(song => [String(song.id), song])).values()];
+        return getDailySongOrder(uniqueSongs, dateKey, optionLabel);
     }, [songs, optionLabel]);
 
     const quickPickSongs = useMemo(() => matchedSongs.slice(0, Math.ceil(matchedSongs.length / 2)), [matchedSongs]);
