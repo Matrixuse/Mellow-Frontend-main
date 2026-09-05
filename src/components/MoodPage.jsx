@@ -275,10 +275,10 @@ const MoodPage = () => {
     return (
         <div className="flex-grow flex flex-col min-h-0 min-w-0">
             {/* Expandable Header */}
-            <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-gray-900/80 p-6' : 'bg-gray-900/80 p-3'}`}>
+            <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-[#0f0f0f]/80 p-6' : 'bg-[#0f0f0f]/80 p-3'}`}>
                 {/* Compact Header (always visible) */}
                 <div className="flex items-center gap-3 mb-0">
-                    <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                    <Link to="/" className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
                         <ArrowLeft size={20} />
                     </Link>
                     {isHeaderExpanded ? (
@@ -289,7 +289,7 @@ const MoodPage = () => {
                     <div className="flex items-center gap-2">
                         {/* Search toggle button */}
                         {moodSongs.length > 0 && (
-                            <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                            <button onClick={toggleSearch} className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
                                 {searchOpen ? <X size={18} /> : <Search size={18} />}
                             </button>
                         )}
@@ -299,8 +299,8 @@ const MoodPage = () => {
                                 onClick={handleToggleShuffle}
                                 className={`p-2 rounded-full transition-all flex-shrink-0 ${
                                     isMoodShuffleMode 
-                                        ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' 
-                                        : 'bg-gray-900 hover:bg-gray-500'
+                                        ? 'bg-blue-900 shadow-lg shadow-red-500/50 animate-pulse'
+                                        : 'bg-[#0f0f0f] hover:bg-[#5f5f5f]'
                                 }`}
                                 title={isMoodShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
                             >
@@ -337,18 +337,18 @@ const MoodPage = () => {
                                 <div className="relative">
                                     <button
                                         onClick={() => setMoodMenuOpen(!moodMenuOpen)}
-                                        className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
+                                        className="p-2 rounded-full bg-[#1f1f1f] hover:bg-[#282828] transition-colors"
                                     >
                                         <MoreVertical size={20} className="text-white" />
                                     </button>
                                     {moodMenuOpen && (
-                                        <div className="absolute right-0 bottom-full mb-2 w-40 bg-gray-800 rounded-lg shadow-lg z-20">
+                                        <div className="absolute right-0 bottom-full mb-2 w-40 bg-[#1f1f1f] rounded-lg shadow-lg z-20">
                                             <button
                                                 onClick={() => {
                                                     handleToggleShuffle();
                                                     setMoodMenuOpen(false);
                                                 }}
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-t-lg flex items-center gap-2 text-white transition-colors"
+                                                className="w-full text-left px-4 py-2 hover:bg-[#282828] rounded-t-lg flex items-center gap-2 text-white transition-colors"
                                             >
                                                 <Shuffle size={16} />
                                                 <span>Shuffle</span>
@@ -357,9 +357,9 @@ const MoodPage = () => {
                                                 onClick={async () => {
                                                     await handleSaveMoodAsPlaylist();
                                                 }}
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2 text-white transition-colors"
+                                                className="w-full text-left px-4 py-2 hover:bg-[#282828] flex items-center gap-2 text-white transition-colors"
                                             >
-                                                <Bookmark size={16} className={isSaved ? 'fill-current text-blue-400' : ''} />
+                                                <Bookmark size={16} className={isSaved ? 'fill-current text-red-400' : ''} />
                                                 <span>{isSaved ? 'Already Saved' : 'Save'}</span>
                                             </button>
                                             <button
@@ -369,7 +369,7 @@ const MoodPage = () => {
                                                     }
                                                     setMoodMenuOpen(false);
                                                 }}
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-b-lg flex items-center gap-2 text-white transition-colors"
+                                                className="w-full text-left px-4 py-2 hover:bg-[#282828] rounded-b-lg flex items-center gap-2 text-white transition-colors"
                                             >
                                                 <Plus size={16} />
                                                 <span>Add to Queue</span>
@@ -385,7 +385,7 @@ const MoodPage = () => {
 
             {/* Search bar shown when toggled */}
             {searchOpen && (
-                <div className="flex-shrink-0 bg-gray-900/80 px-4 pb-4">
+                <div className="flex-shrink-0 bg-[#0f0f0f]/80 px-4 pb-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
@@ -394,7 +394,7 @@ const MoodPage = () => {
                             placeholder={`Search within ${moodName} mood...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                            className="w-full bg-[#1f1f1f]/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                             autoComplete="off"
                         />
                         {searchTerm && (
@@ -407,7 +407,7 @@ const MoodPage = () => {
             )}
 
             {/* Songs Grid/List */}
-            <hr className='h-px bg-gray-500'/>
+            <hr className='h-px bg-[#5f5f5f]'/>
             <div ref={scrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4 pb-24 md:pb-28">
                 {filteredSongs.length > 0 ? (
                     <>
@@ -426,7 +426,7 @@ const MoodPage = () => {
                                                 handleSelectSong(song.id);
                                             }
                                         }}
-                                        className={`group relative p-1 md:p-2 transition-colors cursor-pointer ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/50 hover:bg-gray-700/80'}`}
+                                        className={`group relative p-1 md:p-2 transition-colors cursor-pointer ${isActive ? 'bg-blue-900/30' : 'bg-[#0f0f0f]/50 hover:bg-[#282828]/80'}`}
                                     >
                                         <div className="relative md:mb-1 flex gap-3 md:flex-col md:gap-0 items-start min-w-0 w-full">
                                             <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer flex-shrink-0 md:w-full">
@@ -438,7 +438,7 @@ const MoodPage = () => {
                                                 />
                                             </div>
                                             <div className="flex-1 min-w-0 mt-1 overflow-hidden md:flex-grow-0 md:w-full md:pr-5">
-                                                <h4 className={`text-sm font-semibold truncate overflow-hidden whitespace-nowrap text-ellipsis ${isActive ? 'text-blue-300' : 'text-white'}`}>
+                                                <h4 className={`text-sm font-semibold truncate overflow-hidden whitespace-nowrap text-ellipsis ${isActive ? 'text-red-300' : 'text-white'}`}>
                                                     {song.title}
                                                 </h4>
                                                 <p className="text-xs text-gray-400 truncate overflow-hidden whitespace-nowrap text-ellipsis">

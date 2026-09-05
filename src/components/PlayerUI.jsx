@@ -338,7 +338,7 @@ const PlayerUI = ({
     if (isMobileVariant) {
         return (
             <div ref={containerRef} style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: 'pan-y' }} className="h-full w-full text-white">
-                <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-[#08111f] shadow-2xl">
+                <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-[#0f0f0f] shadow-2xl">
                     <div
                         className="absolute inset-0"
                         style={currentSong ? {
@@ -346,10 +346,10 @@ const PlayerUI = ({
                             backgroundSize: 'cover',
                             backgroundPosition: 'center'
                         } : {
-                            background: 'radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 40%), linear-gradient(180deg, #101a2f 0%, #08111f 100%)'
+                            background: 'radial-gradient(circle at top, rgba(255, 0, 0, 0.16), transparent 40%), linear-gradient(180deg, #1f1f1f 0%, #0f0f0f 100%)'
                         }}
                     />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_36%),radial-gradient(circle_at_bottom,rgba(168,85,247,0.14),transparent_30%)]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_36%),radial-gradient(circle_at_bottom,rgba(255,0,0,0.10),transparent_30%)]" />
                     <div className="relative z-10 flex h-full min-h-0 flex-col px-4 pt-4 pb-5">
                         <div className="flex items-center justify-between gap-3 w-full">
                             <div></div>
@@ -359,12 +359,12 @@ const PlayerUI = ({
                                     <MoreVertical size={18} />
                                 </button>
                                 {menuOpen && (
-                                <div style={dropdownStyle} className="absolute right-0 mt-2 w-44 rounded-md border border-[#2A3942] bg-[#15202B] py-1 text-left shadow-lg">
-                                    <button onClick={() => { setMenuOpen(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">Add to Queue</button>
-                                    <button onClick={() => { setMenuOpen(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">Add to Playlist</button>
-                                    <button onClick={() => { setMenuOpen(false); const { toggleSongFavorite } = currentFav; toggleSongFavorite(currentSong.id).catch(() => {}); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">{currentFav && currentFav.isSongFavorite(currentSong.id) ? 'Remove Favourite' : 'Add Favourite'}</button>
-                                    <button onClick={() => { setMenuOpen(false); onShowArtist && onShowArtist(artistName); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#121a20]">Artist</button>
-                                    <button onClick={() => { setMenuOpen(false); onReportSong && onReportSong(currentSong.id); }} className="w-full px-3 py-2 text-left text-rose-400 hover:bg-[#121a20]">Report</button>
+                                <div style={dropdownStyle} className="absolute right-0 mt-2 w-44 rounded-md border border-[#3f3f3f] bg-[#1f1f1f] py-1 text-left shadow-lg">
+                                    <button onClick={() => { setMenuOpen(false); onAddToQueue && onAddToQueue(currentSong, 'end'); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#282828]">Add to Queue</button>
+                                    <button onClick={() => { setMenuOpen(false); onAddToPlaylist && onAddToPlaylist(currentSong.id); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#282828]">Add to Playlist</button>
+                                    <button onClick={() => { setMenuOpen(false); const { toggleSongFavorite } = currentFav; toggleSongFavorite(currentSong.id).catch(() => {}); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#282828]">{currentFav && currentFav.isSongFavorite(currentSong.id) ? 'Remove Favourite' : 'Add Favourite'}</button>
+                                    <button onClick={() => { setMenuOpen(false); onShowArtist && onShowArtist(artistName); }} className="w-full px-3 py-2 text-left text-gray-100 hover:bg-[#282828]">Artist</button>
+                                    <button onClick={() => { setMenuOpen(false); onReportSong && onReportSong(currentSong.id); }} className="w-full px-3 py-2 text-left text-rose-400 hover:bg-[#282828]">Report</button>
                                 </div>
                                 )}
                             </div>
@@ -478,7 +478,7 @@ const PlayerUI = ({
             <hr />
             <br />
 
-            <div className="w-[210px] flex gap-2 px-3 py-1 rounded-full items-center justify-center bg-gray-700 text-white hover:bg-gray-600">
+            <div className="w-[210px] flex gap-2 px-3 py-1 rounded-full items-center justify-center bg-[#282828] text-white hover:bg-[#3f3f3f]">
                 <FontAwesomeIcon icon={faPlay} className='ml-7' />
                 <Link to="/favorites" className="w-full">Liked music</Link>
             </div>
@@ -502,7 +502,7 @@ const PlayerUI = ({
                 ) : playlists && playlists.length > 0 ? (
                     <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
                         {playlists.map(pl => (
-                            <div key={pl.id} onClick={() => { try { navigate(`/playlists/${pl.id}`); } catch (e) { window.location.href = `/playlists/${pl.id}`; } }} className="flex items-center gap-3 bg-gray-800 rounded-md p-1 cursor-pointer hover:bg-gray-700">
+                            <div key={pl.id} onClick={() => { try { navigate(`/playlists/${pl.id}`); } catch (e) { window.location.href = `/playlists/${pl.id}`; } }} className="flex items-center gap-3 bg-[#1f1f1f] rounded-md p-1 cursor-pointer hover:bg-[#282828]">
                                 <ImageWithFallback src={pl.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-10 h-10 object-cover rounded-md" fallback={'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} />
                                 <div className="flex-1 min-w-0">
                                     <div className="text-sm font-medium text-white truncate">{pl.name}</div>

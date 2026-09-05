@@ -174,9 +174,9 @@ const ArtistPage = () => {
     return (
 
         <div className="flex-grow flex flex-col min-h-0 min-w-0">
-            <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-gray-900/80 p-6' : 'bg-gray-900/80 p-3'}`}>
+            <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-[#0f0f0f]/80 p-6' : 'bg-[#0f0f0f]/80 p-3'}`}>
                 <div className="flex items-center gap-3 mb-0">
-                    <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                    <Link to="/" className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
                         <ArrowLeft size={20} />
                     </Link>
                     {isHeaderExpanded ? (
@@ -186,7 +186,7 @@ const ArtistPage = () => {
                     )}
                     <div className="flex items-center gap-2">
                         {artistSongs.length > 0 && (
-                            <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                            <button onClick={toggleSearch} className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
                                 {searchOpen ? <X size={18} /> : <Search size={18} />}
                             </button>
                         )}
@@ -194,7 +194,7 @@ const ArtistPage = () => {
                             <button
                                 onClick={handleToggleShuffle}
                                 className={`p-2 rounded-full transition-all flex-shrink-0 ${
-                                    isArtistShuffleMode ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' : 'bg-gray-900 hover:bg-gray-500'
+                                    isArtistShuffleMode ? 'bg-blue-900 shadow-lg shadow-red-500/50 animate-pulse' : 'bg-[#0f0f0f] hover:bg-[#5f5f5f]'
                                 }`}
                                 title={isArtistShuffleMode ? 'Shuffle is on - songs will play randomly' : 'Shuffle is off - click to turn on'}
                             >
@@ -238,7 +238,7 @@ const ArtistPage = () => {
             </div>
 
             {searchOpen && (
-                <div className="flex-shrink-0 bg-gray-900/80 px-4 pb-4">
+                <div className="flex-shrink-0 bg-[#0f0f0f]/80 px-4 pb-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
@@ -247,7 +247,7 @@ const ArtistPage = () => {
                             placeholder={`Search ${artistName} songs...`}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                            className="w-full bg-[#1f1f1f]/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                             autoComplete="off"
                         />
                         {searchTerm && (
@@ -259,7 +259,7 @@ const ArtistPage = () => {
                 </div>
             )}
 
-            <hr className='h-px bg-gray-500'/>
+            <hr className='h-px bg-[#5f5f5f]'/>
 
             <div ref={scrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4 pb-24 md:pb-28">
 
@@ -279,7 +279,7 @@ const ArtistPage = () => {
                                     className={`group relative p-3 rounded-lg cursor-pointer ${
                                         isActive
                                             ? 'bg-blue-900/30'
-                                            : 'bg-gray-800/50 hover:bg-gray-700/80'
+                                            : 'bg-[#1f1f1f]/50 hover:bg-[#282828]/80'
                                     }`}
                                 >
 

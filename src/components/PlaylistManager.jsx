@@ -106,14 +106,14 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
             </div>
 
             {error && (
-                <div className="text-red-400 text-sm mb-4 p-3 bg-red-900/20 rounded-lg">
+                <div className="text-red-400 text-sm mb-4 p-3 bg-blue-900/20 rounded-lg">
                     {error}
                 </div>
             )}
 
             {/* Create Playlist Form */}
             {showCreateForm && (
-                <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="mb-4 p-4 bg-[#1f1f1f]/50 rounded-lg border border-gray-700">
                     <form onSubmit={handleCreatePlaylist} className="space-y-3">
                         <div>
                             <input
@@ -121,7 +121,7 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
                                 placeholder="Playlist name"
                                 value={newPlaylistName}
                                 onChange={(e) => setNewPlaylistName(e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none"
+                                className="w-full px-3 py-2 bg-[#282828] text-white rounded-md border border-gray-600 focus:border-red-500 focus:outline-none"
                                 required
                             />
                         </div>
@@ -131,14 +131,14 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
                                 placeholder="Description (optional)"
                                 value={newPlaylistDescription}
                                 onChange={(e) => setNewPlaylistDescription(e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none"
+                                className="w-full px-3 py-2 bg-[#282828] text-white rounded-md border border-gray-600 focus:border-red-500 focus:outline-none"
                             />
                         </div>
                         <div className="flex gap-2">
                             <button
                                 type="submit"
                                 disabled={isCreating || !newPlaylistName.trim()}
-                                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                className="bg-green-600 hover:bg-green-700 disabled:bg-[#3f3f3f] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                             >
                                 {isCreating ? 'Creating...' : 'Create'}
                             </button>
@@ -149,7 +149,7 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
                                     setNewPlaylistName('');
                                     setNewPlaylistDescription('');
                                 }}
-                                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                className="bg-[#3f3f3f] hover:bg-[#282828] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                             >
                                 Cancel
                             </button>
@@ -170,8 +170,8 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
                     {playlists.map((playlist) => (
                         <div
                             key={playlist.id}
-                            className={`group relative bg-gray-800/50 hover:bg-gray-700/80 p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-                                currentPlaylistId === playlist.id ? 'ring-2 ring-blue-500' : ''
+                            className={`group relative bg-[#1f1f1f]/50 hover:bg-[#282828]/80 p-4 rounded-lg cursor-pointer transition-all duration-300 ${
+                                currentPlaylistId === playlist.id ? 'ring-2 ring-red-500' : ''
                             }`}
                             onClick={() => handleSelectPlaylist(playlist)}
                         >
@@ -187,7 +187,7 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
                                         }}
                                     />
                                 ) : (
-                                    <div className="w-full aspect-square rounded-md bg-gray-700 flex items-center justify-center">
+                                    <div className="w-full aspect-square rounded-md bg-[#282828] flex items-center justify-center">
                                         <Music size={32} className="text-gray-400" />
                                     </div>
                                 )}
@@ -231,14 +231,14 @@ const PlaylistManager = ({ user, onPlayPlaylist, onSelectPlaylist, currentPlayli
                                     </button>
                                     
                                     {expandedPlaylist === playlist.id && (
-                                        <div className="absolute top-8 right-0 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
+                                        <div className="absolute top-8 right-0 bg-[#1f1f1f] border border-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleDeletePlaylist(playlist.id);
                                                     setExpandedPlaylist(null);
                                                 }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 rounded-t-lg"
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#282828] rounded-t-lg"
                                             >
                                                 <Trash2 size={14} />
                                                 Delete

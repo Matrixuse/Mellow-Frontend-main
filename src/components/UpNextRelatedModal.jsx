@@ -181,7 +181,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                 {currentSong && (
                     <div ref={dragHandleRef} style={{ touchAction: 'none' }} className="bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-700 flex-shrink-0">
                         {/* Thin Progress Bar */}
-                        <div className="w-full h-0.5 bg-gray-700 overflow-hidden">
+                        <div className="w-full h-0.5 bg-[#282828] overflow-hidden">
                             <div 
                                 className="h-full bg-blue-400 transition-all duration-100 ease-linear"
                                 style={{
@@ -208,7 +208,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                 <div className="text-xs text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</div>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
-                                <button type="button" onClick={(e) => { e.stopPropagation(); onShuffleToggle && onShuffleToggle(); }} className={`p-3 rounded-full ${isShuffle ? 'text-blue-400' : 'text-gray-300'}`} aria-label="Shuffle">
+                                <button type="button" onClick={(e) => { e.stopPropagation(); onShuffleToggle && onShuffleToggle(); }} className={`p-3 rounded-full ${isShuffle ? 'text-red-400' : 'text-gray-300'}`} aria-label="Shuffle">
                                     <Shuffle size={18} />
                                 </button>
                                 <button type="button" onClick={(e) => { e.stopPropagation(); onPlayPause && onPlayPause(); }} className="p-3 bg-blue-600 hover:bg-blue-500 rounded-full text-white" aria-label="Play/Pause">
@@ -225,19 +225,19 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                     <div className="flex items-center justify-between mb-2">
                         <button 
                             onClick={() => setActiveTab('upnext')}
-                            className={`flex-1 text-center py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'upnext' ? 'text-blue-400' : 'text-gray-400'}`}
+                            className={`flex-1 text-center py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'upnext' ? 'text-red-400' : 'text-gray-400'}`}
                         >
                             UP NEXT
                         </button>
                         <button 
                             onClick={() => setActiveTab('related')}
-                            className={`flex-1 text-center py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'related' ? 'text-blue-400' : 'text-gray-400'}`}
+                            className={`flex-1 text-center py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'related' ? 'text-red-400' : 'text-gray-400'}`}
                         >
                             RELATED
                         </button>
                     </div>
                     {/* Active tab underline */}
-                    <div className="relative h-0.5 bg-gray-700 rounded">
+                    <div className="relative h-0.5 bg-[#282828] rounded">
                         <div 
                             className="absolute h-full bg-blue-400 rounded transition-all duration-300"
                             style={{
@@ -261,43 +261,43 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     {upNextItems.map((song, index) => {
                                         const isActive = currentSong && String(song.id) === String(currentSong.id);
                                         return (
-                                        <div key={`${song.id}-${index}`} className={`group flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-blue-900/25 to-transparent' : 'hover:bg-gray-700/30'}`}>
+                                        <div key={`${song.id}-${index}`} className={`group flex items-center gap-2 p-2 rounded transition-colors relative ${isActive ? 'bg-gradient-to-r from-red-900/25 to-transparent' : 'hover:bg-[#282828]/30'}`}>
                                             <img 
                                                 src={song.coverUrl} 
                                                 alt={song.title}
-                                                className={`w-10 h-10 rounded object-cover flex-shrink-0 ${isActive ? 'ring-2 ring-blue-500' : ''}`}
+                                                className={`w-10 h-10 rounded object-cover flex-shrink-0 ${isActive ? 'ring-2 ring-red-500' : ''}`}
                                                 onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x200/1F2937/FFFFFF?text=Music'; }}
                                             />
                                             <div onClick={() => { try { onSelectSong && onSelectSong(song.id); } catch (e) {} }} className="flex-1 min-w-0 cursor-pointer">
-                                                <div className={`text-sm font-medium ${isActive ? 'text-blue-300' : 'text-white'} truncate`}>{song.title}</div>
+                                                <div className={`text-sm font-medium ${isActive ? 'text-red-300' : 'text-white'} truncate`}>{song.title}</div>
                                                 <div className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</div>
                                             </div>
                                             <span className="text-xs text-gray-400 mr-2">{formatTime(getSongDuration(song))}</span>
                                             {isActive && (
-                                                <div className="flex items-center text-blue-400 ml-2">
+                                                <div className="flex items-center text-red-400 ml-2">
                                                     <Play size={14} />
                                                 </div>
                                             )}
                                             <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="p-2 rounded hover:bg-gray-700/20 text-gray-300">
+                                                <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="p-2 rounded hover:bg-[#282828]/20 text-gray-300">
                                                     <MoreVertical size={16} />
                                                 </button>
                                                 {openMenuId === song.id && (
-                                                    <div className="absolute right-3 top-12 w-48 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1 z-50">
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                                    <div className="absolute right-3 top-12 w-48 bg-[#1f1f1f] border border-[#3f3f3f] rounded-md shadow-lg text-left py-1 z-50">
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Queue</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Playlist</button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setOpenMenuId(null);
                                                                 toggleSongFavorite(song.id).catch(() => {});
                                                             }}
-                                                            className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                                                            className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100"
                                                         >
                                                             {isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}
                                                         </button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onShowArtist && onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onReportSong && onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onShowArtist && onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Artist</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onReportSong && onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#282828]">Report</button>
                                                     </div>
                                                 )}
                                             </div>
@@ -318,7 +318,7 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                     
                                     {relatedItems.map((song, index) => {
                                         return (
-                                        <div key={`${song.id}-${index}`} className="group flex items-center gap-2 p-2 rounded hover:bg-gray-700/30 transition-colors relative">
+                                        <div key={`${song.id}-${index}`} className="group flex items-center gap-2 p-2 rounded hover:bg-[#282828]/30 transition-colors relative">
                                             <img 
                                                 src={song.coverUrl} 
                                                 alt={song.title} 
@@ -331,25 +331,25 @@ const UpNextRelatedModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPau
                                             </div>
                                             <span className="text-xs text-gray-400 mr-2">{formatTime(getSongDuration(song))}</span>
                                             <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="p-2 rounded hover:bg-gray-700/20 text-gray-300">
+                                                <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="p-2 rounded hover:bg-[#282828]/20 text-gray-300">
                                                     <MoreVertical size={16} />
                                                 </button>
                                                 {openMenuId === song.id && (
-                                                    <div className="absolute right-3 top-12 w-48 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1 z-50">
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                                                    <div className="absolute right-3 top-12 w-48 bg-[#1f1f1f] border border-[#3f3f3f] rounded-md shadow-lg text-left py-1 z-50">
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToQueue && onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Queue</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onAddToPlaylist && onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Playlist</button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setOpenMenuId(null);
                                                                 toggleSongFavorite(song.id).catch(() => {});
                                                             }}
-                                                            className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                                                            className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100"
                                                         >
                                                             {isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}
                                                         </button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onShowArtist && onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onReportSong && onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onShowArtist && onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Artist</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onReportSong && onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#282828]">Report</button>
                                                     </div>
                                                 )}
                                             </div>

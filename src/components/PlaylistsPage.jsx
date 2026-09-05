@@ -196,7 +196,7 @@ const PlaylistsPage = () => {
                     tabIndex={0}
                     onClick={() => handleAdd()}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAdd(); } }}
-                    className="bg-gray-800 rounded-md p-2 hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="bg-[#1f1f1f] rounded-md p-2 hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-600"
                 >
                     <div className="flex items-center gap-3">
                         <ImageWithFallback src={playlist.coverUrl || 'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} alt={playlist.name} className="w-10 h-10 object-cover rounded-md" fallback={'https://placehold.co/240x240/1F2937/FFFFFF?text=P'} />
@@ -221,7 +221,7 @@ const PlaylistsPage = () => {
                 key={playlist.id}
                 role="button"
                 tabIndex={0}
-                className="relative bg-gray-800 rounded-md overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600 pointer-events-auto"
+                className="relative bg-[#1f1f1f] rounded-md overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-600 pointer-events-auto"
             >
                 <button
                     type="button"
@@ -246,8 +246,8 @@ const PlaylistsPage = () => {
                             title="Delete playlist"
                             className={`px-2 py-2 rounded-full text-white z-20 pointer-events-auto flex items-center transition-all ${
                                 !token
-                                    ? 'bg-red-500 cursor-not-allowed opacity-50'
-                                    : 'bg-red-600 hover:bg-red-500'
+                                    ? 'bg-blue-500 cursor-not-allowed opacity-50'
+                                    : 'bg-blue-600 hover:bg-blue-500'
                             }`}
                         ><Trash2 size={14} /></button>
                     </div>
@@ -262,7 +262,7 @@ const PlaylistsPage = () => {
         <div className="w-full mx-auto max-w-6xl">
                 <div className="mb-6">
                             <div className="flex items-center gap-3">
-                                <button onClick={() => navigate('/')} aria-label="Back to home" className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-white shadow-md flex items-center justify-center">
+                                <button onClick={() => navigate('/')} aria-label="Back to home" className="p-2 rounded-full bg-[#1f1f1f] hover:bg-[#282828] text-white shadow-md flex items-center justify-center">
                                     <ArrowLeft size={18} />
                                 </button>
                                 <h1 className="text-2xl font-bold">Playlists</h1>
@@ -275,7 +275,7 @@ const PlaylistsPage = () => {
                                     </button>
                                 ) : (
                                     <div className="flex flex-col gap-2 mt-3 w-full max-w-xs">
-                                        <input value={newName} onChange={(e) => setNewName(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-full text-white" placeholder="Playlist name" />
+                                        <input value={newName} onChange={(e) => setNewName(e.target.value)} className="px-3 py-2 bg-[#1f1f1f] border border-gray-700 rounded-full text-white" placeholder="Playlist name" />
                                         <div className="flex gap-2">
                                             <button onClick={handleCreate} disabled={creating} className="flex-1 px-3 py-2 bg-green-600 rounded-full text-white">{creating ? 'Creating...' : 'Create'}</button>
                                             <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-gray-400">Cancel</button>

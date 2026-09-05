@@ -22,7 +22,7 @@ const KeepListeningModal = ({ isOpen, onClose }) => {
             onClick={onClose}
         >
             <div 
-                className="relative w-full h-full max-w-6xl max-h-screen bg-gradient-to-br from-[#0f1720] to-[#1a2332] rounded-lg flex flex-col"
+                className="relative w-full h-full max-w-6xl max-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1a2332] rounded-lg flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close button */}

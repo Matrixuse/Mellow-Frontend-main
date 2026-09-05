@@ -103,7 +103,7 @@ const PlaylistModal = ({ token, onClose, songId, onPlaylistUpdated, allSongs: pr
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 p-0">
             {/* modal container: on mobile take full screen, on desktop keep centered modal */}
             <div className={`${isMobile ? 'h-full w-full overflow-auto' : 'flex items-center justify-center h-full'}`}>
-                <div className={`${isMobile ? 'w-full h-full p-4' : 'w-full max-w-sm md:max-w-md p-4'} bg-gray-900 border border-gray-700 ${isMobile ? '' : 'rounded-lg shadow-lg'} mx-0 md:mx-4`}> 
+                <div className={`${isMobile ? 'w-full h-full p-4' : 'w-full max-w-sm md:max-w-md p-4'} bg-[#0f0f0f] border border-gray-700 ${isMobile ? '' : 'rounded-lg shadow-lg'} mx-0 md:mx-4`}>
                     <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-semibold">{isMobile ? 'Create New Playlist' : 'Add to Playlist'}</h3>
                         <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={18} /></button>
@@ -124,7 +124,7 @@ const PlaylistModal = ({ token, onClose, songId, onPlaylistUpdated, allSongs: pr
                                     }} className="w-full px-4 py-3 bg-green-600 rounded-md text-white">Create Playlist</button>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <input value={newName} onChange={(e) => setNewName(e.target.value)} className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white" placeholder="Playlist name" />
+                                        <input value={newName} onChange={(e) => setNewName(e.target.value)} className="flex-1 px-3 py-2 bg-[#1f1f1f] border border-gray-700 rounded-md text-white" placeholder="Playlist name" />
                                         <button onClick={async () => { await handleCreate(); setMobileCreateOpen(false); }} disabled={creating} className="px-3 py-2 bg-green-600 rounded-md text-white">Create</button>
                                         <button onClick={() => { setMobileCreateOpen(false); setNewName(''); }} className="px-3 py-2 text-gray-400">Cancel</button>
                                     </div>
@@ -135,7 +135,7 @@ const PlaylistModal = ({ token, onClose, songId, onPlaylistUpdated, allSongs: pr
                                 <input
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
-                                    className="w-full px-3 py-3 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400"
+                                    className="w-full px-3 py-3 bg-[#1f1f1f] border border-gray-700 rounded-md text-white placeholder-gray-400"
                                     placeholder="Playlist name"
                                 />
                                     <button
@@ -159,7 +159,7 @@ const PlaylistModal = ({ token, onClose, songId, onPlaylistUpdated, allSongs: pr
                         ) : (
                             <div className={`space-y-3 ${isMobile ? '' : 'max-h-64 md:max-h-72 overflow-y-auto pr-2'}`}>
                                         {playlists.map(pl => (
-                                    <div key={pl.id} className={`${isMobile ? 'flex items-center justify-between p-4' : 'flex items-center justify-between p-3'} bg-gray-800 rounded-md`}>
+                                    <div key={pl.id} className={`${isMobile ? 'flex items-center justify-between p-4' : 'flex items-center justify-between p-3'} bg-[#1f1f1f] rounded-md`}>
                                         <div className="flex items-center gap-3 min-w-0">
                                             <img src={pl.coverUrl || 'https://placehold.co/80x80/1F2937/FFFFFF?text=P'} alt={pl.name} className="w-10 h-10 rounded-md object-cover" />
                                             <div className="flex-1 min-w-0">

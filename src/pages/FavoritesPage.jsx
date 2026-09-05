@@ -125,8 +125,8 @@ const FavoritesPage = () => {
     }, [favoriteSongs, searchTerm]);
 
     return (
-        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-gray-900">
-            <div className="p-2 md:p-3 border-b border-gray-500 bg-gray-600/30">
+        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-[#0f0f0f]">
+            <div className="p-2 md:p-3 border-b border-gray-500 bg-[#3f3f3f]/30">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                         <Heart className="text-red-500" size={20} fill="currentColor" />
@@ -140,7 +140,7 @@ const FavoritesPage = () => {
                                 placeholder="Search favorites..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-40 bg-gray-800/40 text-white rounded py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                                className="w-40 bg-[#1f1f1f]/40 text-white rounded py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                                 autoComplete="off"
                             />
                             {searchTerm && (
@@ -153,16 +153,16 @@ const FavoritesPage = () => {
                 </div>
             </div>
 
-            <div className="flex border-b border-gray-400 bg-gray-500/20">
+            <div className="flex border-b border-gray-400 bg-[#5f5f5f]/20">
                 <button
                     onClick={() => setActiveTab('songs')}
-                    className={`flex-1 py-3 px-4 text-center font-semibold transition-colors ${activeTab === 'songs' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                    className={`flex-1 py-3 px-4 text-center font-semibold transition-colors ${activeTab === 'songs' ? 'border-b-2 border-red-500 text-red-400' : 'text-gray-400 hover:text-white'}`}
                 >
                     Favorite Songs
                 </button>
                 <button
                     onClick={() => setActiveTab('playlists')}
-                    className={`flex-1 py-3 px-4 text-center font-semibold transition-colors ${activeTab === 'playlists' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                    className={`flex-1 py-3 px-4 text-center font-semibold transition-colors ${activeTab === 'playlists' ? 'border-b-2 border-red-500 text-red-400' : 'text-gray-400 hover:text-white'}`}
                 >
                     Favorite Playlists
                 </button>
@@ -185,7 +185,7 @@ const FavoritesPage = () => {
                                 {filteredFavoriteSongs.map((song) => {
                                     const isCurrent = String(song.id) === String(currentSongId);
                                     return (
-                                        <div key={song.id} onClick={() => safeSelectSong(song)} className={`flex items-center bg-gray-800/50 rounded-lg p-2 transition-colors cursor-pointer ${isCurrent ? 'bg-blue-700' : 'hover:bg-gray-700/50'}`}>
+                                        <div key={song.id} onClick={() => safeSelectSong(song)} className={`flex items-center bg-[#1f1f1f]/50 rounded-lg p-2 transition-colors cursor-pointer ${isCurrent ? 'bg-blue-700' : 'hover:bg-[#282828]/50'}`}>
                                             <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0 mr-3">
                                                 <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
                                             </div>
@@ -202,10 +202,10 @@ const FavoritesPage = () => {
                                                         <MoreVertical size={16} />
                                                     </button>
                                                     {menuOpenSongId === song.id && (
-                                                        <div className="absolute right-0 top-full mt-1 w-40 bg-gray-800 rounded-md shadow-lg border border-gray-700 z-10">
-                                                            <button onClick={(e) => { e.stopPropagation(); if (onAddToPlaylist) onAddToPlaylist(song.id); setMenuOpenSongId(null); }} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-2"><ChevronDown size={14} />Add to Playlist</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) onAddToQueue(song); setMenuOpenSongId(null); }} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-2"><Play size={14} className="rotate-90" />Add to Queue</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRemoveFavoriteSong(song.id); setMenuOpenSongId(null); }} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"><Heart size={14} />Remove</button>
+                                                        <div className="absolute right-0 top-full mt-1 w-40 bg-[#1f1f1f] rounded-md shadow-lg border border-gray-700 z-10">
+                                                            <button onClick={(e) => { e.stopPropagation(); if (onAddToPlaylist) onAddToPlaylist(song.id); setMenuOpenSongId(null); }} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-[#282828] flex items-center gap-2"><ChevronDown size={14} />Add to Playlist</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) onAddToQueue(song); setMenuOpenSongId(null); }} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-[#282828] flex items-center gap-2"><Play size={14} className="rotate-90" />Add to Queue</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRemoveFavoriteSong(song.id); setMenuOpenSongId(null); }} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-[#282828] flex items-center gap-2"><Heart size={14} />Remove</button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -228,7 +228,7 @@ const FavoritesPage = () => {
                         ) : (
                             <div className="space-y-2">
                                 {favoritePlaylists.map((playlist) => (
-                                    <div key={playlist.id} onClick={() => navigate(`/playlists/${playlist.id}`)} className="flex items-center bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700/50 transition-colors cursor-pointer">
+                                    <div key={playlist.id} onClick={() => navigate(`/playlists/${playlist.id}`)} className="flex items-center bg-[#1f1f1f]/50 rounded-lg p-2 hover:bg-[#282828]/50 transition-colors cursor-pointer">
                                         <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0 mr-3">
                                             <ImageWithFallback src={playlist.coverUrl} alt={playlist.name} className="w-full h-full object-cover" />
                                         </div>
@@ -244,8 +244,8 @@ const FavoritesPage = () => {
                                         <div className="relative playlist-menu">
                                             <button onClick={(e) => { e.stopPropagation(); setMenuOpenPlaylistId(menuOpenPlaylistId === playlist.id ? null : playlist.id); }} className="p-2 text-gray-400 hover:text-white transition-colors" aria-label="More options"><MoreVertical size={16} /></button>
                                             {menuOpenPlaylistId === playlist.id && (
-                                                <div className="absolute right-0 top-full mt-1 w-48 bg-gray-800 rounded-md shadow-lg border border-gray-700 z-10">
-                                                    <button onClick={() => { handleRemoveFavoritePlaylist(playlist.id); setMenuOpenPlaylistId(null); }} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"><Heart size={14} />Remove</button>
+                                                <div className="absolute right-0 top-full mt-1 w-48 bg-[#1f1f1f] rounded-md shadow-lg border border-gray-700 z-10">
+                                                    <button onClick={() => { handleRemoveFavoritePlaylist(playlist.id); setMenuOpenPlaylistId(null); }} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#282828] flex items-center gap-2"><Heart size={14} />Remove</button>
                                                 </div>
                                             )}
                                         </div>

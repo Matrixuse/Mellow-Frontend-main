@@ -40,8 +40,8 @@ const LibraryPage = () => {
             >
                 {/* Pull-to-refresh indicator */}
                 {refreshing && (
-                    <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-gray-900/50 z-50">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-[#0f0f0f]/50 z-50">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
                     </div>
                 )}
 

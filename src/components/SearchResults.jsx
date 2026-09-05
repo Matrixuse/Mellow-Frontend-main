@@ -215,10 +215,10 @@ const SearchResults = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-900 z-50 md:static md:h-auto md:max-h-[70vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-[#0f0f0f] z-50 md:static md:h-auto md:max-h-[70vh] overflow-hidden flex flex-col">
             <div className="h-full md:h-auto md:max-h-[70vh] flex flex-col">
                 {/* Search bar - mobile only */}
-                <div className="md:hidden p-4 bg-gray-900 border-b border-gray-700">
+                <div className="md:hidden p-4 bg-[#0f0f0f] border-b border-gray-700">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input 
@@ -228,7 +228,7 @@ const SearchResults = ({
                             value={searchTerm}
                             onChange={handleSearchChange}
                             autoComplete="off"
-                            className="w-full bg-gray-700/60 text-white rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:bg-gray-700"
+                            className="w-full bg-[#282828]/60 text-white rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:bg-[#282828]"
                         />
                         {searchTerm && (
                             <button 
@@ -277,7 +277,7 @@ const SearchResults = ({
                                             onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
                                             role="button"
                                             tabIndex={0}
-                                            className="group flex h-12 items-center gap-2 rounded-md px-1 py-1 cursor-pointer bg-gray-800/50 hover:bg-gray-700/80 transition-colors"
+                                            className="group flex h-12 items-center gap-2 rounded-md px-1 py-1 cursor-pointer bg-[#1f1f1f]/50 hover:bg-[#282828]/80 transition-colors"
                                         >
                                             <div className="relative h-10 w-10 flex-shrink-0">
                                                 <ImageWithFallback
@@ -303,7 +303,7 @@ const SearchResults = ({
                                                 onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
                                                 role="button"
                                                 tabIndex={0}
-                                                className="group relative rounded-lg cursor-pointer bg-gray-800/50 p-1 hover:bg-gray-700/80 transition-colors"
+                                                className="group relative rounded-lg cursor-pointer bg-[#1f1f1f]/50 p-1 hover:bg-[#282828]/80 transition-colors"
                                             >
                                                 <div className="relative mb-1">
                                                     <ImageWithFallback
@@ -336,9 +336,9 @@ const SearchResults = ({
                                             <button
                                                 key={artist.name}
                                                 onClick={() => { if (artist.name) navigate(`/artist/${encodeURIComponent(artist.name)}`); }}
-                                                className="flex items-center gap-1 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 p-2 transition-colors text-left"
+                                                className="flex items-center gap-1 rounded-lg bg-[#1f1f1f]/50 hover:bg-[#282828]/50 p-2 transition-colors text-left"
                                             >
-                                                <div className="w-8 h-8 rounded-md bg-gray-700 flex items-center justify-center text-blue-400 text-lg flex-shrink-0">♪</div>
+                                                <div className="w-8 h-8 rounded-md bg-[#282828] flex items-center justify-center text-red-400 text-lg flex-shrink-0">♪</div>
                                                 <div className="min-w-0 flex-1">
                                                    <h3 className="font-semibold text-xs truncate text-white">{artist.name}</h3>
                                                    <p className="text-xs text-gray-400 truncate">{artist.songCount} song{artist.songCount !== 1 ? 's' : ''}</p>
@@ -363,11 +363,11 @@ const SearchResults = ({
                                                         // delay navigation slightly to allow overlay to close smoothly
                                                         setTimeout(() => { try { navigate(`/playlists/${playlist.id}`); } catch (e) {} }, 120);
                                                     }}
-                                                    className="flex items-center gap-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 p-2 transition-colors cursor-pointer"
+                                                    className="flex items-center gap-2 rounded-lg bg-[#1f1f1f]/50 hover:bg-[#282828]/50 p-2 transition-colors cursor-pointer"
                                                     role="button"
                                                     tabIndex={0}
                                                 >
-                                                    <div className="w-8 h-8 rounded-md overflow-hidden bg-gray-700 flex-shrink-0">
+                                                    <div className="w-8 h-8 rounded-md overflow-hidden bg-[#282828] flex-shrink-0">
                                                         <ImageWithFallback src={playlist.coverUrl} alt={playlist.name} className="w-full h-full object-cover" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
@@ -393,7 +393,7 @@ const SearchResults = ({
                                                     onClick={() => { if (typeof onSelectSong === 'function') onSelectSong(song.id, { source: 'search' }); }}
                                                     role="button"
                                                     tabIndex={0}
-                                                    className="group relative p-1 rounded-lg cursor-pointer bg-gray-800/50 hover:bg-gray-700/80 transition-colors"
+                                                    className="group relative p-1 rounded-lg cursor-pointer bg-[#1f1f1f]/50 hover:bg-[#282828]/80 transition-colors"
                                                 >
                                                     <div className="relative mb-1">
                                                         <ImageWithFallback
@@ -419,14 +419,14 @@ const SearchResults = ({
                 
                 {/* Compact mobile player (matches MobilePlayerBar) */}
                 {currentSong && isPlayerInitialized && !showExpandedPlayer && (
-                    <div className="fixed bottom-14 left-0 right-0 bg-gray-800 border-t border-gray-700 p-2 z-40 md:hidden">
+                    <div className="fixed bottom-14 left-0 right-0 bg-[#1f1f1f] border-t border-gray-700 p-2 z-40 md:hidden">
                         <div onClick={handleMiniPlayerClick} className="w-full flex items-center gap-2 cursor-pointer" role="button" tabIndex={0}>
                             <img src={currentSong.coverUrl} alt={currentSong.title} className="w-9 h-9 rounded-md object-cover flex-shrink-0" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x200/1F2937/FFFFFF?text=Music'; }} />
                             <div className="flex-1 min-w-0 text-left">
                                 <div className="text-sm font-semibold truncate text-white">{currentSong.title}</div>
                                 <div className="text-xs text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</div>
                             </div>
-                            <button onClick={(e) => { e.stopPropagation(); onShuffleToggle(); }} className={`p-2 transition-colors ${isShuffle ? 'text-blue-400' : 'text-gray-400'}`} title="Shuffle">
+                            <button onClick={(e) => { e.stopPropagation(); onShuffleToggle(); }} className={`p-2 transition-colors ${isShuffle ? 'text-red-400' : 'text-gray-400'}`} title="Shuffle">
                                 <Shuffle className="w-5 h-5" />
                             </button>
                             <button onClick={(e) => { e.stopPropagation(); if (typeof onPlayPause === 'function') onPlayPause(); }} className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-500">
@@ -438,12 +438,12 @@ const SearchResults = ({
 
                 {/* Expanded Full Player Modal */}
                 {currentSong && isPlayerInitialized && showExpandedPlayer && (
-                    <div className="fixed inset-0 bg-gray-900 z-50 md:hidden flex flex-col">
+                    <div className="fixed inset-0 bg-[#0f0f0f] z-50 md:hidden flex flex-col">
                         {/* Header with close button */}
                         <div className="p-4 border-b border-gray-700 flex items-center justify-between">
                             <div className="flex-1" />
                             <h2 className="flex-1 text-center font-semibold text-white">Now Playing</h2>
-                            <button onClick={handleCloseExpandedPlayer} className="p-2 rounded-full hover:bg-gray-800">
+                            <button onClick={handleCloseExpandedPlayer} className="p-2 rounded-full hover:bg-[#1f1f1f]">
                                 <ChevronDown size={24} className="text-white" />
                             </button>
                         </div>
@@ -475,7 +475,7 @@ const SearchResults = ({
                 
                 {/* Bottom nav for mobile - custom implementation */}
                 <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden">
-                          <div className="bg-gray-900 border-t border-gray-800 h-14 flex items-center">
+                          <div className="bg-[#0f0f0f] border-t border-gray-800 h-14 flex items-center">
                             <div className="w-full max-w-[480px] mx-auto px-4 flex items-center justify-between">
                               <button onClick={goHome} aria-label="Home" className={`flex flex-col items-center ${isActive('/') ? 'text-white' : 'text-gray-300 hover:text-white'}`}>
                                 <Home className={`w-5 h-5 ${isActive('/') ? 'scale-110' : ''}`} />

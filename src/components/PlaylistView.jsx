@@ -310,7 +310,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
             <div className="flex-grow p-4 flex flex-col min-h-0 min-w-0">
                 <div className="text-center py-10">
                     <div className="text-red-400 mb-4">{error || 'Playlist not found'}</div>
-                    <Link to="/" className="text-blue-400 hover:text-blue-300">
+                    <Link to="/" className="text-red-400 hover:text-red-300">
                         Back to Library
                     </Link>
                 </div>
@@ -332,7 +332,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
             {/* Header */}
                 <div className="flex items-center gap-4 mb-6 flex-shrink-0">
                 {/* back button: always visible */}
-                <button onClick={onClose} className="inline-flex p-2 rounded-full bg-gray-800 hover:bg-gray-700 mr-2">
+                <button onClick={onClose} className="inline-flex p-2 rounded-full bg-[#1f1f1f] hover:bg-[#282828] mr-2">
                     <ArrowLeft size={24} />
                 </button>
                     <div className="flex-1 flex flex-col">
@@ -359,7 +359,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                                                 console.error('follow toggle error', err);
                                             }
                                         }}
-                                        className="text-xs text-blue-400 hover:text-blue-200"
+                                        className="text-xs text-red-400 hover:text-red-200"
                                     >{followingMap[playlist.owner] ? 'Unfollow' : 'Follow'}</button>
                                 )}
                             </div>
@@ -378,7 +378,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                     {/* Top-left: Public / Private (was bottom-left) */}
                     <button
                         onClick={handleToggleVisibility}
-                        className={`p-2 rounded-full transition-all ${playlist.isPublic ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
+                        className={`p-2 rounded-full transition-all ${playlist.isPublic ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' : 'bg-[#3f3f3f] hover:bg-[#5f5f5f]'}`}
                         title={playlist.isPublic ? "Make private" : "Make public"}
                     >
                         {playlist.isPublic ? (
@@ -393,7 +393,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                         onClick={(e) => { e.stopPropagation(); handleTogglePin(); }}
                         disabled={!user?.token}
                         title={isPinned ? "Unpin playlist" : "Pin playlist"}
-                        className={`p-2 rounded-full transition-all ${!user?.token ? 'bg-gray-500 cursor-not-allowed opacity-50' : isPinned ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
+                        className={`p-2 rounded-full transition-all ${!user?.token ? 'bg-[#5f5f5f] cursor-not-allowed opacity-50' : isPinned ? 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-500/30' : 'bg-[#3f3f3f] hover:bg-[#5f5f5f]'}`}
                     >
                         <Pin size={24} className="text-white" />
                     </button>
@@ -402,7 +402,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                     {playlist.songs && playlist.songs.length > 0 ? (
                         <button
                             onClick={() => handleToggleShuffleMode(!isShuffleMode)}
-                            className={`p-2 rounded-full transition-all ${isShuffleMode ? 'bg-blue-600 shadow-lg shadow-blue-500/50 animate-pulse' : 'bg-gray-600 hover:bg-gray-500'}`}
+                            className={`p-2 rounded-full transition-all ${isShuffleMode ? 'bg-blue-600 shadow-lg shadow-red-500/50 animate-pulse' : 'bg-[#3f3f3f] hover:bg-[#5f5f5f]'}`}
                             title={isShuffleMode ? "Shuffle is on - songs will play randomly" : "Shuffle is off - click to turn on"}
                         >
                             <Shuffle size={24} className="text-white" />
@@ -425,7 +425,7 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                         })(); }}
                         disabled={!user?.token}
                         title={isFav ? 'Unfavorite playlist' : 'Favorite playlist'}
-                        className={`p-2 rounded-full transition-all ${!user?.token ? 'bg-gray-500 cursor-not-allowed opacity-50' : isFav ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
+                        className={`p-2 rounded-full transition-all ${!user?.token ? 'bg-[#5f5f5f] cursor-not-allowed opacity-50' : isFav ? 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-red-500/30' : 'bg-[#3f3f3f] hover:bg-[#5f5f5f]'}`}
                     >
                         <Heart size={20} className="text-white" fill={isFav ? 'currentColor' : 'none'} strokeWidth={isFav ? 0 : 2} />
                     </button>
@@ -438,13 +438,13 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search in playlist"
-                    className="w-full max-w-md px-3 py-1 text-sm bg-gray-800 border border-gray-700 rounded-sm placeholder-gray-500 h-8"
+                    className="w-full max-w-md px-3 py-1 text-sm bg-[#1f1f1f] border border-gray-700 rounded-sm placeholder-gray-500 h-8"
                 />
             </div>
 
             {/* Error Display */}
             {error && (
-                <div className="text-red-400 text-sm mb-4 p-3 bg-red-900/20 rounded-lg">
+                <div className="text-red-400 text-sm mb-4 p-3 bg-blue-900/20 rounded-lg">
                     {error}
                 </div>
             )}
@@ -467,10 +467,10 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                             {filtered.map((song, index) => {
                                 const isActive = currentSongId === song.id && isPlaying;
                                 return (
-                                    <div key={song.id} className={`w-full max-w-[170px] rounded-lg p-2 flex flex-col cursor-pointer ${isDragging ? '' : 'transition-colors'} ${isActive ? 'bg-blue-900/30 ring-2 ring-blue-600' : 'bg-gray-800 hover:bg-gray-700'} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
+                                    <div key={song.id} className={`w-full max-w-[170px] rounded-lg p-2 flex flex-col cursor-pointer ${isDragging ? '' : 'transition-colors'} ${isActive ? 'bg-blue-900/30 ring-2 ring-red-600' : 'bg-[#1f1f1f] hover:bg-[#282828]'} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
                                         <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-24 object-cover rounded-md mb-2" fallback={'https://placehold.co/400x400/1F2937/FFFFFF?text=Music'} />
                                         <div className="flex-1">
-                                            <h4 className={`text-sm md:text-base font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                            <h4 className={`text-sm md:text-base font-semibold truncate ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
                                             <p className="text-xs md:text-sm text-gray-400">{Array.isArray(song.artist) ? song.artist.join(', ') : song.artist}</p>
                                         </div>
                                         <div className="mt-2 flex items-center justify-between">
@@ -478,11 +478,11 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                                                 <button onClick={(e) => { e.stopPropagation(); handlePlaySong(song.id); }} className="px-2 py-1 bg-blue-600 rounded-md text-white flex items-center gap-2 text-sm"><Play size={12}/>Play</button>
                                             </div>
                                             <div className="relative">
-                                                <button onClick={(e) => { e.stopPropagation(); setExpandedMenu(expandedMenu === song.id ? null : song.id); }} className="p-1 rounded-full hover:bg-gray-700"><MoreVertical size={14} /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); setExpandedMenu(expandedMenu === song.id ? null : song.id); }} className="p-1 rounded-full hover:bg-[#282828]"><MoreVertical size={14} /></button>
                                                 {expandedMenu === song.id && (
-                                                    <div className="absolute right-0 top-10 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 min-w-[140px]">
-                                                        <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) { onAddToQueue(song, playlist); setToast({ type: 'success', message: 'Added to queue' }); } else { setToast({ type: 'error', message: 'Queue action not available' }); } setExpandedMenu(null); }} className="w-full text-left px-2 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"><Play size={14}/>Add to queue</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(song.id); }} className="w-full text-left px-2 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"><Trash2 size={14}/>Remove</button>
+                                                    <div className="absolute right-0 top-10 bg-[#1f1f1f] border border-gray-700 rounded-lg shadow-lg z-10 min-w-[140px]">
+                                                        <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) { onAddToQueue(song, playlist); setToast({ type: 'success', message: 'Added to queue' }); } else { setToast({ type: 'error', message: 'Queue action not available' }); } setExpandedMenu(null); }} className="w-full text-left px-2 py-2 text-sm text-gray-200 hover:bg-[#282828] flex items-center gap-2"><Play size={14}/>Add to queue</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(song.id); }} className="w-full text-left px-2 py-2 text-sm text-red-400 hover:bg-[#282828] flex items-center gap-2"><Trash2 size={14}/>Remove</button>
                                                     </div>
                                                 )}
                                             </div>
@@ -495,18 +495,18 @@ const PlaylistView = ({ playlistId, user, onPlaySong, onPlayPlaylist, onAddToQue
                         {/* Mobile: vertical list with horizontal bars and 3-dot menu */}
                         <div className="md:hidden space-y-2">
                             {filtered.map((song, index) => (
-                                <div key={song.id} className={`flex items-center gap-2 rounded-lg px-2 py-1 ${isDragging ? '' : ''} ${currentSongId === song.id && isPlaying ? 'bg-blue-900/30' : 'bg-gray-800'} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
+                                <div key={song.id} className={`flex items-center gap-2 rounded-lg px-2 py-1 ${isDragging ? '' : ''} ${currentSongId === song.id && isPlaying ? 'bg-blue-900/30' : 'bg-[#1f1f1f]'} ${draggedSongId === song.id ? 'opacity-50' : ''}`} onClick={() => handlePlaySong(song.id)} draggable onDragStart={(e) => handleDragStart(e, index, song.id)} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={(e) => handleDrop(e, index)}>
                                     <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-10 h-9 rounded-md object-cover" fallback={'https://placehold.co/160x160/1F2937/FFFFFF?text=♪'} />
                                     <div className="flex-1 min-w-0">
                                         <div className="font-medium text-xs md:text-base text-white truncate">{song.title}</div>
                                         <div className="text-[11px] text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : song.artist}</div>
                                     </div>
                                     <div className="relative">
-                                        <button onClick={(e) => { e.stopPropagation(); setExpandedMenu(expandedMenu === song.id ? null : song.id); }} className="p-2 rounded-full hover:bg-gray-700"><MoreVertical size={18} /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); setExpandedMenu(expandedMenu === song.id ? null : song.id); }} className="p-2 rounded-full hover:bg-[#282828]"><MoreVertical size={18} /></button>
                                         {expandedMenu === song.id && (
-                                            <div className="absolute right-0 top-10 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
-                                                <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) { onAddToQueue(song, playlist); setToast({ type: 'success', message: 'Added to queue' }); } else { setToast({ type: 'error', message: 'Queue action not available' }); } setExpandedMenu(null); }} className="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"><Play size={14}/>Add to queue</button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(song.id); }} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"><Trash2 size={14}/>Remove</button>
+                                            <div className="absolute right-0 top-10 bg-[#1f1f1f] border border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
+                                                <button onClick={(e) => { e.stopPropagation(); if (onAddToQueue) { onAddToQueue(song, playlist); setToast({ type: 'success', message: 'Added to queue' }); } else { setToast({ type: 'error', message: 'Queue action not available' }); } setExpandedMenu(null); }} className="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-[#282828] flex items-center gap-2"><Play size={14}/>Add to queue</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(song.id); }} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-[#282828] flex items-center gap-2"><Trash2 size={14}/>Remove</button>
                                             </div>
                                         )}
                                     </div>

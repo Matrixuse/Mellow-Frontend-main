@@ -152,7 +152,7 @@ const RecentsPage = ({}) => {
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
-      <div className="p-4 border-b border-gray-700 bg-gray-800/30 flex-shrink-0">
+      <div className="p-4 border-b border-gray-700 bg-[#1f1f1f]/30 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-900">
             <ArrowLeft className="w-4 h-4" />
@@ -173,13 +173,13 @@ const RecentsPage = ({}) => {
             const isCurrent = String(idVal) === String(currentSongId);
             return (
               <div key={key} className="relative">
-                <div className={`flex items-center gap-3 p-1 rounded-lg cursor-pointer ${isCurrent ? 'bg-blue-700' : 'bg-gray-800/50 hover:bg-gray-700/50'}`} onClick={() => { try { if (typeof onSelectSong === 'function') { onSelectSong(s.id || s.songId || s); } else { navigate('/'); window.setTimeout(()=>{ const evt = new CustomEvent('play-song-from-recents', { detail: s }); window.dispatchEvent(evt); }, 50); } } catch(e){} }}>
-                  <div className={`w-8 h-8 rounded-md overflow-hidden flex-shrink-0 ${isCurrent ? 'ring-2 ring-blue-300' : 'bg-gray-700'}`}>
+                <div className={`flex items-center gap-3 p-1 rounded-lg cursor-pointer ${isCurrent ? 'bg-blue-700' : 'bg-[#1f1f1f]/50 hover:bg-[#282828]/50'}`} onClick={() => { try { if (typeof onSelectSong === 'function') { onSelectSong(s.id || s.songId || s); } else { navigate('/'); window.setTimeout(()=>{ const evt = new CustomEvent('play-song-from-recents', { detail: s }); window.dispatchEvent(evt); }, 50); } } catch(e){} }}>
+                  <div className={`w-8 h-8 rounded-md overflow-hidden flex-shrink-0 ${isCurrent ? 'ring-2 ring-red-300' : 'bg-[#282828]'}`}>
                     <ImageWithFallback src={s.coverUrl || s.cover || ''} alt={title} className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className={`text-sm font-semibold truncate ${isCurrent ? 'text-white' : 'text-white'}`}>{title}</div>
-                    <div className={`text-xs truncate ${isCurrent ? 'text-blue-100' : 'text-gray-400'}`}>{artist}</div>
+                    <div className={`text-xs truncate ${isCurrent ? 'text-red-100' : 'text-gray-400'}`}>{artist}</div>
                   </div>
                   <div className="flex items-center flex-shrink-0">
                     <button aria-label="Play quick" onClick={(e) => { e.stopPropagation(); try { if (typeof onSelectSong === 'function') onSelectSong(s.id || s.songId || s); else { navigate('/'); window.setTimeout(()=>{ const evt = new CustomEvent('play-song-from-recents', { detail: s }); window.dispatchEvent(evt); }, 50); } } catch(e){} }} className="p-2 text-gray-300 hover:text-white">
@@ -190,12 +190,12 @@ const RecentsPage = ({}) => {
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {activeMenuId === key && (
-                        <div className="absolute right-0 top-10 z-40 w-44 bg-gray-900 border border-gray-800 rounded shadow-lg text-sm overflow-hidden">
-                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof onAddToQueue === 'function') onAddToQueue(s); else { const e = new CustomEvent('add-to-queue', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to queue</button>
-                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof onAddToPlaylist === 'function') onAddToPlaylist(s.id || s.songId || s); else { const e = new CustomEvent('open-add-to-playlist', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to playlist</button>
-                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof toggleSongFavorite === 'function') toggleSongFavorite(s.id || s.songId || s); else { const e = new CustomEvent('toggle-favorite', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Add to favourites</button>
-                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const artistName = Array.isArray(s.artist) ? s.artist[0] : (s.artist || s.artists || s.artistName || ''); if (artistName) { if (typeof onShowArtist === 'function') onShowArtist(artistName); else navigate(`/artist/${encodeURIComponent(artistName)}`); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Artist</button>
-                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const raw = JSON.parse(localStorage.getItem('recents')||'[]'); const list = raw.filter(item => String(item.id) !== String(idVal)); localStorage.setItem('recents', JSON.stringify(list)); setSongs(list); try { console.debug('RecentsPage: removed item, newCount=', list.length); } catch(e){} try { window.dispatchEvent(new CustomEvent('recents-updated', { detail: { removedId: idVal } })); } catch(e){} } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-gray-800">Remove from recents</button>
+                        <div className="absolute right-0 top-10 z-40 w-44 bg-[#0f0f0f] border border-gray-800 rounded shadow-lg text-sm overflow-hidden">
+                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof onAddToQueue === 'function') onAddToQueue(s); else { const e = new CustomEvent('add-to-queue', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-[#1f1f1f]">Add to queue</button>
+                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof onAddToPlaylist === 'function') onAddToPlaylist(s.id || s.songId || s); else { const e = new CustomEvent('open-add-to-playlist', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-[#1f1f1f]">Add to playlist</button>
+                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { if (typeof toggleSongFavorite === 'function') toggleSongFavorite(s.id || s.songId || s); else { const e = new CustomEvent('toggle-favorite', { detail: s }); window.dispatchEvent(e); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-[#1f1f1f]">Add to favourites</button>
+                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const artistName = Array.isArray(s.artist) ? s.artist[0] : (s.artist || s.artists || s.artistName || ''); if (artistName) { if (typeof onShowArtist === 'function') onShowArtist(artistName); else navigate(`/artist/${encodeURIComponent(artistName)}`); } } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-[#1f1f1f]">Artist</button>
+                          <button onClick={(ev) => { ev.stopPropagation(); setActiveMenuId(null); try { const raw = JSON.parse(localStorage.getItem('recents')||'[]'); const list = raw.filter(item => String(item.id) !== String(idVal)); localStorage.setItem('recents', JSON.stringify(list)); setSongs(list); try { console.debug('RecentsPage: removed item, newCount=', list.length); } catch(e){} try { window.dispatchEvent(new CustomEvent('recents-updated', { detail: { removedId: idVal } })); } catch(e){} } catch(e){} }} className="w-full text-left px-3 py-2 hover:bg-[#1f1f1f]">Remove from recents</button>
                         </div>
                       )}
                     </div>

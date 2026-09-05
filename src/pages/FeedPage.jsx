@@ -39,8 +39,8 @@ const FeedPage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-gray-900">
-            <div className="p-2 md:p-4 border-b border-gray-700 bg-gray-800/30">
+        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 bg-[#0f0f0f]">
+            <div className="p-2 md:p-4 border-b border-gray-700 bg-[#1f1f1f]/30">
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-900">
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -60,7 +60,7 @@ const FeedPage = () => {
                 {recents.length > 0 && (
                     <ul className="space-y-4">
                         {recents.map(song => (
-                            <li key={song.id} className="flex items-center gap-3 bg-gray-800/50 p-3 rounded-lg hover:bg-gray-700/50 cursor-pointer" onClick={() => { if (onPlaySong) onPlaySong(song.id); }}>
+                            <li key={song.id} className="flex items-center gap-3 bg-[#1f1f1f]/50 p-3 rounded-lg hover:bg-[#282828]/50 cursor-pointer" onClick={() => { if (onPlaySong) onPlaySong(song.id); }}>
                                 <div className="w-12 h-12">
                                     <ImageWithFallback src={song.coverUrl} alt={song.title} className="w-full h-full object-cover rounded" fallback="https://placehold.co/80x80/1F2937/FFFFFF?text=♪" />
                                 </div>

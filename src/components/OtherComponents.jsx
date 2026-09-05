@@ -12,7 +12,7 @@ const formatTime = (time) => {
 // Loader Component
 export const Loader = () => (
     <div className="flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-blue-500"></div>
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-red-500"></div>
     </div>
 );
 
@@ -27,19 +27,19 @@ export const Header = ({ onLogout }) => (
 // Controls Component
 const ControlsInner = ({ isPlaying, onPlayPause, onNext, onPrev, isShuffle, onShuffleToggle, isRepeat, onRepeatToggle }) => (
     <div className="flex items-center justify-center gap-3 sm:gap-4 flex-nowrap">
-            <button onClick={onShuffleToggle} className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${isShuffle ? 'text-blue-400' : 'text-gray-400'}`} aria-label="Shuffle">
+            <button onClick={onShuffleToggle} className={`p-2 rounded-full hover:bg-[#282828] transition-colors ${isShuffle ? 'text-red-400' : 'text-gray-400'}`} aria-label="Shuffle">
                 <Shuffle className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
-            <button onClick={onPrev} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Previous Song">
+            <button onClick={onPrev} className="p-2 rounded-full hover:bg-[#282828] transition-colors text-gray-300" aria-label="Previous Song">
                 <SkipBack className="w-5 h-6 sm:w-7 sm:h-7" />
             </button>
             <button onClick={onPlayPause} className="bg-blue-600 text-white rounded-full p-4 sm:p-5 hover:bg-blue-500 transition-all shadow-lg flex items-center justify-center" aria-label={isPlaying ? 'Pause' : 'Play'}>
                 {isPlaying ? <Pause className="w-6.5 h-6.5 sm:w-6.5 sm:h-6.5" /> : <Play className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5" />}
             </button>
-            <button onClick={onNext} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Next Song">
+            <button onClick={onNext} className="p-2 rounded-full hover:bg-[#282828] transition-colors text-gray-300" aria-label="Next Song">
                 <SkipForward className="w-5 h-6 sm:w-7 sm:h-7" />
             </button>
-            <button onClick={onRepeatToggle} className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${isRepeat ? 'text-blue-400' : 'text-gray-400'}`} aria-label="Repeat">
+            <button onClick={onRepeatToggle} className={`p-2 rounded-full hover:bg-[#282828] transition-colors ${isRepeat ? 'text-red-400' : 'text-gray-400'}`} aria-label="Repeat">
                 <Repeat className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
     </div>
@@ -123,9 +123,9 @@ export const Footer = ({ onDeveloperClick }) => (
                 <button className="block text-left hover:text-white">Mellow Free</button>
             </div>
              <div className="col-span-2 md:col-span-1 flex md:justify-end items-start gap-4">
-                <a href="/" className="bg-gray-800 p-3 rounded-full hover:bg-gray-700"><Instagram size={20} className="text-white" /></a>
-                <a href="/" className="bg-gray-800 p-3 rounded-full hover:bg-gray-700"><Twitter size={20} className="text-white" /></a>
-                <a href="/" className="bg-gray-800 p-3 rounded-full hover:bg-gray-700"><Facebook size={20} className="text-white" /></a>
+                <a href="/" className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#282828]"><Instagram size={20} className="text-white" /></a>
+                <a href="/" className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#282828]"><Twitter size={20} className="text-white" /></a>
+                <a href="/" className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#282828]"><Facebook size={20} className="text-white" /></a>
             </div>
         </div>
         <div className="border-t border-gray-700 pt-6 grid grid-cols-1 md:grid-cols-3 gap-y-4 items-start text-xs">

@@ -164,5 +164,5 @@ export const getAllVibeCards = () => VIBE_DEFINITIONS.map(v => ({
   id: v.key,
   name: v.key,
   imageUrl: vibeImageMap[v.key] || `/vibes/${v.key.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg`,
-  color: '#1d4ed8'
+  color: '#dc2626'
 }));

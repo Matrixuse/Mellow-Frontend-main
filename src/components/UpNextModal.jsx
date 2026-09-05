@@ -81,7 +81,7 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
                 {/* Mini Player Bar at Top */}
                 <div className="bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-700 flex-shrink-0">
                     {/* Thin Progress Bar */}
-                    <div className="w-full h-0.5 bg-gray-700 overflow-hidden">
+                    <div className="w-full h-0.5 bg-[#282828] overflow-hidden">
                         <div 
                             className="h-full bg-blue-400 transition-all duration-100 ease-linear"
                             style={{
@@ -90,7 +90,7 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
                         />
                     </div>
                     <div className="p-3 flex items-center justify-between">
-                    <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full">
+                    <button onClick={onClose} className="p-2 hover:bg-[#282828] rounded-full">
                         <X size={20} className="text-white" />
                     </button>
                     <div className="flex-1 text-center">
@@ -102,7 +102,7 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
 
                 {/* Current Song Mini Display */}
                 {currentSong && (
-                    <div className="bg-gray-800/50 px-3 py-2 border-b border-gray-700 flex items-center gap-2 flex-shrink-0">
+                    <div className="bg-[#1f1f1f]/50 px-3 py-2 border-b border-gray-700 flex items-center gap-2 flex-shrink-0">
                         <img 
                             src={currentSong.coverUrl} 
                             alt={currentSong.title} 
@@ -114,13 +114,13 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
                             <div className="text-xs text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                            <button onClick={onPrev} className="p-1 hover:bg-gray-700 rounded-full text-gray-300">
+                            <button onClick={onPrev} className="p-1 hover:bg-[#282828] rounded-full text-gray-300">
                                 <SkipBack size={16} />
                             </button>
                             <button onClick={onPlayPause} className="p-1 bg-blue-600 hover:bg-blue-500 rounded-full text-white">
                                 {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                             </button>
-                            <button onClick={onNext} className="p-1 hover:bg-gray-700 rounded-full text-gray-300">
+                            <button onClick={onNext} className="p-1 hover:bg-[#282828] rounded-full text-gray-300">
                                 <SkipForward size={16} />
                             </button>
                         </div>
@@ -133,8 +133,8 @@ const UpNextModal = ({ isOpen, onClose, currentSong, isPlaying, onPlayPause, onN
                         <div className="space-y-2">
                             <h4 className="text-xs font-bold text-gray-400 uppercase mb-3">Coming up</h4>
                             {queueItems.map((song, index) => (
-                                <div key={`${song.id}-${index}`} className="flex items-center gap-2 p-2 rounded hover:bg-gray-700/30 transition-colors">
-                                    <div className="w-10 h-10 rounded bg-gray-700 flex-shrink-0 flex items-center justify-center text-xs text-gray-400 font-semibold">
+                                <div key={`${song.id}-${index}`} className="flex items-center gap-2 p-2 rounded hover:bg-[#282828]/30 transition-colors">
+                                    <div className="w-10 h-10 rounded bg-[#282828] flex-shrink-0 flex items-center justify-center text-xs text-gray-400 font-semibold">
                                         {index + 1}
                                     </div>
                                     <div className="flex-1 min-w-0">

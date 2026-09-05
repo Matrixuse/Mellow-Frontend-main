@@ -37,25 +37,25 @@ const EqualizerPage = () => {
     return (
         <div className="p-4 md:p-6 max-w-6xl mx-auto min-h-screen overflow-auto pb-24">
             <div className="flex items-center gap-3 mb-4">
-                <button aria-label="Back" onClick={() => navigate(-1)} className="p-2 rounded-md bg-transparent hover:bg-gray-800/40 text-white">
+                <button aria-label="Back" onClick={() => navigate(-1)} className="p-2 rounded-md bg-transparent hover:bg-[#1f1f1f]/40 text-white">
                     <ChevronLeft size={20} />
                 </button>
                 <h2 className="text-xl md:text-2xl font-semibold">Equalizer</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-800 p-4 rounded-md md:sticky md:top-20 order-2 md:order-1">
+                <div className="bg-[#1f1f1f] p-4 rounded-md md:sticky md:top-20 order-2 md:order-1">
                     <h3 className="font-medium mb-2">Presets</h3>
                     <div className="flex gap-2 flex-wrap">
                         {presets.map(p => (
-                            <button key={p} onClick={() => applyPreset(p)} className={`px-3 py-1 rounded ${preset===p? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}>{p}</button>
+                            <button key={p} onClick={() => applyPreset(p)} className={`px-3 py-1 rounded ${preset===p? 'bg-blue-600 text-white' : 'bg-[#282828] text-gray-200'}`}>{p}</button>
                         ))}
                     </div>
                     <div className="mt-4">
                         <label className="flex items-center gap-2"><input type="checkbox" checked={normalization} onChange={(e) => setNormalization(e.target.checked)} /> <span className="text-sm">Enable volume normalization (basic)</span></label>
                     </div>
                 </div>
-                <div className="bg-gray-800 p-4 rounded-md order-1 md:order-2">
+                <div className="bg-[#1f1f1f] p-4 rounded-md order-1 md:order-2">
                     <h3 className="font-medium mb-2">Bands</h3>
                     <div className="flex md:gap-3 gap-2 items-end md:h-48 flex-nowrap overflow-x-auto justify-center">
                         {bands.map((b, idx) => (

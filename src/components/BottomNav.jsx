@@ -42,7 +42,7 @@ export default function BottomNav() {
 
     return (
       <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden">
-          <div className="bg-gray-900 border-t border-gray-800 h-14 flex items-center">
+          <div className="bg-[#0f0f0f] border-t border-gray-800 h-14 flex items-center">
             <div className="w-full max-w-[480px] mx-auto px-4 flex items-center justify-between">
               <button onClick={goHome} aria-label="Home" className={`flex flex-col items-center ${isActive('/') ? 'text-white' : 'text-gray-300 hover:text-white'}`}>
                 <Home className={`w-5 h-5 ${isActive('/') ? 'scale-110' : ''}`} />

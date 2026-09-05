@@ -116,7 +116,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
     <div className="flex flex-col md:flex-row h-full">
         {/* Left Column desktop/tablet par hi dikhega - hide on favorites */}
         {!isFavoritesPage && (
-        <div className="hidden md:flex md:w-90 p-3 flex-shrink-0 flex-col bg-gray-800/30">
+        <div className="hidden md:flex md:w-90 p-3 flex-shrink-0 flex-col bg-[#1f1f1f]/30">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Link to="/" className="flex items-center gap-3">
@@ -125,7 +125,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                     </Link>
                 </div>
             </div>
-            <div className="bg-gray-800 rounded-lg flex flex-col shadow-xl flex-grow">
+            <div className="bg-[#1f1f1f] rounded-lg flex flex-col shadow-xl flex-grow">
                 {/* Forward modal open handlers from props (App supplies them). Avoid referencing
                     App-scoped setters directly here to prevent undefined reference errors. */}
                 <PlayerUI {...props} user={user} onOpenUpNext={props.onOpenUpNext} onOpenRelated={props.onOpenRelated} />
@@ -137,11 +137,11 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
 
         <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
             {!isFavoritesPage && !isArtistPage && !isMoodPage && !isProfilePage && !isPlaylistsPage && (
-            <div className="md:hidden bg-gray-900 border-b border-gray-800 pt-3 pl-3 pr-3 pb-2 relative">
+            <div className="md:hidden bg-[#0f0f0f] border-b border-gray-800 pt-3 pl-3 pr-3 pb-2 relative">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center">
-                      <div className="w-9 h-9 rounded-full bg-gray-700 overflow-hidden cursor-pointer" onClick={toggleLogoutVisible}>
+                      <div className="w-9 h-9 rounded-full bg-[#282828] overflow-hidden cursor-pointer" onClick={toggleLogoutVisible}>
                         <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
                       </div>
                     </div>
@@ -156,7 +156,7 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                             value={(props && props.searchTerm) ? props.searchTerm : ''}
                             onChange={(e) => { try { props && props.onSearchChange && props.onSearchChange(e); } catch (err) {} }}
                             onFocus={() => { try { props && props.onSearchBarClick && props.onSearchBarClick(); } catch (err) {} }}
-                            className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                            className="w-full bg-[#1f1f1f]/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                             autoComplete="off"
                         />
                         {(props && props.searchTerm) && (
@@ -171,12 +171,12 @@ const MainLayout = React.memo(({ navigate, onNavigateToProfile, onNavigateToUpda
                     <LibraryOptions />
                 </div>
                 {isLogoutVisible && (
-                    <div className="absolute left-3 top-14 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden z-50">
-                        <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800">Profile</button>
-                        <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-gray-800">Your Updates</button>
-                        <button onClick={() => { onCloseLogoutMenu && onCloseLogoutMenu(); onNavigateToEqualizer && onNavigateToEqualizer(); }} className="w-full text-left py-2 px-4 hover:bg-gray-800">Equalizer</button>
-                        <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-gray-800">About</button>
-                        <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 border-t border-gray-700">Logout</button>
+                    <div className="absolute left-3 top-14 w-44 bg-[#0f0f0f] text-white rounded-md shadow-lg text-sm overflow-hidden z-50">
+                        <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f]">Profile</button>
+                        <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f]">Your Updates</button>
+                        <button onClick={() => { onCloseLogoutMenu && onCloseLogoutMenu(); onNavigateToEqualizer && onNavigateToEqualizer(); }} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f]">Equalizer</button>
+                        <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f]">About</button>
+                        <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f] border-t border-gray-700">Logout</button>
                     </div>
                 )}
             </div>
@@ -254,7 +254,7 @@ const LibraryPage = React.memo(() => {
 
     return (
         <div className="flex-1 overflow-auto">
-            <div className="sticky top-0 z-40 bg-slate-900/95 border-b border-gray-800 backdrop-blur-md px-4 -mx-4 lg:py-3">
+            <div className="sticky top-0 z-40 bg-neutral-950/95 border-b border-gray-800 backdrop-blur-md px-4 -mx-4 lg:py-3">
                 <div className="hidden md:flex items-center ml-3 w-full justify-center">
                     {/* Left: Desktop search bar */}
                     <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ const LibraryPage = React.memo(() => {
                                 value={searchTerm || ''}
                                 onChange={(e) => { try { onSearchChange && onSearchChange(e); } catch (err) {} }}
                                 // onFocus={() => { try { onSearchBarClick && onSearchBarClick(); } catch (err) {} }}
-                                className="w-full bg-gray-800/40 text-white rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                                className="w-full bg-[#1f1f1f]/40 text-white rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                                 autoComplete="off"
                             />
                             {searchTerm && (
@@ -281,16 +281,16 @@ const LibraryPage = React.memo(() => {
                     <div className="flex items-center gap-3">
                         <span className="text-gray-300 font-medium">Hi,</span>
                         <div className="relative">
-                            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer overflow-hidden" onClick={toggleLogoutVisible}>
+                            <div className="w-10 h-10 bg-[#282828] rounded-full flex items-center justify-center cursor-pointer overflow-hidden" onClick={toggleLogoutVisible}>
                                 <img src="/customer.jpg" alt="Profile" className="w-full h-full object-cover" />
                             </div>
                             {isLogoutVisible && (
-                                <div className="absolute right-0 mt-2 w-44 bg-gray-900 text-white rounded-md shadow-lg text-sm overflow-hidden">
-                                    <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Profile</button>
-                                    <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Your Updates</button>
-                                    <button onClick={() => { onCloseLogoutMenu && onCloseLogoutMenu(); onNavigateToEqualizer && onNavigateToEqualizer(); }} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">Equalizer</button>
-                                    <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors">About</button>
-                                    <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-gray-800 transition-colors border-t border-gray-700">Logout</button>
+                                <div className="absolute right-0 mt-2 w-44 bg-[#0f0f0f] text-white rounded-md shadow-lg text-sm overflow-hidden">
+                                    <button onClick={onNavigateToProfile} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f] transition-colors">Profile</button>
+                                    <button onClick={onNavigateToUpdates} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f] transition-colors">Your Updates</button>
+                                    <button onClick={() => { onCloseLogoutMenu && onCloseLogoutMenu(); onNavigateToEqualizer && onNavigateToEqualizer(); }} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f] transition-colors">Equalizer</button>
+                                    <button onClick={onNavigateToAbout} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f] transition-colors">About</button>
+                                    <button onClick={onLogout} className="w-full text-left py-2 px-4 hover:bg-[#1f1f1f] transition-colors border-t border-gray-700">Logout</button>
                                 </div>
                             )}
                         </div>
@@ -334,8 +334,8 @@ const LibraryPage = React.memo(() => {
                             </button>
                         </div>
                         {/* RIGHT : Up Next / Related */}
-                        <div className="lg:w-[40%] bg-gray-950 rounded overflow-hidden border border-gray-800">
-                            <div className="sticky top-0 bg-gray-950 z-10">
+                        <div className="lg:w-[40%] bg-[#0f0f0f] rounded overflow-hidden border border-gray-800">
+                            <div className="sticky top-0 bg-[#0f0f0f] z-10">
                                 <div className="flex border-b border-gray-800">
                                     <button onClick={() => setActiveTab("upnext")} className={`flex-1 py-3 font-semibold text-sm transition ${activeTab === "upnext"
                                     ? "text-white border-b-2 border-white"
@@ -400,8 +400,8 @@ const LibraryPage = React.memo(() => {
                 >
                     {/* Pull-to-refresh indicator */}
                     {refreshing && (
-                        <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-gray-900/50 z-50">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <div className="fixed top-0 left-0 right-0 flex justify-center items-center p-4 bg-[#0f0f0f]/50 z-50">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
                         </div>
                     )}
 
@@ -2688,13 +2688,13 @@ function App() {
         ? getFuzzySuggestions(fuzzy, searchTerm, 100)
         : songs;
     
-    if (isInitializing) return <div className="h-screen bg-gray-900 flex items-center justify-center"><Loader /></div>;
+    if (isInitializing) return <div className="h-screen bg-[#0f0f0f] flex items-center justify-center"><Loader /></div>;
     
     // determine token for favorites provider
     const token = (user && user.token) ? user.token : null;
 
     return (
-        <div className="h-screen bg-gray-900 text-white font-sans overflow-hidden">
+        <div className="h-screen bg-[#0f0f0f] text-white font-sans overflow-hidden">
             {!apiHealthy && (
                 <div className="w-full bg-black text-white text-center py-2 z-50">Server unreachable — Restart the App</div>
             )}
@@ -2830,18 +2830,18 @@ function App() {
             )}
             {isAdminPanelOpen && ( <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"><AdminPanel onClose={() => setIsAdminPanelOpen(false)} onSongUploaded={handleSongUploaded} /> </div> )}
             {isPlayerExpanded && (
-                <div className="fixed inset-0 bg-gray-900 z-50 md:hidden" style={{ transform: isPlayerEntered ? 'translateY(0%)' : 'translateY(-100%)', transition: 'transform 260ms cubic-bezier(.2,.8,.2,1)' }}>
+                <div className="fixed inset-0 bg-[#0f0f0f] z-50 md:hidden" style={{ transform: isPlayerEntered ? 'translateY(0%)' : 'translateY(-100%)', transition: 'transform 260ms cubic-bezier(.2,.8,.2,1)' }}>
                     <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
                         <Link to="/" className="flex items-center gap-3">
                             <img src="/logo.png" alt="App Logo" className="w-8 h-8 rounded-full" onError={(e) => e.target.style.display = 'none'} />
                             <h1 className="text-xl font-bold text-gray-200">Mellow</h1>
                         </Link>
-                        <button onClick={() => setIsPlayerExpanded(false)} className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-800" aria-label="Minimize player">
+                        <button onClick={() => setIsPlayerExpanded(false)} className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-[#1f1f1f]" aria-label="Minimize player">
                             <ChevronDown className="w-6 h-6" />
                         </button>
                     </div>
                     <div className="h-full pt-16 pb-8 px-4">
-                        <div className="bg-gray-800 rounded-2xl h-full" style={currentSong ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('${currentSong.coverUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+                        <div className="bg-[#1f1f1f] rounded-2xl h-full" style={currentSong ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('${currentSong.coverUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
                             <PlayerUI 
                                 currentSong={currentSong}
                                 isPlaying={isPlaying}
@@ -2889,7 +2889,7 @@ function App() {
                 <PlaylistModal token={(user && user.token) ? user.token : null} onClose={() => setIsPlaylistOpen(false)} songId={playlistSongId} onPlaylistUpdated={handlePlaylistUpdated} allSongs={songs} />
             )}
             {showSearchResults && (
-                <div ref={searchResultsRef} className="fixed inset-0 z-40 md:inset-auto md:top-20 md:left-1/2 md:w-[min(25rem,calc(100vw-2rem))] md:-translate-x-1/2 md:max-h-[70vh] md:overflow-hidden md:rounded-lg md:border md:border-gray-700 md:bg-gray-900 md:shadow-xl">
+                <div ref={searchResultsRef} className="fixed inset-0 z-40 md:inset-auto md:top-20 md:left-1/2 md:w-[min(25rem,calc(100vw-2rem))] md:-translate-x-1/2 md:max-h-[70vh] md:overflow-hidden md:rounded-lg md:border md:border-gray-700 md:bg-[#0f0f0f] md:shadow-xl">
                     <SearchResults 
                         songs={filteredSongs}
                         onSelectSong={(songId, options) => {
@@ -3081,13 +3081,13 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
     if (!currentSong) return null;
 
     return (
-        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#0f1720]/95 border-t border-gray-800 shadow-xl backdrop-blur-sm">
+        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#0f0f0f]/95 border-t border-gray-800 shadow-xl backdrop-blur-sm">
             <input
                 type="range"
                 min="0"
                 max="100"
                 value={isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}
-                onChange={(e) => onProgressChange(Number(e.target.value))} style={{ background: `linear-gradient(to right, #3b82f6 ${isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}%, #4B5563 ${isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}%)` }}
+                onChange={(e) => onProgressChange(Number(e.target.value))} style={{ background: `linear-gradient(to right, #ff0000 ${isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}%, #4B5563 ${isFinite(duration) && duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0}%)` }}
                 className="w-full h-0.5 rounded-full appearance-none cursor-pointer range-sm [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                 aria-label="Seek track"
             />
@@ -3095,13 +3095,13 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="flex items-center gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Previous Song">
+                        <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-2 rounded-full hover:bg-[#282828] transition-colors text-gray-300" aria-label="Previous Song">
                             <SkipBack className="w-5 h-6 sm:w-7 sm:h-7" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="bg-blue-600 text-white rounded-full p-2 sm:p-3 hover:bg-blue-500 transition-all shadow-lg flex items-center justify-center" aria-label={isPlaying ? 'Pause' : 'Play'}>
                             {isPlaying ? <PauseIcon className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5" /> : <PlayIcon className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5" />}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-300" aria-label="Next Song">
+                        <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-2 rounded-full hover:bg-[#282828] transition-colors text-gray-300" aria-label="Next Song">
                             <SkipForward className="w-5 h-6 sm:w-7 sm:h-7" />
                         </button>
                     </div>
@@ -3134,10 +3134,10 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
             style={{ background: `linear-gradient(to right, #ffffff ${volume * 100}%, #4B5563 ${volume * 100}%)` }}
             className="w-full h-1 rounded-full appearance-none cursor-pointer range-sm [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
         />
-                    <button onClick={onShuffleToggle} className={`p-2 rounded-full transition-colors ${isShuffle ? 'text-blue-400 bg-white/5' : 'text-gray-400 hover:bg-gray-800'}`} aria-label="Shuffle">
+                    <button onClick={onShuffleToggle} className={`p-2 rounded-full transition-colors ${isShuffle ? 'text-red-400 bg-white/5' : 'text-gray-400 hover:bg-[#1f1f1f]'}`} aria-label="Shuffle">
                         <Shuffle className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
-                    <button onClick={onRepeatToggle} className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${isRepeat ? 'text-blue-400' : 'text-gray-400'}`} aria-label="Repeat">
+                    <button onClick={onRepeatToggle} className={`p-2 rounded-full hover:bg-[#282828] transition-colors ${isRepeat ? 'text-red-400' : 'text-gray-400'}`} aria-label="Repeat">
                         <Repeat className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                     <div ref={menuContainerRef} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
@@ -3146,7 +3146,7 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
                             type="button"
                             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             onClick={handleMenuToggle}
-                            className="p-2 rounded-full hover:bg-gray-800 text-gray-300"
+                            className="p-2 rounded-full hover:bg-[#1f1f1f] text-gray-300"
                             aria-label="More options"
                             aria-haspopup="menu"
                             aria-expanded={menuOpen}
@@ -3154,11 +3154,11 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
                             <MoreVertical className="w-5 h-5" />
                         </button>
                         {menuOpen && (
-                            <div role="menu" style={dropdownStyle} className="w-44 bg-[#15202B] border border-[#2A3942] rounded-md shadow-lg text-left py-1">
-                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onAddToQueue && onAddToQueue(currentSong, 'end'))} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
-                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onAddToPlaylist && onAddToPlaylist(currentSong.id))} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
-                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')))} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
-                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onReportSong && onReportSong(currentSong.id))} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
+                            <div role="menu" style={dropdownStyle} className="w-44 bg-[#1f1f1f] border border-[#3f3f3f] rounded-md shadow-lg text-left py-1">
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onAddToQueue && onAddToQueue(currentSong, 'end'))} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Queue</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onAddToPlaylist && onAddToPlaylist(currentSong.id))} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Playlist</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onShowArtist && onShowArtist(Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')))} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Artist</button>
+                                <button type="button" role="menuitem" onMouseDown={(e) => e.stopPropagation()} onClick={handleMenuAction(() => onReportSong && onReportSong(currentSong.id))} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#282828]">Report</button>
                             </div>
                         )}
                     </div>
@@ -3186,9 +3186,9 @@ const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerEx
     // Hide player bar until a song has been played, then keep it visible
     if (!currentSong || !isPlayerInitialized) return null;
     return (
-        <div className="fixed bottom-14 left-0 right-0 bg-gray-800 border-t border-gray-700 z-40 animate-in slide-in-from-bottom-2 duration-500">
+        <div className="fixed bottom-14 left-0 right-0 bg-[#1f1f1f] border-t border-gray-700 z-40 animate-in slide-in-from-bottom-2 duration-500">
             {/* Thin Progress Bar at Top */}
-            <div className="w-full h-0.5 bg-gray-700 overflow-hidden">
+            <div className="w-full h-0.5 bg-[#282828] overflow-hidden">
                 <div 
                     className="h-full bg-blue-400 transition-all duration-100 ease-linear"
                     style={{
@@ -3203,7 +3203,7 @@ const MobilePlayerBar = ({ currentSong, isPlaying, onPlayPause, onTogglePlayerEx
                     <div className="text-sm font-semibold truncate">{currentSong.title}</div>
                     <div className="text-xs text-gray-400 truncate">{Array.isArray(currentSong.artist) ? currentSong.artist.join(', ') : (currentSong.artist || '')}</div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); onShuffleToggle(); }} className={`p-2 transition-colors ${isShuffle ? 'text-blue-400 drop-shadow-lg drop-shadow-blue-500/50' : 'text-gray-400'}`} title="Shuffle">
+                <button onClick={(e) => { e.stopPropagation(); onShuffleToggle(); }} className={`p-2 transition-colors ${isShuffle ? 'text-red-400 drop-shadow-lg drop-shadow-red-500/50' : 'text-gray-400'}`} title="Shuffle">
                     <Shuffle className="w-5 h-5" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="bg-blue-600 text-white rounded-full p-3 hover:bg-blue-500">

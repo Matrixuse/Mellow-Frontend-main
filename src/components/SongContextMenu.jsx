@@ -75,7 +75,7 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
         onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
         onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
         aria-label="More"
-        className="p-1 rounded-full hover:bg-gray-700"
+        className="p-1 rounded-full hover:bg-[#282828]"
       >
         <MoreVertical size={16} className="text-gray-200" />
       </button>
@@ -89,8 +89,8 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
             top: `${menuStyle.top}px`,
             left: `${menuStyle.left}px`,
             opacity: 1,
-            background: 'rgb(17, 24, 39)',
-            backgroundColor: 'rgb(17, 24, 39)',
+            background: 'rgb(31, 31, 31)',
+            backgroundColor: 'rgb(31, 31, 31)',
             backdropFilter: 'none',
             WebkitBackdropFilter: 'none',
             filter: 'none',
@@ -103,40 +103,40 @@ export default function SongContextMenu({ song, onAddToQueue, onAddToPlaylist, o
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onAddToQueue && onAddToQueue(song, 'end'); }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-700"
-            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+            className="w-full text-left px-3 py-2 hover:bg-[#282828]"
+            style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1, filter: 'none' }}
           >
             Add to Queue
           </button>
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); toggleSongFavorite && toggleSongFavorite(song.id); }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-700"
-            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+            className="w-full text-left px-3 py-2 hover:bg-[#282828]"
+            style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1, filter: 'none' }}
           >
             {isSongFavorite(song.id) ? 'Remove Favourite' : 'Add Favourite'}
           </button>
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onAddToPlaylist && onAddToPlaylist(song.id); }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-700"
-            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+            className="w-full text-left px-3 py-2 hover:bg-[#282828]"
+            style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1, filter: 'none' }}
           >
             Add to Playlist
           </button>
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onNavigateToArtist && onNavigateToArtist(Array.isArray(song.artist) ? song.artist[0] : song.artist); }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-700"
-            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+            className="w-full text-left px-3 py-2 hover:bg-[#282828]"
+            style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1, filter: 'none' }}
           >
             Artist
           </button>
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); onReport && onReport(song); }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-700"
-            style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1, filter: 'none' }}
+            className="w-full text-left px-3 py-2 hover:bg-[#282828]"
+            style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1, filter: 'none' }}
           >
             Report
           </button>

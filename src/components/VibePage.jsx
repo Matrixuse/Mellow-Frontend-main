@@ -241,7 +241,7 @@ const VibePage = ({ libraryOption = '' }) => {
   if (isLoadingSongs && !hasSongData) {
     return (
       <div className="flex h-full min-h-[50vh] items-center justify-center p-8 text-center text-white">
-        <div className="max-w-md rounded-2xl border border-gray-700 bg-gray-900/80 p-8 shadow-xl">
+        <div className="max-w-md rounded-2xl border border-gray-700 bg-[#0f0f0f]/80 p-8 shadow-xl">
           <p className="text-lg font-semibold">Loading your music library...</p>
           <p className="mt-2 text-sm text-gray-400">Please wait while we fetch your songs.</p>
         </div>
@@ -252,7 +252,7 @@ const VibePage = ({ libraryOption = '' }) => {
   if (!hasSongData) {
     return (
       <div className="flex h-full min-h-[50vh] items-center justify-center p-8 text-center text-white">
-        <div className="max-w-md rounded-2xl border border-gray-700 bg-gray-900/80 p-8 shadow-xl">
+        <div className="max-w-md rounded-2xl border border-gray-700 bg-[#0f0f0f]/80 p-8 shadow-xl">
           <p className="text-lg font-semibold">No songs available for this vibe yet.</p>
           <p className="mt-2 text-sm text-gray-400">Your music library is still loading or the vibe has no matching tracks.</p>
         </div>
@@ -264,9 +264,9 @@ const VibePage = ({ libraryOption = '' }) => {
     <>
       <div className="flex flex-col min-h-0 min-w-0 md:hidden">
         <div className="flex-grow flex flex-col min-h-0 min-w-0">
-          <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-gray-900/80 p-6' : 'bg-gray-900/80 p-3'}`}>
+          <div className={`flex-shrink-0 transition-all duration-300 ${isHeaderExpanded ? 'bg-[#0f0f0f]/80 p-6' : 'bg-[#0f0f0f]/80 p-3'}`}>
             <div className="flex items-center gap-3 mb-0">
-              <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+              <Link to="/" className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
                 <ArrowLeft size={20} />
               </Link>
               {isHeaderExpanded ? (
@@ -276,7 +276,7 @@ const VibePage = ({ libraryOption = '' }) => {
               )}
               <div className="flex items-center gap-2">
                 {dailySongs.length > 0 && (
-                  <button onClick={toggleSearch} className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+                  <button onClick={toggleSearch} className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
                     {searchOpen ? <X size={18} /> : <Search size={18} />}
                   </button>
                 )}
@@ -284,7 +284,7 @@ const VibePage = ({ libraryOption = '' }) => {
                   <button
                     onClick={handleToggleShuffle}
                     className={`p-2 rounded-full transition-all flex-shrink-0 ${
-                      isVibeShuffleMode ? 'bg-blue-900 shadow-lg shadow-blue-500/50 animate-pulse' : 'bg-gray-900 hover:bg-gray-500'
+                      isVibeShuffleMode ? 'bg-blue-900 shadow-lg shadow-red-500/50 animate-pulse' : 'bg-[#0f0f0f] hover:bg-[#5f5f5f]'
                     }`}
                     title={isVibeShuffleMode ? 'Shuffle is on - songs will play randomly' : 'Shuffle is off - click to turn on'}
                   >
@@ -311,7 +311,7 @@ const VibePage = ({ libraryOption = '' }) => {
                           handleSelectSong(dailySongs[0].id);
                         }
                       }}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 shadow-sm shadow-blue-500/40 transition-all hover:bg-blue-500"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 shadow-sm shadow-red-500/40 transition-all hover:bg-blue-500"
                       aria-label={isPlaying ? 'Pause vibe playback' : 'Play vibe'}
                     >
                       {isPlaying ? <Pause className="h-5 w-5 fill-white text-white" /> : <Play className="ml-1 h-5 w-5 fill-white text-white" />}
@@ -319,19 +319,19 @@ const VibePage = ({ libraryOption = '' }) => {
                     <div className="relative">
                       <button
                         onClick={() => setVibeMenuOpen(!vibeMenuOpen)}
-                        className="rounded-full bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700"
+                        className="rounded-full bg-[#1f1f1f] p-2 text-white transition-colors hover:bg-[#282828]"
                         aria-label="Vibe actions"
                       >
                         <MoreVertical size={20} />
                       </button>
                       {vibeMenuOpen && (
-                        <div className="absolute right-0 bottom-full mb-2 w-40 bg-gray-800 rounded-lg shadow-lg z-20">
+                        <div className="absolute right-0 bottom-full mb-2 w-40 bg-[#1f1f1f] rounded-lg shadow-lg z-20">
                           <button
                             onClick={() => {
                               handleToggleShuffle();
                               setVibeMenuOpen(false);
                             }}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-t-lg flex items-center gap-2 text-white transition-colors"
+                            className="w-full text-left px-4 py-2 hover:bg-[#282828] rounded-t-lg flex items-center gap-2 text-white transition-colors"
                           >
                             <Shuffle size={16} />
                             <span>Shuffle</span>
@@ -340,9 +340,9 @@ const VibePage = ({ libraryOption = '' }) => {
                             onClick={async () => {
                               await handleSaveVibeAsPlaylist();
                             }}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2 text-white transition-colors"
+                            className="w-full text-left px-4 py-2 hover:bg-[#282828] flex items-center gap-2 text-white transition-colors"
                           >
-                            <Bookmark size={16} className={isSaved ? 'fill-current text-blue-400' : ''} />
+                            <Bookmark size={16} className={isSaved ? 'fill-current text-red-400' : ''} />
                             <span>{isSaved ? 'Already Saved' : 'Save'}</span>
                           </button>
                           <button
@@ -352,7 +352,7 @@ const VibePage = ({ libraryOption = '' }) => {
                               }
                               setVibeMenuOpen(false);
                             }}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-b-lg flex items-center gap-2 text-white transition-colors"
+                            className="w-full text-left px-4 py-2 hover:bg-[#282828] rounded-b-lg flex items-center gap-2 text-white transition-colors"
                           >
                             <Plus size={16} />
                             <span>Add to Queue</span>
@@ -367,7 +367,7 @@ const VibePage = ({ libraryOption = '' }) => {
           </div>
 
           {searchOpen && (
-            <div className="flex-shrink-0 bg-gray-900/80 px-4 pb-4">
+            <div className="flex-shrink-0 bg-[#0f0f0f]/80 px-4 pb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input
@@ -376,7 +376,7 @@ const VibePage = ({ libraryOption = '' }) => {
                   placeholder={`Search within ${vibeName} vibe...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-800/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-gray-800"
+                  className="w-full bg-[#1f1f1f]/40 text-white rounded-full py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                   autoComplete="off"
                 />
                 {searchTerm && (
@@ -388,7 +388,7 @@ const VibePage = ({ libraryOption = '' }) => {
             </div>
           )}
 
-          <hr className="h-px bg-gray-500" />
+          <hr className="h-px bg-[#5f5f5f]" />
           <div ref={mobileScrollContainerRef} className="flex-grow overflow-y-auto custom-scrollbar p-4 pb-24">
           {filteredSongs.length > 0 ? (
             <div className="grid grid-cols-1 gap-2">
@@ -406,7 +406,7 @@ const VibePage = ({ libraryOption = '' }) => {
                         handleSelectSong(song.id);
                       }
                     }}
-                    className={`group relative p-1 cursor-pointer transition-colors ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/50 hover:bg-gray-700/80'}`}
+                    className={`group relative p-1 cursor-pointer transition-colors ${isActive ? 'bg-blue-900/30' : 'bg-[#0f0f0f]/50 hover:bg-[#282828]/80'}`}
                   >
                     <div className="relative flex gap-3 items-start min-w-0 w-full">
                       <div onClick={() => handleSelectSong(song.id)} className="cursor-pointer flex-shrink-0">
@@ -418,7 +418,7 @@ const VibePage = ({ libraryOption = '' }) => {
                         />
                       </div>
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
                         <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                       </div>
                       <div className="absolute right-1 top-1/2 -translate-y-1/2 flex-shrink-0">
@@ -446,9 +446,9 @@ const VibePage = ({ libraryOption = '' }) => {
       </div>
 
       <div className="hidden md:flex md:flex-grow md:min-h-0 md:min-w-0 md:overflow-hidden md:flex-row">
-        <div className="flex-shrink-0 transition-all duration-300 bg-gray-900/80 p-6 md:w-[430px] md:min-w-[430px] md:sticky md:top-0 md:h-full md:border-r md:border-gray-800 md:p-5">
+        <div className="flex-shrink-0 transition-all duration-300 bg-[#0f0f0f]/80 p-6 md:w-[430px] md:min-w-[430px] md:sticky md:top-0 md:h-full md:border-r md:border-gray-800 md:p-5">
           <div className="flex items-center gap-3 mb-0 md:mb-4">
-            <Link to="/" className="p-2 rounded-full bg-gray-900 hover:bg-gray-700 flex-shrink-0">
+            <Link to="/" className="p-2 rounded-full bg-[#0f0f0f] hover:bg-[#282828] flex-shrink-0">
               <ArrowLeft size={20} />
             </Link>
           </div>
@@ -468,10 +468,10 @@ const VibePage = ({ libraryOption = '' }) => {
                     onClick={async () => {
                       await handleSaveVibeAsPlaylist();
                     }}
-                    className="rounded-full p-2 text-white transition-colors hover:bg-gray-700"
+                    className="rounded-full p-2 text-white transition-colors hover:bg-[#282828]"
                     aria-label="Save vibe as playlist"
                   >
-                    <Bookmark size={20} className={isSaved ? 'fill-current text-blue-400' : ''} />
+                    <Bookmark size={20} className={isSaved ? 'fill-current text-red-400' : ''} />
                   </button>
                   <button
                     onClick={() => {
@@ -479,7 +479,7 @@ const VibePage = ({ libraryOption = '' }) => {
                         handleSelectSong(dailySongs[0].id);
                       }
                     }}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 shadow-sm shadow-blue-500/40 transition-all hover:bg-blue-500 md:h-16 md:w-16"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 shadow-sm shadow-red-500/40 transition-all hover:bg-blue-500 md:h-16 md:w-16"
                     aria-label={isPlaying ? 'Pause vibe playback' : 'Play vibe'}
                   >
                     {isPlaying ? <Pause className="h-7 w-7 fill-white text-white md:h-8 md:w-8" /> : <Play className="ml-1 h-7 w-7 fill-white text-white md:h-8 md:w-8" />}
@@ -488,19 +488,19 @@ const VibePage = ({ libraryOption = '' }) => {
                   <div className="relative">
                     <button
                       onClick={() => setVibeMenuOpen(!vibeMenuOpen)}
-                      className="rounded-full bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700"
+                      className="rounded-full bg-[#1f1f1f] p-2 text-white transition-colors hover:bg-[#282828]"
                       aria-label="Vibe actions"
                     >
                       <MoreVertical size={20} />
                     </button>
                     {vibeMenuOpen && (
-                      <div className="absolute right-0 bottom-full mb-2 w-40 bg-gray-800 rounded-lg shadow-lg z-20">
+                      <div className="absolute right-0 bottom-full mb-2 w-40 bg-[#1f1f1f] rounded-lg shadow-lg z-20">
                         <button
                           onClick={() => {
                             handleToggleShuffle();
                             setVibeMenuOpen(false);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-t-lg flex items-center gap-2 text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-[#282828] rounded-t-lg flex items-center gap-2 text-white transition-colors"
                         >
                           <Shuffle size={16} />
                           <span>Shuffle</span>
@@ -509,9 +509,9 @@ const VibePage = ({ libraryOption = '' }) => {
                           onClick={async () => {
                             await handleSaveVibeAsPlaylist();
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2 text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-[#282828] flex items-center gap-2 text-white transition-colors"
                         >
-                          <Bookmark size={16} className={isSaved ? 'fill-current text-blue-400' : ''} />
+                          <Bookmark size={16} className={isSaved ? 'fill-current text-red-400' : ''} />
                           <span>{isSaved ? 'Already Saved' : 'Save'}</span>
                         </button>
                         <button
@@ -521,7 +521,7 @@ const VibePage = ({ libraryOption = '' }) => {
                             }
                             setVibeMenuOpen(false);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded-b-lg flex items-center gap-2 text-white transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-[#282828] rounded-b-lg flex items-center gap-2 text-white transition-colors"
                         >
                           <Plus size={16} />
                           <span>Add to Queue</span>
@@ -536,7 +536,7 @@ const VibePage = ({ libraryOption = '' }) => {
         </div>
 
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 bg-gray-900/80 px-4 py-2 pb-2 md:px-6 md:pt-4">
+          <div className="flex-shrink-0 bg-[#0f0f0f]/80 px-4 py-2 pb-2 md:px-6 md:pt-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
@@ -545,7 +545,7 @@ const VibePage = ({ libraryOption = '' }) => {
                 placeholder={`Search songs in ${vibeName}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-800/40 text-white rounded py-2 pl-10 pr-10 text-sm focus:outline-none focus:bg-gray-800"
+                className="w-full bg-[#1f1f1f]/40 text-white rounded py-2 pl-10 pr-10 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                 autoComplete="off"
               />
               {searchTerm && (
@@ -573,7 +573,7 @@ const VibePage = ({ libraryOption = '' }) => {
                           handleSelectSong(song.id);
                         }
                       }}
-                      className={`group relative flex cursor-pointer items-center border-b gap-1 rounded border-gray-800 bg-gray-900/50 px-1 py-1 pr-12 transition-colors hover:bg-gray-700/80 md:gap-4 md:px-1 md:py-1 md:pr-14 overflow-visible z-0 ${isActive ? 'border-blue-500 bg-blue-900/20' : ''}`}
+                      className={`group relative flex cursor-pointer items-center border-b gap-1 rounded border-gray-800 bg-[#0f0f0f]/50 px-1 py-1 pr-12 transition-colors hover:bg-[#282828]/80 md:gap-4 md:px-1 md:py-1 md:pr-14 overflow-visible z-0 ${isActive ? 'border-red-500 bg-blue-900/20' : ''}`}
                     >
                       <div className="flex-shrink-0">
                         <ImageWithFallback

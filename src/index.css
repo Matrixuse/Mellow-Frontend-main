@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --mellow-black: #0f0f0f;
+  --mellow-surface: #1f1f1f;
+  --mellow-surface-hover: #282828;
+  --mellow-red: #ff0000;
+}
+
+body {
+  background: var(--mellow-black);
+  color: #ffffff;
+}
+
+button,
+input,
+textarea,
+select {
+  accent-color: var(--mellow-red);
+}
+
 /* Page ko scroll hone se rokne ke liye */
 html, body, #root {
   height: 100%;
@@ -40,7 +60,7 @@ html {
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #718096; /* Tailwind gray-500 */
+  background: #8a8a8a; /* YouTube Music-style neutral hover */
 }
 
 /* --- YAHAN HUMNE BADLAAV KIYA HAI --- */

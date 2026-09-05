@@ -4,7 +4,7 @@ import ImageWithFallback from './ImageWithFallback';
 
 const QueuePanel = ({ queue, onClose, onPlaySongAtIndex, onRemove }) => {
     return (
-        <div className="fixed right-4 top-20 w-80 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-50 p-4">
+        <div className="fixed right-4 top-20 w-80 bg-[#0f0f0f] border border-gray-700 rounded-lg shadow-2xl z-50 p-4">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold">Queue</h3>
                 <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={18} /></button>
@@ -20,7 +20,7 @@ const QueuePanel = ({ queue, onClose, onPlaySongAtIndex, onRemove }) => {
                             </div>
                             <div className="flex-shrink-0 flex items-center gap-2">
                                 <button onClick={() => onPlaySongAtIndex(idx)} className="p-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white"><Play size={14} /></button>
-                                <button onClick={() => onRemove(song.id)} className="p-2 rounded-full bg-transparent hover:bg-gray-800 text-gray-400"><Trash2 size={14} /></button>
+                                <button onClick={() => onRemove(song.id)} className="p-2 rounded-full bg-transparent hover:bg-[#1f1f1f] text-gray-400"><Trash2 size={14} /></button>
                             </div>
                         </div>
                     ))}

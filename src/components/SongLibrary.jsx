@@ -73,19 +73,19 @@ const moodCategories = [
     { 
         name: 'Party', 
         imageUrl: '/moods/party.jpg', 
-        color: 'bg-red-500', 
+        color: 'bg-blue-500',
         keywords: ['party', 'dance', 'energetic', 'upbeat', 'club', 'remix', 'electronic', 'bollywood', 'item', 'peppy']
     },
     { 
         name: 'Chill', 
         imageUrl: '/moods/chill.jpg', 
-        color: 'bg-blue-500', 
+        color: 'bg-blue-500',
         keywords: ['chill', 'relaxing', 'ambient', 'indie', 'acoustic', 'folk', 'peaceful', 'calm', 'mellow', 'soft']
     },
     { 
         name: 'Hip Hop Mix', 
         imageUrl: '/moods/hiphop.jpg', 
-        color: 'bg-indigo-500', 
+        color: 'bg-blue-500',
         keywords: ['hip hop', 'rap', 'trap', 'urban', 'street', 'gangsta', 'freestyle', 'beat', 'rhyme', 'flow']
     },
     { 
@@ -109,7 +109,7 @@ const moodCategories = [
     { 
         name: 'Hollywood Mix', 
         imageUrl: '/moods/hollywoodmix.jpg', 
-        color: 'bg-red-600', 
+        color: 'bg-blue-600',
         keywords: ['hollywood', 'english', 'western', 'pop', 'rock', 'foreign', 'international', 'bollywood english', 'bollywood mix']
     }
     ,{ 
@@ -154,7 +154,7 @@ const YourMood = () => {
                     <Link 
                         key={mood.name} 
                         to={`/mood/${encodeURIComponent(mood.name)}`}
-                        className="group relative cursor-pointer transition-all duration-300 flex flex-col p-3 bg-gray-800/50 hover:bg-gray-700/80"
+                        className="group relative cursor-pointer transition-all duration-300 flex flex-col p-3 bg-[#1f1f1f]/50 hover:bg-[#282828]/80"
                     >
                         <div className="relative mb-3">
                             <img 
@@ -192,7 +192,7 @@ const MatchYourVibe = ({ songs = [] }) => {
                         <Link
                             key={vibe.id}
                             to={`/vibe/${encodeURIComponent(vibe.name)}`}
-                            className="group relative cursor-pointer transition-all duration-300 flex flex-col p-3 bg-gray-800/50 hover:bg-gray-700/80"
+                            className="group relative cursor-pointer transition-all duration-300 flex flex-col p-3 bg-[#1f1f1f]/50 hover:bg-[#282828]/80"
                         >
                             <div className="relative mb-3">
                                 <img
@@ -276,7 +276,7 @@ const ListenAgainSection = ({ songs = [], onSelectSong, onSearchBarClick }) => {
                         <div
                             key={song.id}
                             onClick={() => onSelectSong(song.id)}
-                            className="flex flex-col justify-between flex-shrink-0 w-40 h-40 bg-gray-900/50 rounded-lg cursor-pointer"
+                            className="flex flex-col justify-between flex-shrink-0 w-40 h-40 bg-[#0f0f0f]/50 rounded-lg cursor-pointer"
                         >
                             <div className="flex flex-col items-center gap-2 h-full">
                                 <ImageWithFallback
@@ -335,7 +335,7 @@ const LongToListenSection = ({ songs = [], onSelectSong }) => {
         return (
             <div className="mb-5">
                 <h3 className="text-2xl font-bold mb-3">Long to Listen</h3>
-                <div className="flex items-center justify-center h-56 bg-gray-800/50 rounded-md p-4 text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-56 bg-[#1f1f1f]/50 rounded-md p-4 text-gray-400 text-sm">
                     No long songs available yet. Play a longer track to see recommendations here.
                 </div>
             </div>
@@ -351,7 +351,7 @@ const LongToListenSection = ({ songs = [], onSelectSong }) => {
                 {longSongs.map(song => {
                     const dur = song.duration ?? song.durationSeconds;
                     return (
-                        <div key={song.id} onClick={() => onSelectSong(song.id)} className="flex flex-col justify-between flex-shrink-0 w-40 h-50 bg-gray-800/50 rounded-md p-2 cursor-pointer">
+                        <div key={song.id} onClick={() => onSelectSong(song.id)} className="flex flex-col justify-between flex-shrink-0 w-40 h-50 bg-[#1f1f1f]/50 rounded-md p-2 cursor-pointer">
                             <ImageWithFallback src={song.coverUrl || song.cover} fallback={DEFAULT_ARTIST_IMAGE} alt={song.title} className="w-full h-30 rounded-md object-cover" />
                             <div className="min-w-0">
                                 <h5 className="text-sm font-semibold truncate">{song.title}</h5>
@@ -384,7 +384,7 @@ const LibraryOptionLink = ({ option }) => {
         <Link
             to={`/library/${encodeURIComponent(option.label)}`}
             aria-current={active ? 'page' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors focus:outline-none focus:bg-slate-100 focus:text-black ${active ? 'bg-gray-500' : 'bg-gray-800/80 hover:bg-gray-700'}`}
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors focus:outline-none focus:bg-slate-100 focus:text-black ${active ? 'bg-[#5f5f5f]' : 'bg-[#1f1f1f]/80 hover:bg-[#282828]'}`}
         >
             {option.label}
         </Link>
@@ -450,7 +450,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
             if (top < margin) top = margin;
             if (top + menuHeight > window.innerHeight - margin) top = window.innerHeight - menuHeight - margin;
 
-            setMenuStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, width: '11rem', zIndex: 2000, opacity: 1, backgroundColor: 'rgb(17, 24, 39)', boxShadow: '0 18px 48px rgba(0,0,0,0.75)', border: '1px solid rgba(148,163,184,0.2)' });
+            setMenuStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, width: '11rem', zIndex: 2000, opacity: 1, backgroundColor: 'rgb(31, 31, 31)', boxShadow: '0 18px 48px rgba(0,0,0,0.75)', border: '1px solid rgba(148,163,184,0.2)' });
         }, [openMenuId, song.id]);
 
         const isOpen = openMenuId === `quickpick-${song.id}`;
@@ -477,11 +477,11 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                         style={menuStyle}
                         className="overflow-hidden rounded-md text-left py-0.5 z-[2000]"
                     >
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>Add to Queue</button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>Add to Playlist</button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); toggleSongFavorite(song.id).catch(() => {}); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>{fav ? 'Remove Favourite' : 'Add Favourite'}</button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-gray-700 text-gray-100 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fff', opacity: 1 }}>Artist</button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-gray-700 text-xs" style={{ backgroundColor: 'rgb(17, 24, 39)', color: '#fca5a5', opacity: 1 }}>Report</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100 text-xs" style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1 }}>Add to Queue</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100 text-xs" style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1 }}>Add to Playlist</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); toggleSongFavorite(song.id).catch(() => {}); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100 text-xs" style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1 }}>{fav ? 'Remove Favourite' : 'Add Favourite'}</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100 text-xs" style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fff', opacity: 1 }}>Artist</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#282828] text-xs" style={{ backgroundColor: 'rgb(31, 31, 31)', color: '#fca5a5', opacity: 1 }}>Report</button>
                     </div>
                 )}
             </div>
@@ -500,7 +500,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                         <div 
                             key={song.id} 
                             onClick={() => onSelectSong(song.id)}
-                            className={`group relative mt-0.5 ml-0.5 mr-0.5 rounded-lg cursor-pointer transition-all duration-300 overflow-hidden ${isActive ? 'ring-2 ring-blue-400' : ''}`}
+                            className={`group relative mt-0.5 ml-0.5 mr-0.5 rounded-lg cursor-pointer transition-all duration-300 overflow-hidden ${isActive ? 'ring-2 ring-red-400' : ''}`}
                         >
                             <ImageWithFallback
                                 src={song.coverUrl}
@@ -510,7 +510,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                             />
                             {/* Title overlay on mobile */}
                             <div className="absolute inset-0 flex items-end justify-start bg-gradient-to-t from-black/80 to-transparent p-2 rounded-lg">
-                                <h4 className={`text-xs font-semibold truncate line-clamp-2 ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                <h4 className={`text-xs font-semibold truncate line-clamp-2 ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
                             </div>
                             {/* Play button on hover */}
                             <div className={`absolute bottom-1 right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'}`}>
@@ -529,7 +529,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                         <div 
                             key={song.id} 
                             onClick={() => onSelectSong(song.id)}
-                            className={`group relative p-1.5 rounded-lg cursor-pointer transition-all duration-300 flex items-center gap-2 ${isActive ? 'bg-blue-900/40' : 'bg-gray-800/50 hover:bg-gray-700/80'}`}
+                            className={`group relative p-1.5 rounded-lg cursor-pointer transition-all duration-300 flex items-center gap-2 ${isActive ? 'bg-blue-900/40' : 'bg-[#1f1f1f]/50 hover:bg-[#282828]/80'}`}
                         >
                             <div className="relative flex-shrink-0 w-10 h-10">
                                 <ImageWithFallback
@@ -540,7 +540,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className={`text-xs font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                <h4 className={`text-xs font-semibold truncate ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
                                 <p className="text-xs text-gray-400 truncate max-w-[full]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
                             </div>
                             <div className="flex-shrink-0 flex items-center gap-1">
@@ -624,21 +624,21 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                 </button>
                 {isOpen && (
                     // narrower dropdown and tighter padding
-                    <div style={menuStyle} className="bg-gray-800 border border-gray-700 rounded-md shadow-lg text-left py-0.5 z-50">
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Queue</button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Add to Playlist</button>
+                    <div style={menuStyle} className="bg-[#1f1f1f] border border-gray-700 rounded-md shadow-lg text-left py-0.5 z-50">
+                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToQueue && handlers.onAddToQueue(song, 'end'); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Queue</button>
+                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onAddToPlaylist && handlers.onAddToPlaylist(song.id); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Add to Playlist</button>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId(null);
                                 toggleSongFavorite(song.id).catch(() => {});
                             }}
-                            className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100"
+                            className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100"
                         >
                             {fav ? 'Remove Favourite' : 'Add Favourite'}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#121a20] text-gray-100">Artist</button>
-                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#121a20]">Report</button>
+                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onShowArtist && handlers.onShowArtist(Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')); }} className="w-full text-left px-3 py-2 hover:bg-[#282828] text-gray-100">Artist</button>
+                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handlers.onReportSong && handlers.onReportSong(song.id); }} className="w-full text-left px-3 py-2 text-rose-400 hover:bg-[#282828]">Report</button>
                     </div>
                 )}
             </div>
@@ -666,7 +666,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                 <div 
                                     key={song.id} 
                                     onClick={() => onSelectSong(song.id)}
-                                    className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-gray-900/80 hover:bg-gray-700/80'}`}>
+                                    className={`flex items-center p-1 gap-2 rounded-md cursor-pointer transition-all duration-300 ${isActive ? 'bg-blue-900/30' : 'bg-[#0f0f0f]/80 hover:bg-[#282828]/80'}`}>
                                     <div className="relative flex-shrink-0">
                                         <ImageWithFallback
                                             src={song.coverUrl}
@@ -675,11 +675,11 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                             className="w-10 h-10 rounded-md object-cover"
                                         />
                                         {isActive && (
-                                            <Play className="absolute inset-0 m-auto text-blue-400" size={16} />
+                                            <Play className="absolute inset-0 m-auto text-red-400" size={16} />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-blue-300' : 'text-white'}`}>{song.title}</h4>
+                                        <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
                                         <p className="text-xs text-gray-400 truncate">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                                     </div>
                                     <SongMenu song={song} className="flex-shrink-0" />
@@ -724,7 +724,7 @@ const SongLibrary = ({ songs, onSelectSong, currentSongId, isPlaying, onAddToQue
                                 <div 
                                     key={song.id} 
                                     onClick={() => onSelectSong(song.id)}
-                                    className="group relative bg-gray-800/50 hover:bg-gray-700/80 p-2 rounded-lg cursor-pointer transition-all duration-300 flex flex-col"
+                                    className="group relative bg-[#1f1f1f]/50 hover:bg-[#282828]/80 p-2 rounded-lg cursor-pointer transition-all duration-300 flex flex-col"
                                 >
                                     <div className="relative mb-1">
                                         <ImageWithFallback

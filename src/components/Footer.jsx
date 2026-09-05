@@ -45,9 +45,9 @@ const Footer = ({ onDeveloperClick }) => (
 
             {/* Social Icons */}
              <div className="col-span-2 md:col-span-1 flex md:justify-end items-start gap-4">
-                <a href="#!" className="bg-gray-800 p-3 rounded-full hover:bg-gray-700"><Instagram size={20} className="text-white" /></a>
-                <a href="#!" className="bg-gray-800 p-3 rounded-full hover:bg-gray-700"><Twitter size={20} className="text-white" /></a>
-                <a href="#!" className="bg-gray-800 p-3 rounded-full hover:bg-gray-700"><Facebook size={20} className="text-white" /></a>
+                <a href="#!" className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#282828]"><Instagram size={20} className="text-white" /></a>
+                <a href="#!" className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#282828]"><Twitter size={20} className="text-white" /></a>
+                <a href="#!" className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#282828]"><Facebook size={20} className="text-white" /></a>
             </div>
         </div>
 

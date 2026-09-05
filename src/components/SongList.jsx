@@ -7,12 +7,12 @@ const SongList = ({ songs, currentSongIndex, onSongSelect }) => {
                 <li
                     key={song.id}
                     onClick={() => onSongSelect(index)}
-                    className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${index === currentSongIndex ? 'bg-indigo-600/30' : 'hover:bg-gray-700/50'}`}
+                    className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${index === currentSongIndex ? 'bg-blue-600/30' : 'hover:bg-[#282828]/50'}`}
                     aria-current={index === currentSongIndex}
                 >
                     <img src={song.cover} alt={song.title} className="w-12 h-12 rounded-md mr-4" />
                     <div className="flex-grow">
-                        <p className={`font-medium ${index === currentSongIndex ? 'text-indigo-300' : 'text-white'}`}>{song.title}</p>
+                        <p className={`font-medium ${index === currentSongIndex ? 'text-red-300' : 'text-white'}`}>{song.title}</p>
                         <p className="text-sm text-gray-400">{Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '')}</p>
                     </div>
                     <span className="text-sm text-gray-400">{song.duration}</span>

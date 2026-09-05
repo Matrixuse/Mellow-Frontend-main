@@ -14,13 +14,13 @@ const QueueView = ({ queue, currentSongId, isPlaying, onPlaySong, onRemoveFromQu
     };
 
     return (
-        <div className="relative w-full max-w-2xl max-h-[80vh] bg-gray-800 rounded-lg shadow-2xl border border-gray-700">
+        <div className="relative w-full max-w-2xl max-h-[80vh] bg-[#1f1f1f] rounded-lg shadow-2xl border border-gray-700">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
                 <h2 className="text-2xl font-bold text-white">Queue</h2>
                 <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700"
+                    className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-[#282828]"
                 >
                     <X size={24} />
                 </button>
@@ -42,7 +42,7 @@ const QueueView = ({ queue, currentSongId, isPlaying, onPlaySong, onRemoveFromQu
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, index)}
                                 onDragEnd={handleDragEnd}
-                                className={`group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer ${
+                                className={`group flex items-center gap-4 p-3 rounded-lg hover:bg-[#282828]/50 transition-colors cursor-pointer ${
                                     currentSongId === song.id ? 'bg-blue-900/30' : ''
                                 }`}
                                 onClick={() => onPlaySong(song.id)}
@@ -72,7 +72,7 @@ const QueueView = ({ queue, currentSongId, isPlaying, onPlaySong, onRemoveFromQu
 
                                 {/* Play Indicator */}
                                 {currentSongId === song.id && isPlaying && (
-                                    <div className="text-blue-400">
+                                    <div className="text-red-400">
                                         <Play size={16} />
                                     </div>
                                 )}
@@ -83,7 +83,7 @@ const QueueView = ({ queue, currentSongId, isPlaying, onPlaySong, onRemoveFromQu
                                         e.stopPropagation();
                                         onRemoveFromQueue(song.id);
                                     }}
-                                    className="p-2 rounded-full hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
+                                    className="p-2 rounded-full hover:bg-[#3f3f3f] opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
                                 >
                                     <Trash2 size={16} />
                                 </button>
