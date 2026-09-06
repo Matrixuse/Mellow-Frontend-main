@@ -267,7 +267,11 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className={`text-xs font-semibold truncate ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
-                                <p className="text-xs text-gray-400 truncate max-w-[full]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
+                                <span className="flex gap-2">
+                                    <p className="text-xs text-gray-400 truncate max-w-[full]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
+                                    <p className='text-xs justify-center items-center'>•</p>
+                                    <p className="text-xs text-gray-400 truncate">{formatSecondsToDuration(song.duration ?? song.durationSeconds ?? song.duration_seconds ?? song.metadata?.duration)}</p>
+                                </span>
                             </div>
                             <div className="flex-shrink-0 flex items-center gap-1">
                                 <div className={`w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100'}`}>

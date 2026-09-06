@@ -12,7 +12,7 @@ const formatTime = (time) => {
 // Loader Component
 export const Loader = () => (
     <div className="flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-red-500"></div>
+        <div className="loader" aria-label="Loading" role="status"></div>
     </div>
 );
 

@@ -254,7 +254,7 @@ const LibraryPage = React.memo(() => {
 
     return (
         <div className="flex-1 overflow-auto">
-            <div className="sticky top-0 z-40 bg-neutral-950/95 border-b border-gray-800 backdrop-blur-md px-4 -mx-4 lg:py-3">
+            <div className="sticky top-0 z-40 bg-neutral-950/95 border-b border-gray-700 backdrop-blur-md px-4 -mx-4 lg:py-3">
                 <div className="hidden md:flex items-center ml-3 w-full justify-center">
                     {/* Left: Desktop search bar */}
                     <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ const LibraryPage = React.memo(() => {
                                 value={searchTerm || ''}
                                 onChange={(e) => { try { onSearchChange && onSearchChange(e); } catch (err) {} }}
                                 // onFocus={() => { try { onSearchBarClick && onSearchBarClick(); } catch (err) {} }}
-                                className="w-full bg-[#1f1f1f]/40 text-white rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
+                                className="w-full bg-[#3b3939] text-white rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:bg-[#1f1f1f]"
                                 autoComplete="off"
                             />
                             {searchTerm && (
@@ -3081,7 +3081,7 @@ const DesktopPlayerBar = ({ currentSong, isPlaying, onPlayPause, onNext, onPrev,
     if (!currentSong) return null;
 
     return (
-        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#0f0f0f]/95 border-t border-gray-800 shadow-xl backdrop-blur-sm">
+        <div className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 flex-col bg-[#1f1f1f] border-t border-gray-800 shadow-xl backdrop-blur-sm">
             <input
                 type="range"
                 min="0"

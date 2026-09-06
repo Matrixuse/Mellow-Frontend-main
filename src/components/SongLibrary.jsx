@@ -384,7 +384,7 @@ const LibraryOptionLink = ({ option }) => {
         <Link
             to={`/library/${encodeURIComponent(option.label)}`}
             aria-current={active ? 'page' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors focus:outline-none focus:bg-slate-100 focus:text-black ${active ? 'bg-[#5f5f5f]' : 'bg-[#1f1f1f]/80 hover:bg-[#282828]'}`}
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors focus:outline-none focus:bg-slate-100 focus:text-black ${active ? 'bg-[#5f5f5f]' : 'bg-[#2a2929] hover:bg-[#3b3939]'}`}
         >
             {option.label}
         </Link>
@@ -405,7 +405,7 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
         return (
             <div className="mb-5">
                 <h3 className="text-2xl font-bold mb-3">Quick picks</h3>
-                <p className="text-gray-400 text-sm">Quick Picks are being generated for you. Please play a song to improve recommendations.</p>
+                <p className="text-gray-400 text-sm">Quick Picks are being generated for you.</p>
             </div>
         );
     }
@@ -541,7 +541,11 @@ const QuickPicksSection = ({ songs, currentSongId, isPlaying, onSelectSong, open
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className={`text-xs font-semibold truncate ${isActive ? 'text-red-300' : 'text-white'}`}>{song.title}</h4>
-                                <p className="text-xs text-gray-400 truncate max-w-[full]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
+                                <span className="flex gap-2">
+                                    <p className="text-xs text-gray-400 truncate max-w-[full]">{Array.isArray(song.artist) ? song.artist[0] : (song.artist || '')}</p>
+                                    <p className='text-xs justify-center items-center'>•</p>
+                                    <p className="text-xs text-gray-400 truncate">{formatSecondsToDuration(song.duration ?? song.durationSeconds ?? song.duration_seconds ?? song.metadata?.duration)}</p>
+                                </span>
                             </div>
                             <div className="flex-shrink-0 flex items-center gap-1">
                                 <div className={`w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100'}`}>
