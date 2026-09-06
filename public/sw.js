@@ -1,59 +1,55 @@
 // Service Worker for Mellow Music Player PWA
-const CACHE_NAME = 'mellow-music-v1';
-const urlsToCache = [
-    '/',
-    '/static/js/bundle.js',
-    '/static/css/main.css    ',
-    '/logo.png',
-    '/manifest.json'
-];
+const STATIC_CACHE = 'mellow-static-v2';
+const MEDIA_CACHE = 'mellow-media-v1';
 
-// Install event
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                return cache.addAll(urlsToCache);
-            })
+        caches.open(STATIC_CACHE)
+            .then((cache) => cache.addAll(['/', '/logo.png', '/manifest.json']))
+            .then(() => self.skipWaiting())
     );
 });
 
-// Fetch event
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request);
-            })
-    );
-});
-
-// Activate event
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+        caches.keys()
+            .then((names) => Promise.all(
+                names
+                    .filter((name) => ![STATIC_CACHE, MEDIA_CACHE].includes(name))
+                    .map((name) => caches.delete(name))
+            ))
+            .then(() => self.clients.claim())
+    );
+});
+
+const isCacheableMedia = (request) => {
+    if (request.method !== 'GET' || request.headers.has('range')) return false;
+    const url = new URL(request.url);
+    if (url.origin !== self.location.origin) return false;
+    return /\.(?:png|jpe?g|webp|gif|mp3|wav|m4a|ogg)$/i.test(url.pathname)
+        || /\/api\/songs\/(?:cover|stream)\//i.test(url.pathname);
+};
+
+self.addEventListener('fetch', (event) => {
+    if (!isCacheableMedia(event.request)) return;
+
+    event.respondWith(
+        caches.open(MEDIA_CACHE).then(async (cache) => {
+            const cached = await cache.match(event.request);
+            if (cached) {
+                console.debug('[sw] media cache hit', new URL(event.request.url).pathname);
+                return cached;
+            }
+
+            console.debug('[sw] media network fetch', new URL(event.request.url).pathname);
+            const response = await fetch(event.request);
+            if (response.ok) {
+                await cache.put(event.request, response.clone());
+            }
+            return response;
         })
     );
 });
-
-// Background sync for offline functionality
-self.addEventListener('sync', (event) => {
-    if (event.tag === 'background-sync') {
-        event.waitUntil(
-            // Handle background sync tasks
-            console.log('Background sync triggered')
-        );
-    }
-});
-
 // Push notification handling
 self.addEventListener('push', (event) => {
     const options = {

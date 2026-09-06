@@ -96,8 +96,11 @@ export async function fetchWithFallback(method, apiPath, { body = null, token = 
       }
       if (token) opts.headers['Authorization'] = `Bearer ${token}`;
 
+      console.debug('[api] request', { method, path: apiPath });
       const res = await fetch(url, opts);
       const parsed = await parseResponseOnce(res);
+
+      console.debug('[api] response', { method, path: apiPath, status: res.status });
 
       if (res.ok) return parsed;
 

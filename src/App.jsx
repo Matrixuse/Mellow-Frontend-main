@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 
 import { Routes, Route, Link, Outlet, useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import apiClient from './api/apiClient';
+import queryClient from './queryClient';
 import AuthForm from './components/AuthForm';
 
 // Only load critical services synchronously
@@ -1230,7 +1231,12 @@ function App() {
                 return;
             }
 
-            getSongs(activeToken)
+            queryClient.fetchQuery({
+                queryKey: ['songs', activeToken],
+                queryFn: () => getSongs(activeToken),
+                staleTime: 5 * 60 * 1000,
+                gcTime: 30 * 60 * 1000,
+            })
                 .then((data) => {
                     // normalize song objects: ensure `id`, `coverUrl`, and parsed duration seconds
                     const normalized = Array.isArray(data) ? data.map(s => ({
@@ -1286,7 +1292,11 @@ function App() {
             if (a.src !== currentSongUrl) {
                 a.src = currentSongUrl;
                 a.load();
-                console.debug('Loading song:', currentSong.title, currentSongUrl);
+                console.debug('[media] audio request', {
+                    songId: currentSong.id,
+                    resourceType: 'audio',
+                    cachedByBrowserOrServiceWorker: true,
+                });
             }
 
             if (isPlaying) {
@@ -2788,7 +2798,7 @@ function App() {
                         <Route path="artist/:artistName" element={<Suspense fallback={<LazyLoadingFallback />}><ArtistPage /></Suspense>} />
                         <Route path="mood/:moodName" element={<Suspense fallback={<LazyLoadingFallback />}><MoodPage /></Suspense>} />
                         <Route path="vibe/:vibeName" element={<Suspense fallback={<LazyLoadingFallback />}><VibePage /></Suspense>} />
-                        <Route path="library/:optionName" element={<LibraryPage />} />
+                        <Route path="library/:optionName" element={<Suspense fallback={<LazyLoadingFallback />}><LibraryPage /></Suspense>} />
                         <Route path="equalizer" element={<Suspense fallback={<LazyLoadingFallback />}><EqualizerPage /></Suspense>} />
                         <Route path="playlists" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistsPage /></Suspense>} />
                         <Route path="playlists/:id" element={<Suspense fallback={<LazyLoadingFallback />}><PlaylistPage /></Suspense>} />
